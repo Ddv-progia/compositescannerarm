@@ -1,0 +1,27 @@
+/*
+ * Core/Devices.hh
+ */
+
+#pragma once
+
+#include <DevTalk/Device/AudioDataCollector.hh>
+#include <DevTalk/Device/Coil.hh>
+#include <DevTalk/Device/IODevice.hh>
+#include <DevTalk/Device/SerialStepMotor.hh>
+#include <DevTalk/Factory/Coil.hh>
+#include <DevTalk/Factory/SerialStepMotor.hh>
+#include <Ice/CommunicatorF.h>
+
+#include "Core/DevicesConfiguration.hh"
+#include "Core/ObjectKeeper.hh"
+#include "Core/StepMotor.hh"
+
+namespace devices {
+
+  extern uts::devtalk::AudioDataCollectorPrx audioDataCollector;
+  extern uts::devtalk::CoilPrx coil;
+  extern devices::StepMotorPtr xAxisMotor;
+  extern devices::StepMotorPtr yAxisMotor;
+
+  void setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper);
+}

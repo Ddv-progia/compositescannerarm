@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<icegrid>
+  <application name="Composite-Scanner-Arm">
+    <variable name="Services-Installation-Dir" value="D:\CompositeScannerArm-build\bin\RelWithDebInfo"/>
+    <variable name="Services-Configuration-Dir" value="D:\CompositeScannerArm\Configuration"/>
+    <variable name="IceBox-Executable" value="C:\Projects\vcpkg\installed\x64-windows\bin\icebox.exe"/>
+    <node name="Composite-Node">
+      <icebox id="Composite-Node-DevTalk" activation="always" exe="${IceBox-Executable}">
+        <env>PATH=%PATH%;${Services-Installation-Dir}</env>
+        <service name="DevTalk-Composite" entry="${Services-Installation-Dir}\DevTalk-Time-Sharing-Service:create">
+          <description>Instance of DevTalk TimeSharing Service for collecting data for geometry modules</description>
+          <properties>
+            <property name="${service}.LogFile" value="D:\CompositeScannerArm\var\log\${service}-%N.log"/>
+            <property name="${service}.PluginDir" value="${Services-Installation-Dir}"/>
+            <property name="${service}.LogLevel" value="trace"/>
+          </properties>
+          <adapter name="${service}" endpoints="tcp -h localhost" id="${service}"/>
+        </service>
+        <service name="DevTalk-CAND" entry="${Services-Installation-Dir}\DevTalk-CAND-Service:create">
+          <description>DevTalk Configuration and Naming Daemon</description>
+          <properties>
+            <property name="${service}.LogFile" value="D:\CompositeScannerArm\var\log\${service}-%N.log"/>
+            <property name="${service}.Simulate" value="0"/>
+            <property name="${service}.Config" value="${Services-Configuration-Dir}\Devices-Configuration.xml"/>
+            <property name="${service}.PluginDir" value="${Services-Installation-Dir}"/>
+          </properties>
+          <adapter name="${service}" endpoints="tcp -h localhost" id="${service}"/>
+        </service>
+      </icebox>
+      <icebox id="Composite-Node-Ice" activation="always" exe="${IceBox-Executable}">
+        <service name="Ice-Storm" entry="IceStormService,36:createIceStorm">
+          <properties>
+            <property name="${service}.Transient" value="1"/>
+            <property name="Ice.MessageSizeMax" value="100000000" />
+          </properties>
+          <adapter name="${service}.Publish" endpoints="tcp -h localhost" id="${service}.Publish"/>
+          <adapter name="${service}.TopicManager" endpoints="tcp -h localhost" id="${service}.TopicManager"/>
+        </service>
+      </icebox>
+    </node>
+  </application>
+</icegrid>

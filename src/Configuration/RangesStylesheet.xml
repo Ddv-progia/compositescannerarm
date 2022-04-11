@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stylesheet>
+  <multiple-values kind="group" property="title.match-name"/>
+  <multiple-values kind="group" property="title.pattern"/>
+  <multiple-values kind="category" property="title.match-name"/>
+  <multiple-values kind="category" property="title.pattern"/>
+ 
+  <rule kind="curve" class="scaled-line">
+    <title match-name="scaled line ([0-9]+)" pattern="Сигнал"/>
+    <style>dots</style>
+    <pen brush.color="black" width="2"/>
+  </rule>
+
+  <rule kind="curve" class="high-frequency-line">
+    <title match-name="high frequency line ([0-9]+)" pattern="Сигнал"/>
+  </rule>
+  
+  <rule kind="curve" class="range-high-frequency-line">
+    <title match-name="line ([0-9]+) ([0-9]+)" pattern="Сигнал"/>
+    <style>lines</style>
+    <pen brush.color="blue" width="2"/>
+  </rule>
+
+  <rule kind="curve" class="linear-regression">
+    <title match-name="linear-regression-line (.+)-([0-9]+)" pattern="Регрессия %1 порядка %2"/>
+    <pen brush.color="darkred" width="2"/>
+  </rule>
+
+  <rule kind="group">
+    <title match-name="scaled line ([0-9]+)" pattern="Строка %1"/>
+    <title match-name="high frequency line ([0-9]+)" pattern="Строка %1 высокочастотный сигнал сигнал"/>
+    <title match-name="line ([0-9]+) range ([0-9]+) \[ ([0-9]+) ([0-9]+) \]" pattern="Строка %1 диапазон %2 (%3 -- %4 Гц)"/>
+    <title match-name="line-range ([0-9]+) \[ ([0-9]+) ([0-9]+) \]" pattern="Диапазон %2 (%3 -- %4 Гц)"/>
+  </rule>
+
+  <rule kind="category">
+    <title match-name="source-scan-line-category" pattern="Исходные данные"/>
+    <title match-name="line-ranges-category" pattern="Частотные диапазоны по строкам"/>
+    <title match-name="line-([0-9]+)-ranges-category" pattern="Строка %1"/>
+  </rule>
+</stylesheet>

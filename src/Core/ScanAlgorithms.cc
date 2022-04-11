@@ -1,0 +1,217 @@
+/*
+ * Core/ScanAlgorithms.cc
+ */
+
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+#include <fftw3.h>
+#include <boost/format.hpp>
+#include <UCL/Exception.hh>
+#include <UCL/SignalProcessing/Decimate.hh>
+#include <UCL/SignalProcessing/Difference.hh>
+
+#include "Core/ScanAlgorithms.hh"
+
+using boost::format;
+
+namespace {
+
+  const std::size_t HIGH_FREQUENCY_ESTIMATED_PART = 4;
+
+}
+
+std::vector<Peak>
+findPeaks(std::vector<float>::const_iterator srcBegin, 
+          std::vector<float>::const_iterator srcEnd, 
+          unsigned int sampleRate, 
+          float peakLimit, 
+          double backstepSeconds, 
+          double forestepSeconds,
+          unsigned int peakPauseCountSeconds)
+{
+  const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
+  const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
+
+  if (forestep == 0) {
+    BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() 
+      << uts::ErrInfo_Description((format("Длительность пика слишком мала: %1% при частоте дискретизации %2%") % backstepSeconds % sampleRate).str()));
+  }
+  std::vector<Peak> peaks;
+  std::size_t srcSize = std::distance(srcBegin, srcEnd);
+  //*******
+  // Попытка выделить пики по-другому
+  //std::size_t peakStart = 0;
+  //std::size_t peakEnd = 0;
+  //std::size_t peakPauseCount = 0;
+  //std::size_t peakWidthMaxLimit = 2 * peakPauseCountSeconds;
+  //for (std::size_t i = 0; i < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+  //  if (std::abs(*(srcBegin + i)) > peakLimit) {
+  //      peakPauseCount = 0;
+  //      if (peakStart == 0) {
+  //          peakStart = i;
+  //          peakEnd = i;
+  //      }
+  //      else {
+  //          peakEnd = i;
+  //      }
+  //  }
+  //  else {
+  //      peakPauseCount++;
+  //  }
+  //  if ((peakPauseCount > peakPauseCountSeconds)||((peakEnd - peakStart)> peakWidthMaxLimit)) {
+  //      peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(peakStart - peakPauseCount)), (unsigned int)(peakEnd + peakPauseCount) });
+  //      peakStart = 0;
+  //      peakEnd = 0;
+  //      peakPauseCount = 0;
+  //  }
+  //  i++;
+  //}
+  //*******
+  for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+    if (std::abs(*(srcBegin + i)) > peakLimit) {
+      peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(i - backstep)), (unsigned int)(i + forestep) });
+      i += forestep;
+    } else {
+      i++;
+    }
+  }
+//*******
+
+  if(peaks.size()==0)
+    BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() << uts::ErrInfo_Description("Пики не найдены. Проверьте настройки пикового детектора"));
+
+  return peaks;
+}
+
+namespace {
+
+  std::size_t peakLength(const Peak& peak)
+  {
+    return peak.endIndex - peak.beginIndex;
+  }
+
+  std::size_t maxPeakLength(const std::vector<Peak>& peaks)
+  {
+    switch (peaks.size()) {
+    default:
+      return peakLength(peaks[1]);
+    case 1:
+      return peakLength(peaks.front());
+    case 2:
+      return std::max(peakLength(peaks.front()), peakLength(peaks.back()));
+    }
+  }
+
+  std::size_t fftSizeForLength(std::size_t x)
+  {
+    return (x - (x & 1)) / 2 + 1;
+  }
+
+  double calculateFftSum(fftwf_complex* fft,std::size_t fftLength)
+  {
+    auto fftSize = fftSizeForLength(fftLength);
+    double fftSum = 0.0;
+    for(std::size_t i = 0;i<fftSize;i++)
+      fftSum += std::sqrt(fft[i][0] * fft[i][0] + fft[i][1] * fft[i][1]);
+    return fftSum;
+  }
+
+  void appendPeakRanges(std::vector<std::vector<float>>& output,
+                        const std::vector<FrequencyRange>& ranges,
+                        unsigned int sampleRate,
+                        std::size_t fftLength,
+                        fftwf_complex* fft)
+  {
+    auto fftSize = fftSizeForLength(fftLength);
+
+    for (std::size_t rangeIndex = 0; rangeIndex < ranges.size(); rangeIndex++) {
+      auto rangeStartIndex = static_cast<std::size_t>(std::max(0.0, std::floor(ranges[rangeIndex].from * double(fftLength) / double(sampleRate) + 0.5)));
+      auto rangeEndIndex = std::min(fftSize - 1, static_cast<std::size_t>(std::floor(ranges[rangeIndex].to * double(fftLength) / double(sampleRate) + 0.5)));
+
+      double sum = 0.0;
+      for (std::size_t i = rangeStartIndex; i < rangeEndIndex; i++) {
+        sum += std::sqrt(fft[i][0] * fft[i][0] + fft[i][1] * fft[i][1]);
+      }
+      sum /= rangeEndIndex - rangeStartIndex;
+
+      output[rangeIndex].push_back(sum);
+    }
+  }
+}
+
+std::vector<std::vector<float>>
+splitFrequencyRanges(std::vector<float>::const_iterator srcBegin, 
+                     std::vector<float>::const_iterator srcEnd,
+                     unsigned int sampleRate,
+                     const std::vector<Peak>& peaks,
+                     const std::vector<FrequencyRange>& ranges)
+{
+  std::vector<std::vector<float>> result(ranges.size());
+
+  auto maxFFTLength = maxPeakLength(peaks);
+  auto maxFFTSize = fftSizeForLength(maxFFTLength);
+  auto inputFrame = static_cast<float*>(fftwf_malloc(maxFFTLength * sizeof(float)));
+  auto fft = static_cast<fftwf_complex*>(fftwf_malloc(maxFFTSize * sizeof(fftwf_complex))); 
+
+  // Преобразование первого пика
+  std::copy(srcBegin + peaks.front().beginIndex, srcBegin + peaks.front().endIndex, inputFrame);
+  fftwf_plan firstPlan = fftwf_plan_dft_r2c_1d(peakLength(peaks.front()), inputFrame, fft, FFTW_ESTIMATE);
+  fftwf_execute(firstPlan);
+
+  appendPeakRanges(result, ranges, sampleRate, peakLength(peaks.front()), fft);
+
+  // Преобразование основного массива пиков
+  fftwf_plan mainPlan = fftwf_plan_dft_r2c_1d(maxFFTLength, inputFrame, fft, FFTW_ESTIMATE);
+  for (std::size_t i = 1; i < peaks.size() - 1; i++) {
+    std::copy(srcBegin + peaks[i].beginIndex, srcBegin  + peaks[i].endIndex, inputFrame);
+    fftwf_execute(mainPlan);
+
+    appendPeakRanges(result, ranges, sampleRate, maxFFTLength, fft);
+  }
+
+  // Преобразование последнего пика, если он не единственный
+  if (peaks.size() > 1) {
+    std::copy(srcBegin + peaks.back().beginIndex, srcBegin + peaks.back().endIndex, inputFrame);
+    fftwf_plan lastPlan = fftwf_plan_dft_r2c_1d(peakLength(peaks.back()), inputFrame, fft, FFTW_ESTIMATE);
+    //fftwf_execute(firstPlan);
+    //*******
+    fftwf_execute(lastPlan);
+    //*******
+
+    appendPeakRanges(result, ranges, sampleRate, peakLength(peaks.back()), fft);
+
+    fftwf_destroy_plan(lastPlan);
+  }
+  
+  // Освобождение ресурсов
+  fftwf_destroy_plan(firstPlan);
+  fftwf_destroy_plan(mainPlan);
+  
+  fftwf_free(fft);
+  fftwf_free(inputFrame);
+
+  return result;
+}
+
+std::vector<FrequencyRange> constructFrequencyRanges(int beginFreq, int endFreq, int step)
+{
+  std::vector<FrequencyRange> result;
+  for(auto i = beginFreq;i<endFreq;i+=step){
+    result.push_back(FrequencyRange{ (double)i, (double)i + step });
+  }
+  return result;
+}
+
+std::vector<FrequencyRange> constructCommonRanges()
+{
+  std::vector<FrequencyRange> result;
+  auto ranges = constructFrequencyRanges(0,12000,2000);
+  result.insert(result.end(),ranges.begin(),ranges.end());
+  ranges = constructFrequencyRanges(12000,30000,3000);
+  result.insert(result.end(),ranges.begin(),ranges.end());
+  ranges = constructFrequencyRanges(30000,50000,5000);
+  result.insert(result.end(),ranges.begin(),ranges.end());
+
+  return result;
+}

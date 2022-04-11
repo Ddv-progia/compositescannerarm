@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Color-Map-Configuration>
+  <Color-Stops-List>
+    <Item>
+      <Val>0</Val>
+      <Color>#00ff00</Color>
+    </Item>
+    <Item>
+      <Val>-3</Val>
+      <Color>#0000ff</Color>
+    </Item>
+    <Item>
+      <Val>-2</Val>
+      <Color>#00ffff</Color>
+    </Item>
+    <Item>
+      <Val>4</Val>
+      <Color>#ff0000</Color>
+    </Item>
+    <Item>
+      <Val>2</Val>
+      <Color>#ffff00</Color>
+    </Item>
+    <Item>
+      <Val>6</Val>
+      <Color>#ff0000</Color>
+    </Item>
+  </Color-Stops-List>
+</Color-Map-Configuration>

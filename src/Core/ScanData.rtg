@@ -1,0 +1,268 @@
+--
+-- Core/ScanData.rtg
+--
+
+module Core.ScanData is
+
+import Builtin
+import Std.Vector
+import Std.String
+
+native MultiArray(X)  is "boost::multi_array<${X}, 2>" header "boost/multi_array.hpp"
+native Uint8 is "::uint8_t" header "stdint.h"
+
+
+enum ScanProcessingStage is
+	RawDataObtained,
+	PeaksDetected,
+	LinesTrimmed,
+	DirectionNormalized,
+	FrequencyRangesSplited,
+	RangesSmoothed,
+	RangesSelected,
+	LinesAligned,
+	RangesNormalized,
+	ModelSubstracted
+
+struct FrequencyRange is 
+  from : Double_Precision_Real
+  to : Double_Precision_Real
+end
+
+struct Peak is
+  beginIndex : Unsigned_Integer
+  endIndex : Unsigned_Integer
+end
+
+
+struct DefectChannel is
+  range : Unsigned_Integer
+  limit : Double_Precision_Real
+  amplification : Double_Precision_Real
+  useLeastValues : Boolean
+end
+
+struct DefectKindView is
+  title : Std::String
+  red : DefectChannel
+  blue : DefectChannel
+  green : DefectChannel
+end
+
+struct DefectChannelRenderingParameters is
+  startValue : Integer
+  endValue : Integer
+  lightnessStart : Integer
+end
+
+struct DefectRenderingParameters is
+  fixedColorScale : Boolean
+
+  red : DefectChannelRenderingParameters
+  green : DefectChannelRenderingParameters
+  blue : DefectChannelRenderingParameters
+        
+  redFixed : Integer
+  greenFixed : Integer
+  blueFixed : Integer
+end
+
+struct Kernel is
+  height : Integer
+	width : Integer
+	centerx : Integer
+	centery : Integer
+	kernelType :  Integer
+end
+
+struct DefectSearchingRange is
+	range : Unsigned_Integer
+	minimumValue : Double_Precision_Real
+	maximumValue : Double_Precision_Real
+end
+
+struct DefectSearchingParameters is 
+	useBlur : Boolean
+	blurHeight : Integer
+	blurWidth : Integer
+	useUnion : Boolean
+	unionKernel : Kernel
+	useSeparation : Boolean
+	separationKernel : Kernel
+	edgesApproximationType : Integer
+	defectRanges : Std::Vector(DefectSearchingRange)
+end
+
+struct ColorStop is
+	val : Double_Precision_Real
+	color : Std::String
+end
+
+enum DefectAnalysisToken is
+	MIN_IN_RANGE,
+  MAX_IN_RANGE,
+  POS_HALF_SUM, 
+  NEG_HALF_SUM,
+  POS_RELATIVE_RESIDUAL,  
+  NEG_RELATIVE_RESIDUAL
+
+struct DefectClassificationParameter is
+	token :  Unsigned_Integer
+	ranges :  Std::Vector(Unsigned_Integer)
+	koeff :  Double_Precision_Real
+	val :  Double_Precision_Real
+end
+
+struct DefectType is
+	name : Std::String
+	params : Std::Vector(DefectClassificationParameter)
+end
+
+struct SpecNormalizationParams is
+  average :  Double_Precision_Real
+  sigma :  Double_Precision_Real
+end
+
+struct ProcessingParameters is
+  initialSkip :  Double_Precision_Real
+
+  peakMagnitudeLimit :  Double_Precision_Real
+  peakBackstep :  Double_Precision_Real
+  peakForestep :  Double_Precision_Real
+  peakPauseCount : Unsigned_Integer
+
+  ranges : Std::Vector(FrequencyRange)
+  defectPoints : Std::Vector(DefectKindView)
+  columnModelOrder :  Unsigned_Integer
+  smoothingPointsCount : Unsigned_Integer
+  shouldNormalize : Boolean
+  useSubRanges : Boolean
+  specNormalization :Std::Vector(SpecNormalizationParams)
+
+  colorStopsList : Std::Vector(ColorStop)
+  defectClassification : Std::Vector(DefectType)
+  defectRendering : DefectRenderingParameters
+  defectSearching : DefectSearchingParameters
+end
+
+
+struct SourceScanLine is
+  samples : Std::Vector(Single_Precision_Real)
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+
+end
+
+struct RawScanLineInfo is
+  fileName :  Std::String
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+
+end
+
+struct RawScanInfo is
+  lines : Std::Vector(RawScanLineInfo)
+
+end
+
+struct SourceScanLineSlice is
+  samplesBegin :  Std::Vector(Single_Precision_Real)::Const_Iterator
+  samplesEnd :  Std::Vector(Single_Precision_Real)::Const_Iterator
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+
+end
+
+struct PeaksLine is
+  peaks : Std::Vector(Peak)
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+
+end
+
+
+struct RangeScanLine is
+  samples : Std::Vector(Single_Precision_Real)
+  sampleIndexes : Std::Vector(Unsigned_Integer)
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  sourceLineSize :  Unsigned_Integer
+  lineCoordinate :  Double_Precision_Real
+
+  range :  FrequencyRange
+  subBegin : Std::Vector(RangeScanLine)::Iterator
+  subEnd : Std::Vector(RangeScanLine)::Iterator
+
+end
+
+enum Extremum is
+	Max,
+	Min
+
+struct NormalizedRange is  
+  view : MultiArray(Single_Precision_Real)
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinates : Std::Vector(Double_Precision_Real)
+  beginIndex :  Unsigned_Integer
+  endIndex :  Unsigned_Integer
+  min : Double_Precision_Real
+  max : Double_Precision_Real
+  step :  Unsigned_Integer
+  maxView : MultiArray(Single_Precision_Real)
+  extremum : Extremum
+  minView : MultiArray(Single_Precision_Real)
+end
+
+struct Polynomial is
+  coefficients : Std::Vector(Double_Precision_Real)
+end
+
+struct RgbColor is 
+  red :  Uint8
+  green :  Uint8
+  blue :  Uint8
+end
+       
+struct DefectsView is
+  view :  MultiArray(RgbColor)
+  sampleRate :  Unsigned_Integer
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinates : Std::Vector(Double_Precision_Real)
+end
+
+struct Scan is 
+  lines : Std::Vector(SourceScanLine)
+  parameters :  ProcessingParameters
+
+  trimmedLines : Std::Vector(SourceScanLineSlice)
+  peaks : Std::Vector(PeaksLine)
+  ranges : Std::Vector(Std::Vector(RangeScanLine))
+  commonRanges : Std::Vector(Std::Vector(RangeScanLine))
+
+  spec : Std::Vector(Std::Vector(RangeScanLine))
+  normalizedSpec : Std::Vector(Std::Vector(RangeScanLine))
+       
+  normalizedRanges : Std::Vector(NormalizedRange)
+  commonNormalizedRanges : Std::Vector(NormalizedRange)
+  averageColumns : Std::Vector(Std::Vector(Double_Precision_Real))
+  averageColumnPolyniomials : Std::Vector(Polynomial)
+  rangesResiduals : Std::Vector(NormalizedRange)
+  rawDefectPoints : Std::Vector(DefectsView)
+  renderedDefectPoints : Std::Vector(DefectsView)
+  renderedDefectPointsFixedColor : Std::Vector(DefectsView)
+  processingStage : ScanProcessingStage
+  currentRange :  Unsigned_Integer
+  scanName :  Std::String
+end
+

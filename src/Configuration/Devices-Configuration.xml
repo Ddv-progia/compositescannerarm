@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Devices-Configuration>
+  <Com-Port>COM3</Com-Port>
+  <X-Step-Motor>
+    <Address>66</Address>
+    <Steps-Per-Revolution>400</Steps-Per-Revolution>
+    <Motor-Reduction>12.5</Motor-Reduction>
+    <Tooth-Step>3</Tooth-Step>
+    <Tooth-Count>48</Tooth-Count>
+  </X-Step-Motor>
+  <Y-Step-Motor>
+    <Address>65</Address>
+    <Steps-Per-Revolution>400</Steps-Per-Revolution>
+    <Motor-Reduction>12.5</Motor-Reduction>
+    <Tooth-Step>3</Tooth-Step>
+    <Tooth-Count>48</Tooth-Count>
+  </Y-Step-Motor>
+  <Coil>48</Coil>
+  <Audio-Data-Collector>LineIn (SB X-Fi Surround 5.1 Pro)</Audio-Data-Collector>
+</Devices-Configuration>
