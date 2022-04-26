@@ -166,8 +166,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>D:/jpg/Спектр.gif</normaloff>D:/jpg/Спектр.gif</iconset>
+          <iconset resource="tango-icons.qrc">
+           <normaloff>:/icons/actions/icons/Spectr.gif</normaloff>:/icons/actions/icons/Spectr.gif</iconset>
          </property>
          <property name="iconSize">
           <size>

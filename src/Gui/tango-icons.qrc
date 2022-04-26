@@ -2,6 +2,7 @@
   <qresource prefix="icons/actions">
     <file>icons/actions/preferences-system.png</file>
     <file>icons/app.png</file>
+    <file>icons/Spectr.gif</file>
     <file>icons/actions/applications-system.png</file>
     <file>icons/actions/appointment-new.png</file>
     <file>icons/actions/bookmark-new.png</file>
