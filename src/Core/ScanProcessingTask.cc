@@ -89,7 +89,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
     //auto step = 250;
     //*******
 
-    for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
+    for(auto startFrequency = 0;startFrequency<=50000;startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
@@ -584,10 +584,17 @@ void ScanProcessingTask::operator() ()
 
     //дополнение первой строки до размера следующей
     if (scan->lines.size() > 1) {
-      if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[1].samples.size() / 1000)) {
-          auto difference = scan->lines[1].samples.size() - scan->lines[0].samples.size();
+      size_t j = 1;
+      if (scan->lines.size() > 2) {
+          j = 2;
+      }
+      auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
+      if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
           scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
         }
+      else {
+          scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
+      }
     }
 
     boost::transform(scan->lines,
