@@ -7,7 +7,9 @@
 
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
-INCLUDE_DIRECTORIES(
+INCLUDE_DIRECTORIES(DevTalk-Drivers-APL-Techno-Motion
+  PUBLIC  ${DevTalk-Interface_SOURCE_DIR}
+          ${DevTalk-Interface_BINARY_DIR}
   ${DevTalk-Interface_SOURCE_DIR}
   ${DevTalk-Interface_BINARY_DIR}
   ${UtsCommonLibrary_SOURCE_DIR}/include
@@ -26,6 +28,7 @@ INCLUDE_DIRECTORIES(
   ${QWT_INCLUDE_DIRS}
   ${ZEROC_ICE_CORE_INCLUDE_DIR}
   ${PUGIXML_INCLUDE_DIRS}
+  ${VTK_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS})
 
 LINK_DIRECTORIES(
@@ -225,6 +228,7 @@ target_link_libraries(CompositeScanner
   UCL-PlotView
   UCL-Reflection-Binding
   UCL-Regression-Analysis
-  UCL-Signal-Processing)
+  UCL-Signal-Processing
+  DevTalk-Drivers-Unitest-APL-System)
 
 set_target_properties(CompositeScanner PROPERTIES AUTOMOC ON)

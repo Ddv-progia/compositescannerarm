@@ -10,9 +10,6 @@
 #include <DevTalk/Device/SerialStepMotor.hh>
 #include <DevTalk/Factory/Coil.hh>
 #include <DevTalk/Factory/SerialStepMotor.hh>
-#include <DevTalk/LowLevelBoard/APLSystem.hh>
-#include <DevTalk/Device/APLMultiDevice.hh>
-
 #include <Ice/CommunicatorF.h>
 
 #include "Core/DevicesConfiguration.hh"
@@ -25,8 +22,6 @@ namespace devices {
   extern uts::devtalk::CoilPrx coil;
   extern devices::StepMotorPtr xAxisMotor;
   extern devices::StepMotorPtr yAxisMotor;
-  extern uts::devtalk::utscp::APLSystemPrx aplSystemPrx;
-  extern uts::devtalk::drivers::utscp::APLMultiDevicePrx aplMultiDevicePrx;
 
   void setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper);
 }

@@ -21,4 +21,5 @@ struct DevicesConfiguration is
   xStepMotor : StepMotorConfiguration
   yStepMotor : StepMotorConfiguration
   coil: Integer
+
 end
