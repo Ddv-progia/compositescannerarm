@@ -479,6 +479,11 @@ ProcessingParametersDialog::ProcessingParametersDialog(const ProcessingParameter
   } else {
     setWindowTitle("Параметры обработки");
   }
+
+  // Скрываем параметр ui.peakPauseCountBox "Длительность паузы после пика", 
+  // т.к. его использование закомменчено.
+  ui.label_16->setVisible(false); // метка "Длительность паузы после пика"
+  ui.peakPauseCountBox->setVisible(false);
   colorDialog = new AssignColorForColorBarDialog(params, false,  this);
   // Прячем кнопки перемещения итемов, т.к. реализация не завершена.
   colorDialog->ui.moveTopButton->setVisible(false);
@@ -602,8 +607,7 @@ void ProcessingParametersDialog::fillWidgets()
 
 void ProcessingParametersDialog::updateParameters()
 {
-  //colorDialog->updateParameters();
-  params = colorDialog->getProcessingParameters();
+  params.colorStopsList = (colorDialog->getProcessingParameters()).colorStopsList;
   params.initialSkip = ui.initialSkipBox->value();
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
