@@ -22,12 +22,13 @@
 
 namespace adp = boost::adaptors;
 
-AssignColorForColorBarDialog::AssignColorForColorBarDialog(const ProcessingParameters& params, QWidget* parent)
+AssignColorForColorBarDialog::AssignColorForColorBarDialog(const ProcessingParameters& params, bool buttonBoxVisible , QWidget* parent)
   : QDialog(parent), params(params)
 {
   ui.setupUi(this);
   connectSignals();
   fillWidgets();
+  ui.buttonBox->setVisible(buttonBoxVisible);
 }
 
 ProcessingParameters AssignColorForColorBarDialog::getProcessingParameters() const
@@ -297,6 +298,9 @@ void AssignColorForColorBarDialog::connectSignals()
   connect(ui.moveDownButton, SIGNAL(clicked()), this, SLOT(moveDown()));
   connect(ui.moveBottomButton, SIGNAL(clicked()), this, SLOT(moveBottom()));
   connect(this, SIGNAL(accepted()), this, SLOT(updateParameters()));
+  if (auto parentQDialog = qobject_cast<QDialog*>(parent())) {
+      connect(parentQDialog, SIGNAL(accepted()), this, SLOT(updateParameters()));
+  }
 
 }
 

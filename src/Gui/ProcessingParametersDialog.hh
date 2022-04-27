@@ -9,6 +9,7 @@
 #include "Core/ScanData.hh"
 #include "ui_ProcessingParametersDialog.h"
 #include "ui_KernelDialog.h"
+#include "Gui/AssignColorForColorBarDialog.hh"
 
 
 class KernelDialog:public QDialog
@@ -32,9 +33,10 @@ class ProcessingParametersDialog : public QDialog
 public:
   ProcessingParametersDialog(const ProcessingParameters& params, bool technological, QWidget* parent = 0);
   ProcessingParameters getProcessingParameters() const;
+  Ui::ProcessingParametersDialog ui;
+  AssignColorForColorBarDialog* colorDialog;
 
 private:
-  Ui::ProcessingParametersDialog ui;
   ProcessingParameters params;
 
   void fillWidgets();

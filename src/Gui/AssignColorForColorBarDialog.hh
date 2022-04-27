@@ -39,9 +39,11 @@ class AssignColorForColorBarDialog: public QDialog
 {
   Q_OBJECT
 public:
-  explicit AssignColorForColorBarDialog(const ProcessingParameters& params, QWidget* parent = 0);
+  explicit AssignColorForColorBarDialog(const ProcessingParameters& params, bool buttonBoxVisible = true, QWidget* parent = 0);
   ProcessingParameters getProcessingParameters() const;
   Ui::AssignColorForColorBarDialog ui;
+  Q_SLOT void updateParameters();
+
 private:
   ProcessingParameters params;
 
@@ -50,7 +52,6 @@ private:
   Q_SLOT void addColorItem(double value = 0, QColor color = "red");
   Q_SLOT void removeSource();
   Q_SLOT void clearSources();
-  Q_SLOT void updateParameters();
   void GetItemValueAndColor(int i, QColor& curveColor, double& val);
   Q_SLOT void distributeHSV();
   Q_SLOT void saveToXMLFile();

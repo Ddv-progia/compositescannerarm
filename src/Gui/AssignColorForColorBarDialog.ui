@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>401</width>
+    <width>420</width>
     <height>653</height>
    </rect>
   </property>
@@ -63,11 +63,14 @@
        <property name="textElideMode">
         <enum>Qt::ElideLeft</enum>
        </property>
+       <property name="resizeMode">
+        <enum>QListView::Adjust</enum>
+       </property>
        <property name="viewMode">
         <enum>QListView::ListMode</enum>
        </property>
        <property name="sortingEnabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -180,7 +183,7 @@
        <item>
         <widget class="QPushButton" name="readFromParametersButton">
          <property name="text">
-          <string>Считать из конфига</string>
+          <string>Считать из параметров</string>
          </property>
         </widget>
        </item>

@@ -544,8 +544,9 @@ void MainWindow::showCurrentParameterDialog()
   auto currentWidget = getCurrentMdiWidget();
   if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
     ProcessingParametersDialog ppd(sdw->getProcessingParameters(), false);
+
     if (ppd.exec() == QDialog::Accepted) {
-      sdw->applyParameters(ppd.getProcessingParameters(), scanFactory);
+        sdw->applyParameters(ppd.getProcessingParameters(), scanFactory);
     }
   }
 }

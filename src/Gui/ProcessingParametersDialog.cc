@@ -479,6 +479,16 @@ ProcessingParametersDialog::ProcessingParametersDialog(const ProcessingParameter
   } else {
     setWindowTitle("Параметры обработки");
   }
+  colorDialog = new AssignColorForColorBarDialog(params, false,  this);
+  // Прячем кнопки перемещения итемов, т.к. реализация не завершена.
+  colorDialog->ui.moveTopButton->setVisible(false);
+  colorDialog->ui.moveBottomButton->setVisible(false);
+  colorDialog->ui.moveDownButton->setVisible(false);
+  colorDialog->ui.moveUpButton->setVisible(false);
+
+  colorDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+
+  ui.horizontalLayout_14->addWidget(colorDialog);
 
   connect(ui.rangesAddButton, SIGNAL(clicked()), this, SLOT(rangesAdd()));
   connect(ui.rangesRemoveButton, SIGNAL(clicked()), this, SLOT(rangesRemove()));
@@ -592,6 +602,8 @@ void ProcessingParametersDialog::fillWidgets()
 
 void ProcessingParametersDialog::updateParameters()
 {
+  //colorDialog->updateParameters();
+  params = colorDialog->getProcessingParameters();
   params.initialSkip = ui.initialSkipBox->value();
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
