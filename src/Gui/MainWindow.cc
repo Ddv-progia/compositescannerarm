@@ -106,7 +106,6 @@ void MainWindow::connectSignals()
   connect(ui.showManualControlDialogAction, SIGNAL(triggered()), this, SLOT(showManualControlDialog()));
   connect(ui.quitAction, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
   connect(ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
-  connect(ui.assignColorsForColorBarAction, SIGNAL(triggered()), this, SLOT(showAssignColorsForColorBarDialog()));
   connect(ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
