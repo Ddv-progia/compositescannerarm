@@ -8,15 +8,34 @@
 class DefectRangeDelegate : public QStyledItemDelegate
   {
     std::vector<FrequencyRange>& ranges;
+    std::vector<::Extremum>& extremums;
+
   public:
+    //explicit DefectRangeDelegate(std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)
     explicit DefectRangeDelegate(std::vector<FrequencyRange>& ranges, QObject* parent = 0)
-      : QStyledItemDelegate(parent), ranges(ranges)
+      : QStyledItemDelegate(parent), ranges(ranges), extremums(std::vector<::Extremum>())
+    { }
+
+    DefectRangeDelegate(std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)
+      : QStyledItemDelegate(parent), ranges(ranges), extremums(extremums)
     { }
 
     virtual QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override
     {
       auto cb = new QComboBox(parent);
-      for (auto& r : ranges) cb->addItem(QString("%1 - %2").arg(r.from).arg(r.to));
+      int i = 0;
+      if (extremums.size() == ranges.size()) {
+          for (auto& r : ranges) {
+              QString str = "Max";
+              if (extremums[i] == ::Extremum::Aver) str = "Aver";
+              else if (extremums[i] == ::Extremum::Min) str = "Min";
+              i++;
+              cb->addItem(QString("%1 - %2 : %3").arg(r.from).arg(r.to).arg(str));
+          }
+      }
+      else {
+          for (auto& r : ranges) cb->addItem(QString("%1 - %2").arg(r.from).arg(r.to));
+      }
       return cb;
     }
 

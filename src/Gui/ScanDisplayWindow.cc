@@ -987,9 +987,25 @@ void ScanDisplayWindow::updatePlot()
 void ScanDisplayWindow::updatePlotList()
 {
   plotBox->clear();
+  int i = 0;
   switch (kindBox->currentIndex()) {
   default:
-    for (auto & r : scan->parameters.ranges) plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to));
+      for (auto& r : scan->parameters.ranges) {
+          auto index = plotBox->count();
+          plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to));
+          QString path = "icons/button_average.ico";
+          if (scan->parameters.extremumOfRanges.size()>i) {
+              if (scan->parameters.extremumOfRanges[i] == ::Extremum::Min) {
+                  path = "icons/button_min.ico";
+              }
+              else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Max) {
+                  path = "icons/button_max.ico";
+              }
+          }
+          QIcon icon(path);
+          plotBox->setItemIcon(index, icon);
+          i++;
+      }
     break;
   case 2:
   case 3:

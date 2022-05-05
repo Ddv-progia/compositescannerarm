@@ -12,6 +12,11 @@ native MultiArray(X)  is "boost::multi_array<${X}, 2>" header "boost/multi_array
 native Uint8 is "::uint8_t" header "stdint.h"
 
 
+enum Extremum is
+	Max,
+	Min,
+	Aver
+
 enum ScanProcessingStage is
 	RawDataObtained,
 	PeaksDetected,
@@ -132,6 +137,7 @@ struct ProcessingParameters is
   peakPauseCount : Unsigned_Integer
 
   ranges : Std::Vector(FrequencyRange)
+  extremumOfRanges : Std::Vector(Extremum)
   defectPoints : Std::Vector(DefectKindView)
   columnModelOrder :  Unsigned_Integer
   smoothingPointsCount : Unsigned_Integer
@@ -203,9 +209,6 @@ struct RangeScanLine is
 
 end
 
-enum Extremum is
-	Max,
-	Min
 
 struct NormalizedRange is  
   view : MultiArray(Single_Precision_Real)

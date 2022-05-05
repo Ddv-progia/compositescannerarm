@@ -158,6 +158,7 @@ add_executable(CompositeScanner #WIN32
   Gui/DefectClassificationTable.cc
   Gui/DefectClassificationTable.hh
   Gui/RangeDelegate.hh
+  Gui/ExtremumDelegate.hh
   Gui/CoilManualControl.cc
   Gui/CoilManualControl.hh
   Gui/CommonActions.hh

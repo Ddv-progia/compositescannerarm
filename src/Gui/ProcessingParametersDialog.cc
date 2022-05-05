@@ -5,6 +5,7 @@
 #include <QtCore/QAbstractTableModel>
 #include <QtWidgets/QComboBox>
 #include "Gui/RangeDelegate.hh"
+#include "Gui/ExtremumDelegate.hh"
 #include "opencv2/opencv.hpp"
 
 #include "Gui/ProcessingParametersDialog.hh"
@@ -52,15 +53,18 @@ namespace {
   class RangesTableModel : public QAbstractTableModel
   {
     std::vector<FrequencyRange>& ranges;
-
+    std::vector < ::Extremum>& extremums;
   public:
-    explicit RangesTableModel(std::vector<FrequencyRange>& ranges, QObject* parent = 0)
-      : QAbstractTableModel(parent), ranges(ranges)
+      explicit RangesTableModel(std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)
+          : QAbstractTableModel(parent), ranges(ranges), extremums(extremums)
     { }
 
     virtual int columnCount(const QModelIndex& = QModelIndex()) const override
     {
-      return 2;
+//*******
+  //      return 2;
+      return 3;
+//*******
     }
 
     virtual int rowCount(const QModelIndex& = QModelIndex()) const override
@@ -82,6 +86,7 @@ namespace {
           switch (section) {
           case 0: return "От";
           case 1: return "До";
+          case 2: return "Экстремум";
           }
 
         case Qt::Vertical:
@@ -100,6 +105,15 @@ namespace {
         switch (index.column()) {
         case 0: return QString::number(ranges[index.row()].from);
         case 1: return QString::number(ranges[index.row()].to);
+        case 2: 
+            switch (extremums[index.row()]) {
+            case ::Extremum::Aver:
+                return QString("Aver");
+            case ::Extremum::Min:
+                return QString("Min");
+            case ::Extremum::Max:
+                return QString("Max");
+            }
         }
       }
 
@@ -116,6 +130,20 @@ namespace {
           return true;
         case 1:
           ranges[index.row()].to = value.toDouble();
+          return true;
+        case 2:       
+            switch (value.toInt()) {
+            case 0:
+                extremums[index.row()] = Extremum::Max;
+                break;
+            case 1:
+                extremums[index.row()] = Extremum::Min;
+                break;
+            case 2:
+                extremums[index.row()] = Extremum::Aver;
+                //extremums[index.row()] = Extremum::Min;
+                break;
+            }
           return true;
         }
       }
@@ -164,10 +192,12 @@ namespace {
   {
     std::vector<DefectKindView>& defects;
     std::vector<FrequencyRange>& ranges;
+    std::vector < ::Extremum>& extremums;
+
 
   public:
-    explicit DefectsTableModel(std::vector<DefectKindView>& defects, std::vector<FrequencyRange>& ranges, QObject* parent = 0)
-      : QAbstractTableModel(parent), defects(defects), ranges(ranges)
+    explicit DefectsTableModel(std::vector<DefectKindView>& defects, std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)
+      : QAbstractTableModel(parent), defects(defects), ranges(ranges), extremums(extremums)
     { }
 
     virtual int columnCount(const QModelIndex& = QModelIndex()) const override
@@ -217,19 +247,39 @@ namespace {
 
     virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
     {
+      QString str = "Min";
+
       switch (role) {
       case Qt::DisplayRole:
         switch (index.column()) {
         case 0: return QString::fromStdString(defects[index.row()].title);
-        case 1: return QString("%1 - %2").arg(ranges[defects[index.row()].red.range].from).arg(ranges[defects[index.row()].red.range].to);
+        case 1: 
+            str = "Min";
+            if (extremums[defects[index.row()].red.range] == ::Extremum::Max) {
+                str = "Max";
+            }
+            else if (extremums[defects[index.row()].red.range] == ::Extremum::Aver) str = "Aver";
+            return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].red.range].from).arg(ranges[defects[index.row()].red.range].to).arg(str);
         case 2: return defects[index.row()].red.limit;
         case 3: return defects[index.row()].red.amplification;
 		case 4: return defects[index.row()].red.useLeastValues;
-        case 5: return QString("%1 - %2").arg(ranges[defects[index.row()].blue.range].from).arg(ranges[defects[index.row()].blue.range].to);
+        case 5:
+            str = "Min";
+            if (extremums[defects[index.row()].blue.range] == ::Extremum::Max) {
+                str = "Max";
+            }
+            else if (extremums[defects[index.row()].blue.range] == ::Extremum::Aver) str = "Aver";
+            return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].blue.range].from).arg(ranges[defects[index.row()].blue.range].to).arg(str);
         case 6: return defects[index.row()].blue.limit;
         case 7: return defects[index.row()].blue.amplification;
 		case 8: return defects[index.row()].blue.useLeastValues;
-        case 9: return QString("%1 - %2").arg(ranges[defects[index.row()].green.range].from).arg(ranges[defects[index.row()].green.range].to);
+        case 9: 
+            str = "Min";
+            if (extremums[defects[index.row()].green.range] == ::Extremum::Max) {
+                str = "Max";
+            }
+            else if (extremums[defects[index.row()].green.range] == ::Extremum::Aver) str = "Aver";
+            return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].green.range].from).arg(ranges[defects[index.row()].green.range].to).arg(str);
         case 10: return defects[index.row()].green.limit;
         case 11: return defects[index.row()].green.amplification;
 		case 12: return defects[index.row()].green.useLeastValues;
@@ -346,15 +396,16 @@ namespace {
   {
 	std::vector<DefectSearchingRange>& defectRanges;
 	std::vector<FrequencyRange>& ranges;
+    std::vector <::Extremum>& extremums;
 
   public:
-	explicit DefectRangesTableModel(std::vector<DefectSearchingRange>& defectRanges,std::vector<FrequencyRange>& ranges, QObject* parent = 0)
-      : QAbstractTableModel(parent), defectRanges(defectRanges),ranges(ranges)
+	explicit DefectRangesTableModel(std::vector<DefectSearchingRange>& defectRanges,std::vector<FrequencyRange>& ranges, std::vector <::Extremum>& extremums, QObject* parent = 0)
+      : QAbstractTableModel(parent), defectRanges(defectRanges), ranges(ranges), extremums(extremums)
     { }
 
     virtual int columnCount(const QModelIndex& = QModelIndex()) const override
     {
-      return 3;
+      return 3; 
     }
 
     virtual int rowCount(const QModelIndex& = QModelIndex()) const override
@@ -395,7 +446,12 @@ namespace {
 		case 0:{//проверка добавлена для совместимости со старыми сканами
 				FrequencyRange range;
 				range = ranges[defectRanges[index.row()].range < ranges.size() ? defectRanges[index.row()].range : 0];
-				return QString("%1-%2").arg(range.from).arg(range.to); 
+                auto extremum = extremums[defectRanges[index.row()].range < ranges.size() ? defectRanges[index.row()].range : 0];
+                QString str = "Max";
+                if (extremum == ::Extremum::Min ) str = "Min";
+                if (extremum == ::Extremum::Aver ) str = "Aver";
+
+				return QString("%1-%2 : %3").arg(range.from).arg(range.to).arg(str);
 			}
 		case 1: return QString::number(defectRanges[index.row()].minimumValue);
 		case 2: return QString::number(defectRanges[index.row()].maximumValue);
@@ -589,19 +645,21 @@ void ProcessingParametersDialog::fillWidgets()
   ui.redFixedBox->setValue(params.defectRendering.redFixed);
   ui.greenFixedBox->setValue(params.defectRendering.greenFixed);
   ui.blueFixedBox->setValue(params.defectRendering.blueFixed);
-  ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this));
-  ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this));
-  ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this));
-  ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this));
-  ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this));
+  ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.rangesTableView->setItemDelegateForColumn(2, new ExtremumDelegate(this));
+
+  ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
 
   ui.blurCheckBox->setChecked(this->params.defectSearching.useBlur);
   ui.blurHEdit->setText(QString::number(this->params.defectSearching.blurHeight));
   ui.blurWEdit->setText(QString::number(this->params.defectSearching.blurWidth));
   ui.unionCheckBox->setChecked(this->params.defectSearching.useUnion);
   ui.separationCheckBox->setChecked(this->params.defectSearching.useSeparation);
-  ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges,this));
-  ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this));
+  ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
+  ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
   ui.approximationComboBox->setCurrentIndex(this->params.defectSearching.edgesApproximationType-1);
 }
 
@@ -642,7 +700,6 @@ void ProcessingParametersDialog::updateParameters()
   params.defectSearching.blurWidth = ui.blurWEdit->text().toInt();
   params.defectSearching.useSeparation = ui.separationCheckBox->isChecked();
   params.defectSearching.useUnion = ui.unionCheckBox->isChecked();
-
 
   //CV_CHAIN_APPROX_NONE=1,
   //CV_CHAIN_APPROX_SIMPLE=2,

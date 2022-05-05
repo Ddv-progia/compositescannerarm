@@ -446,6 +446,7 @@ class DefectClassificationWidget : public QWidget, public Ui::DefectClassificati
 	Q_OBJECT
 	std::vector<DefectType> defects;
 	std::vector<FrequencyRange> ranges;
+	//std::vector < ::Extremum> extremums;
 	std::vector<QString> tokens;
 	DefectClassificationTableModel* model;
 public:
