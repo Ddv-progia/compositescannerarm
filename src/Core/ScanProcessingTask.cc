@@ -89,7 +89,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
     //auto step = 250;
     //*******
 
-    for(auto startFrequency = 0;startFrequency<=50000;startFrequency+=step)
+    for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
@@ -212,6 +212,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
     for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
       float maxPeak = 0.0;
       float minPeak = 0.0;
+      float justPeak = 0.0; //*******
       if(scan->parameters.useSubRanges){
         auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         minPeak = peaks.first;
@@ -220,9 +221,10 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
         maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         minPeak = maxPeak;
       }
-
+      justPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step); //*******
       normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
       normalizedRange.minView[peakIndex][lineIndex] = minPeak;
+      normalizedRange.view[peakIndex][lineIndex] = justPeak; //*******
       if(maxPeak> normalizedRange.max) normalizedRange.max = maxPeak;
       if(minPeak< normalizedRange.min) normalizedRange.min = minPeak;
     }
@@ -254,7 +256,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
     //}
   }
   
-  normalizedRange.view =  normalizedRange.maxView;
+  //******* normalizedRange.view =  normalizedRange.maxView;
   
 }
 
@@ -584,6 +586,7 @@ void ScanProcessingTask::operator() ()
 
     //дополнение первой строки до размера следующей
     if (scan->lines.size() > 1) {
+//*******
       size_t j = 1;
       if (scan->lines.size() > 2) {
           j = 2;
@@ -595,6 +598,7 @@ void ScanProcessingTask::operator() ()
       else {
           scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
       }
+//*******
     }
 
     boost::transform(scan->lines,
