@@ -288,7 +288,7 @@ void FrequencyRoseGrid::splitInterval(QwtInterval interval,int splitDepth)
 	auto middle = (interval.minValue()+interval.maxValue())/2;
 	splitInterval(QwtInterval(interval.minValue(),middle),splitDepth-1);
 	splitInterval(QwtInterval(middle,interval.maxValue()),splitDepth-1);
-	return;
+    return;
 }
 
 FrequencyRoseGrid::FrequencyRoseGrid(int radius,std::vector<FrequencyRange> ranges,QWidget* parent):QWidget(parent),r(radius)

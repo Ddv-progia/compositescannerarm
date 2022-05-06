@@ -84,10 +84,9 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
     //находим полный спектр с дискретизацией 250 Гц
 
     std::vector<FrequencyRange> ranges;
-    auto step = 1000;
-    //*******
+    
+    auto step = 1000; 
     //auto step = 250;
-    //*******
 
     for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
@@ -204,6 +203,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.maxView.resize(be);
   normalizedRange.minView.resize(boost::extents[lineLength][linesCount]);
   normalizedRange.view.resize(boost::extents[lineLength][linesCount]);
+  normalizedRange.averView.resize(boost::extents[lineLength][linesCount]); //*******
 
   normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
   normalizedRange.min = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
@@ -224,7 +224,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
       justPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step); //*******
       normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
       normalizedRange.minView[peakIndex][lineIndex] = minPeak;
-      normalizedRange.view[peakIndex][lineIndex] = justPeak; //*******
+      normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
       if(maxPeak> normalizedRange.max) normalizedRange.max = maxPeak;
       if(minPeak< normalizedRange.min) normalizedRange.min = minPeak;
     }
@@ -256,7 +256,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
     //}
   }
   
-  //******* normalizedRange.view =  normalizedRange.maxView;
+   normalizedRange.view =  normalizedRange.maxView;
   
 }
 

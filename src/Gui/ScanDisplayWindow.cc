@@ -773,12 +773,26 @@ void ScanDisplayWindow::updateRangesPlot()
 
   auto idx = plotBox->currentIndex();
   if (idx < 0) return;
-
+  
   scan->currentRange = idx;
   auto* normalizedRanges = &scan->normalizedRanges;
   if(showCommonRange) {
     normalizedRanges = &scan->commonNormalizedRanges;
     idx = commonRangeNum;
+  }
+  else{
+      //switch (scan->normalizedRanges[idx].extremum){
+      switch (scan->parameters.extremumOfRanges[idx]) {
+      case Extremum::Max:
+          scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].maxView;
+          break;
+      case Extremum::Min:
+          scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].minView;
+          break;
+      case Extremum::Aver:
+          scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].averView;
+          break;
+      }
   }
   auto spec = new QwtPlotSpectrogram;
   spec->setData(new NormalizedRangeRasterData((*normalizedRanges)[idx]));
@@ -992,16 +1006,19 @@ void ScanDisplayWindow::updatePlotList()
   default:
       for (auto& r : scan->parameters.ranges) {
           auto index = plotBox->count();
-          plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to));
+          QString strExtremum = " Aver";
           QString path = "icons/button_average.ico";
           if (scan->parameters.extremumOfRanges.size()>i) {
               if (scan->parameters.extremumOfRanges[i] == ::Extremum::Min) {
                   path = "icons/button_min.ico";
+                  strExtremum = " Min";
               }
               else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Max) {
                   path = "icons/button_max.ico";
+                  strExtremum = " Max";
               }
           }
+          plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to) + strExtremum);
           QIcon icon(path);
           plotBox->setItemIcon(index, icon);
           i++;

@@ -224,6 +224,7 @@ struct NormalizedRange is
   maxView : MultiArray(Single_Precision_Real)
   extremum : Extremum
   minView : MultiArray(Single_Precision_Real)
+  averView : MultiArray(Single_Precision_Real)
 end
 
 struct Polynomial is
