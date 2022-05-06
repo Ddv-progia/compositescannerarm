@@ -131,7 +131,11 @@ namespace {
         case 1:
           ranges[index.row()].to = value.toDouble();
           return true;
-        case 2:       
+        case 2:
+            auto indexRow = index.row();
+            if (indexRow >= extremums.size()){
+                extremums.resize(indexRow+1);
+            }
             switch (value.toInt()) {
             case 0:
                 extremums[index.row()] = Extremum::Max;
