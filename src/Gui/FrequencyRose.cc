@@ -298,7 +298,7 @@ FrequencyRoseGrid::FrequencyRoseGrid(int radius,std::vector<FrequencyRange> rang
 	std::sort(marks.begin(),marks.end());
 }
 
-void FrequencyRoseGrid::paintGrid(QPainter* painter)
+void FrequencyRoseGrid::paintGrid(QPainter* painter, bool isNeedToRoundTextMarks)
 {
 	QPointF center = rect().center();
 	painter->setBackground(QBrush(Qt::transparent));
@@ -311,8 +311,12 @@ void FrequencyRoseGrid::paintGrid(QPainter* painter)
 	for(auto i = 0;i<marks.size();i++){
 		QPointF point = FrequencyRose::findCoordinates(i*angleStep,r);
 		painter->drawLine(QPoint(0,0),point);
-		QString text = QString::number(marks[i]);
-		QPointF textPoint(point.x()-this->fontMetrics().width(text)/2,point.y()+this->fontMetrics().height()/2);// текст отрисовывается строго по центру линии
+        //*******
+		QString text = QString::number(isNeedToRoundTextMarks? std::floor(marks[i]): marks[i]);
+		//QString text = QString::number(marks[i]);
+        //*******
+
+        QPointF textPoint(point.x()-this->fontMetrics().width(text)/2,point.y()+this->fontMetrics().height()/2);// текст отрисовывается строго по центру линии
 
  		painter->setBrush(QBrush(Qt::white));
 		painter->setPen(QPen(Qt::white));
@@ -472,7 +476,7 @@ void MinMaxFrequencyRose::paintEvent(QPaintEvent* event)
   painter->setBrush(QBrush(Qt::transparent));
   painter->drawEllipse(QPointF(0,0),nullCircleRadius,nullCircleRadius);
   currentPoint = maxPoints.begin()->second;
-  grid->paintGrid(painter);
+  grid->paintGrid(painter,true);
 }
 
 ///
@@ -551,7 +555,7 @@ void AverageFrequencyRose::paintEvent(QPaintEvent* event)
   painter.end();
 
   currentPoint = points.begin()->second;
-  grid->paintGrid(&painter);
+  grid->paintGrid(&painter, true);
 }
 
 SplitedAverageFrequencyRose::SplitedAverageFrequencyRose(RangedMultiArray data,double positiveThreshold,double negativeThreshold, double factor,std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
@@ -608,7 +612,7 @@ void SplitedAverageFrequencyRose::paintEvent(QPaintEvent* event)
   painter->drawEllipse(QPointF(0,0),nullCircleRadius,nullCircleRadius);
   currentPoint = positivePoints.begin()->second;
 
-  grid->paintGrid(painter);
+  grid->paintGrid(painter, true);
 }
 
 ////////////////////////
@@ -660,7 +664,11 @@ FrequencyRoseWidget::FrequencyRoseWidget(RangedMultiArray& newData,std::vector<C
 
   factorSpinBox = new QDoubleSpinBox;
   factorSpinBox->setSingleStep(1.0);
-  factorSpinBox->setValue(1.0);
+
+  //*******
+  factorSpinBox->setValue(10.0);
+  //factorSpinBox->setValue(1.0);
+  //*******
 
   typeCombo = new QComboBox;
   auto thresholdLayout = new QHBoxLayout;

@@ -65,7 +65,7 @@ class FrequencyRoseGrid: public QWidget
 	void splitInterval(QwtInterval interval,int splitDepth);
 public:
 	FrequencyRoseGrid(int radius,std::vector<FrequencyRange> ranges,QWidget* parent = 0);
-	void paintGrid(QPainter* painter);
+	void paintGrid(QPainter* painter,bool roundTextMarks = false);
 };
 
 
