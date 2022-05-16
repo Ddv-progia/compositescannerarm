@@ -445,6 +445,35 @@ void ScanDisplayWindow::setDefectMask()
   defectsMarker->setDefects(plotDefectsModel->currentDefects());
 }
 
+
+void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
+{
+    switch (ex) {
+        default:
+        case Extremum::Max: {
+            for (auto& range : scan->commonNormalizedRanges) {
+                range.view = range.maxView;
+                range.extremum = Extremum::Max;
+            }
+            break;
+        }
+        case Extremum::Aver: {
+            for (auto& range : scan->commonNormalizedRanges) {
+                range.view = range.averView;
+                range.extremum = Extremum::Aver;
+            }
+            break;
+        }
+        case Extremum::Min: {
+            for (auto& range : scan->commonNormalizedRanges) {
+                range.view = range.minView;
+                range.extremum = Extremum::Min;
+            }
+            break;
+        }
+    }
+}
+
 void ScanDisplayWindow::changeExtremums()
 {
   if(scan->commonNormalizedRanges.front().extremum == Extremum::Max) {
@@ -727,7 +756,7 @@ void ScanDisplayWindow::saveAs(BackgroundTaskExecutor& taskExecutor)
 
 void ScanDisplayWindow::createColoredRangeSelector()
 {
-  std::vector<float> mins, maxs;
+  std::vector<float> mins, maxs, avers;
 
   double max = 0.0;
   double min = 0.0;
@@ -741,12 +770,13 @@ void ScanDisplayWindow::createColoredRangeSelector()
 
     mins.push_back(range.min);
     maxs.push_back(range.max);
+    avers.push_back(range.aver);
   }
   QwtColorMap* colorMap = new FixedColorMap(scan->parameters.colorStopsList);//(min,max);
   auto commonRanges = constructCommonRanges();
   if(scan->parameters.shouldNormalize)
     commonRanges.push_back(FrequencyRange{ commonRanges.front().from, commonRanges.back().to });
-  auto selector = new ColoredRangeSelector(maxs, mins, commonRanges, colorMap);
+  auto selector = new ColoredRangeSelector(maxs, mins, avers, commonRanges, colorMap);
   auto layout = new QHBoxLayout;
   layout->setContentsMargins(1, 1, 1, 1);
 
@@ -822,8 +852,11 @@ void ScanDisplayWindow::updateRangesPlot()
 void ScanDisplayWindow::selectRange(int idx, Extremum ex)
 {
   showCommonRange = true;
-  if(ex != scan->commonNormalizedRanges.front().extremum)
-    this->changeExtremums();
+//*******
+  this->changeExtremum(ex);
+  //if(ex != scan->commonNormalizedRanges.front().extremum)
+    //this->changeExtremums(); 
+//*******
 
   commonRangeNum = idx;
 

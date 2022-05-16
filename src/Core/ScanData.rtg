@@ -220,6 +220,7 @@ struct NormalizedRange is
   endIndex :  Unsigned_Integer
   min : Double_Precision_Real
   max : Double_Precision_Real
+  aver : Double_Precision_Real
   step :  Unsigned_Integer
   maxView : MultiArray(Single_Precision_Real)
   extremum : Extremum

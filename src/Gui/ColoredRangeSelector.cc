@@ -111,13 +111,14 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
 }
 
 
-ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<float> mins, std::vector<FrequencyRange> ranges,
+ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<float> mins, std::vector<float> avers, std::vector<FrequencyRange> ranges,
     QwtColorMap* newColorMap, QWidget* parent) : QFrame(parent)
 {
   QwtInterval interval(static_cast<double>(*std::min_element(mins.begin(), mins.end())), static_cast<double>(*std::max_element(maxs.begin(),
                        maxs.end())));
   auto minLayout = new QHBoxLayout;
   auto maxLayout = new QHBoxLayout;
+  auto averLayout = new QHBoxLayout;
   auto selectorLayout = new QVBoxLayout;
   auto layout = new QHBoxLayout;
   auto headerLayout = new QVBoxLayout;
@@ -129,6 +130,8 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   minLayout->setContentsMargins(2, 0, 0, 0);
   maxLayout->setSpacing(0);
   maxLayout->setContentsMargins(2, 0, 0, 0);
+  averLayout->setSpacing(0);
+  averLayout->setContentsMargins(2, 0, 0, 0);
   selectorLayout->setContentsMargins(0, 0, 0, 0);
   selectorLayout->setSpacing(3);
   headerLayout->setContentsMargins(0, 0, 0, 2);
@@ -140,26 +143,32 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
 
   headerLayout->addWidget(new QLabel("Max. "));
   headerLayout->addWidget(new QLabel("Min. "));
+  headerLayout->addWidget(new QLabel("Aver. "));
 
   minLayout->setStretch(0, 0);
   maxLayout->setStretch(0, 0);
+  averLayout->setStretch(0, 0);
 
-  views.resize(2);
+  views.resize(3);
 
   this->setFrameStyle(QFrame::StyledPanel);
 
   for(int i = 0; i < ranges.size(); i++) {
     auto minView = new RangeView(newColorMap->rgb(interval, mins[i]), ranges[i]);
     auto maxView = new RangeView(newColorMap->rgb(interval, maxs[i]), ranges[i]);
+    auto averView = new RangeView(newColorMap->rgb(interval, avers[i]), ranges[i]);
 
     views[0].push_back(maxView);
     views[1].push_back(minView);
+    views[2].push_back(averView);
 
     maxLayout->addWidget(maxView);
     minLayout->addWidget(minView);
+    averLayout->addWidget(averView);
 
     connect(maxView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeMax(RangeView*)));
     connect(minView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeMin(RangeView*)));
+    connect(averView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeAver(RangeView*)));
   }
 
   frequency = new QLabel;
@@ -169,6 +178,7 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
 
   selectorLayout->addLayout(maxLayout);
   selectorLayout->addLayout(minLayout);
+  selectorLayout->addLayout(averLayout);
 
   layout->addLayout(headerLayout);
   layout->addLayout(selectorLayout);
@@ -201,6 +211,23 @@ void ColoredRangeSelector::selectRangeMax(RangeView* view)
         views[0][i]->deleteSelection();
     }
 }
+void ColoredRangeSelector::selectRangeAver(RangeView* view)
+{
+  auto currView = views[static_cast<uint>(currentRange.second)][currentRange.first];
+  currView->deleteSelection();
+  for(int i = 0; i < views[2].size(); i++)
+    if(view == views[2][i]) {
+      currentRange = std::make_pair(i, Extremum::Aver);
+      emit selectRange(i, Extremum::Aver);
+      view->select();
+      setFrequencyText(view->getRange());
+    }
+    else {
+        views[1][i]->deleteSelection();
+        views[0][i]->deleteSelection();
+    }
+}
+
 void ColoredRangeSelector::selectRangeMin(RangeView* view)
 {
   auto currView = views[static_cast<uint>(currentRange.second)][currentRange.first];

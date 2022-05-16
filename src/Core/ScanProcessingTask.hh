@@ -45,11 +45,14 @@ private:
                       std::size_t rangeIndex,
                       std::size_t step, 
                       std::size_t startIndex, 
-                      std::size_t stopIndex);
+                      std::size_t stopIndex,
+                      ::Extremum extremumOfRangesIn);
   float getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx);
   float getMaxSubrangePeak(const RangeScanLine& line,std::size_t idx);
   float getMinSubrangePeak(const RangeScanLine& line,std::size_t idx);
-  std::pair<float,float> getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx);
+  float getAverageSubrangePeak(const RangeScanLine& line,std::size_t idx);
+  std::tuple<float, float, float> getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx);
+//  std::pair<float,float> getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx);
   void selectRangesFromSpec(Scan& scan);
   void findRelativeSignals(Scan& scan);
   void findRelativeSignals(Scan& scan,const std::vector<SpecNormalizationParams>& params);

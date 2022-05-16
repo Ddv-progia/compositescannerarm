@@ -162,6 +162,7 @@ private:
   Q_SLOT void selectContour(size_t n);
   Q_SLOT void setDefectMask();
   Q_SLOT void changeExtremums();
+  Q_SLOT void changeExtremum(Extremum ex);
   Q_SLOT void getSelectedContour(const QItemSelection& selected, const QItemSelection& deselected);
   QTableView* getDefectTableView();
 
