@@ -3,11 +3,12 @@
  */
 
 #include <QtWidgets/QMessageBox>
+#include <QSplitter>
 
 #include "Core/Devices.hh"
 #include "Gui/CoilManualControl.hh"
 
-CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coil, QWidget* parent)
+CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coil, int currentIndex, QWidget* parent)
   : QWidget(parent), coil(coil)
 {
   ui.setupUi(this);
@@ -16,7 +17,7 @@ CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coil, QWidget* p
   for (std::size_t i = 0; i < commands.size(); i++)
     ui.commandBox->addItem(commands[i].first);
   ui.commandBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-
+  ui.commandBox->setCurrentIndex(currentIndex);
   periodicCommandExecutionTimer = new QTimer(this);
 
   connect(ui.runButton, SIGNAL(clicked()), this, SLOT(runCurrentCommand()));
@@ -26,6 +27,7 @@ CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coil, QWidget* p
 
   connect(ui.addButton, SIGNAL(clicked()), this, SIGNAL(addControlPanel()));
   connect(ui.removeButton, SIGNAL(clicked()), this, SIGNAL(removeControlPanel()));
+  addControlPanel();
 }
 
 void CoilCommandPanel::updateCommands()
@@ -151,12 +153,32 @@ void CoilCommandPanel::runCurrentCommandPeriodically()
 CoilManualControlDialog::CoilManualControlDialog(QWidget* parent)
 {
   setWindowTitle(QString::fromUtf8("Датчик АСК"));
-
   panelsLayout = new QVBoxLayout;
-  addControlPanel();
 
   panelsLayout->addStretch();
   setLayout(panelsLayout);
+  
+  addControlPanelWithIndex(31);
+  addControlPanelWithIndex(30);
+  addControlPanelWithIndex(29);
+  addControlPanelWithIndex(28);
+  addControlPanelWithIndex(21);
+  addControlPanelWithIndex(20);
+  addControlPanelWithIndex(17);
+  addControlPanelWithIndex(16);
+  addControlPanelWithIndex(8);
+  addControlPanelWithIndex(7);
+  addControlPanelWithIndex(6);
+  addControlPanelWithIndex(1);
+}
+
+CoilCommandPanel* CoilManualControlDialog::addControlPanelWithIndex(int index)
+{
+  auto ccp = new CoilCommandPanel(devices::coil, index);
+  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+  return ccp;
 }
 
 void CoilManualControlDialog::addControlPanel()

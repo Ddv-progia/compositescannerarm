@@ -19,7 +19,7 @@ class CoilCommandPanel : public QWidget
 {
   Q_OBJECT
 public:
-  explicit CoilCommandPanel(const uts::devtalk::CoilPrx& coil, QWidget* parent = 0);
+  explicit CoilCommandPanel(const uts::devtalk::CoilPrx& coil, int currentIndex = 1, QWidget* parent = 0);
 
 protected:
   Q_SIGNAL void addControlPanel();
@@ -49,6 +49,7 @@ public:
 private:
   QVBoxLayout* panelsLayout;
 
+  CoilCommandPanel* addControlPanelWithIndex(int index);
   Q_SLOT void addControlPanel();
   void addControlPanel(int commandIndex);
 };
