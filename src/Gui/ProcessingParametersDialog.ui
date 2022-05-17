@@ -297,6 +297,23 @@
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="QSpinBox" name="splitRangeSpinBox">
+             <property name="minimum">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="splitRangeButton">
+             <property name="text">
+              <string>Разделить диапазон</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

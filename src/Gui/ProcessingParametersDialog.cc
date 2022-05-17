@@ -568,6 +568,7 @@ ProcessingParametersDialog::ProcessingParametersDialog(const ProcessingParameter
   connect(ui.rangesMoveUpButton, SIGNAL(clicked()), this, SLOT(rangesMoveUp()));
   connect(ui.rangesMoveDownButton, SIGNAL(clicked()), this, SLOT(rangesMoveDown()));
   connect(ui.rangesMoveBottomButton, SIGNAL(clicked()), this, SLOT(rangesMoveBottom()));
+  connect(ui.splitRangeButton, SIGNAL(clicked()), this, SLOT(rangesSplit()));
   connect(ui.defectsAddButton, SIGNAL(clicked()), this, SLOT(defectsAdd()));
   connect(ui.defectsRemoveButton, SIGNAL(clicked()), this, SLOT(defectsRemove()));
   connect(ui.defectsClearButton, SIGNAL(clicked()), this, SLOT(defectsClear()));
@@ -728,6 +729,32 @@ void ProcessingParametersDialog::rangesAdd()
   } else {
     ui.rangesTableView->model()->insertRow(ui.rangesTableView->model()->rowCount());
   }
+}
+
+void ProcessingParametersDialog::rangesSplit()
+{
+    auto selection = ui.rangesTableView->selectionModel();
+    auto row = selection->selectedRows().front().row();
+    auto from = ui.rangesTableView->model()->index(row, 0).data().toInt();
+    auto to = ui.rangesTableView->model()->index(row, 1).data().toInt();
+    auto partsNum = ui.splitRangeSpinBox->value();
+    if ((from > to)||(partsNum == 0))
+        return;
+    auto lengthOfParts = std::floor((to - from) / partsNum);
+    for (auto i = 0; i < partsNum-1; i++) {
+          ui.rangesTableView->model()->insertRow(row+i);
+          ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + i, 0), from);
+          ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + i, 1), from+lengthOfParts);
+          ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + i, 2), 0);
+          from += lengthOfParts;
+          //model->submitAll();
+    }
+    // Последний диапазон расширяем до "to"-границы, на случай, если ширина диапазонов 
+    // получилась дробной.
+    ui.rangesTableView->model()->insertRow(row + partsNum - 1);
+    ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + partsNum - 1, 0), from);
+    ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + partsNum - 1, 1), to);
+    ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(row + partsNum - 1, 2), 0);
 }
 
 void ProcessingParametersDialog::rangesRemove()
