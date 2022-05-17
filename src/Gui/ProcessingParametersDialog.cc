@@ -159,6 +159,7 @@ namespace {
     {
       beginInsertRows(parent, row, row + count - 1);
       ranges.insert(ranges.begin() + row, count, FrequencyRange{ 0, 0 });
+      extremums.insert(extremums.begin() + row, count, Extremum::Max);
       endInsertRows();
 
       return true;
@@ -169,11 +170,15 @@ namespace {
       if (beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destinationParent, destinationRow)) {
         std::vector<FrequencyRange> moved(ranges.begin() + sourceRow, ranges.begin() + sourceRow + count);
         ranges.erase(ranges.begin() + sourceRow, ranges.begin() + sourceRow + count);
+        std::vector<Extremum> movedExtremums(extremums.begin() + sourceRow, extremums.begin() + sourceRow + count);
+        extremums.erase(extremums.begin() + sourceRow, extremums.begin() + sourceRow + count);
 
         if (destinationRow > sourceRow) {
           ranges.insert(ranges.begin() + (destinationRow - count), moved.begin(), moved.end());
+          extremums.insert(extremums.begin() + (destinationRow - count), movedExtremums.begin(), movedExtremums.end());
         } else {
           ranges.insert(ranges.begin() + destinationRow, moved.begin(), moved.end());
+          extremums.insert(extremums.begin() + destinationRow, movedExtremums.begin(), movedExtremums.end());
         }
         endMoveRows();
         return true;
@@ -186,6 +191,7 @@ namespace {
     {
       beginRemoveRows(parent, row, row + count - 1);
       ranges.erase(ranges.begin() + row, ranges.begin() + row + count);
+      extremums.erase(extremums.begin() + row, extremums.begin() + row + count);
       endRemoveRows();
 
       return true;
