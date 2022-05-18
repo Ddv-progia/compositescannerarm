@@ -45,7 +45,7 @@ void RangeView::deleteSelection()
 
 QSize RangeView::sizeHint () const
 {
-  return QSize(10, 10);
+  return QSize(12, 12);
 }
 
 FrequencyRange RangeView::getRange() const
@@ -69,29 +69,61 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
     if (keyEvent->modifiers() == Qt::NoModifier) {
       switch (keyEvent->key()) {
       case Qt::Key_Down:
-        if(currentRange.second != Extremum::Min) {
-          view->deleteSelection();
-          currentRange.second = Extremum::Min;
-          emit selectRange(currentRange.first, currentRange.second);
-          view->select();
-          setFrequencyText(view->getRange());
+        //*******
+        //if(currentRange.second != Extremum::Min) { 
+        //  view->deleteSelection();
+        //  currentRange.second = Extremum::Min;
+        //  emit selectRange(currentRange.first, currentRange.second);
+        //  view->select();
+        //  setFrequencyText(view->getRange());
+        //}
+        if (currentRange.second != Extremum::Aver) {
+
+            view->deleteSelection();
+            if (currentRange.second == Extremum::Min) {
+            currentRange.second = Extremum::Aver;
+            }
+            else currentRange.second = Extremum::Min;
+            setFrequencyText(view->getRange());
+            auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
+            viewNew->select();
+            emit selectRange(currentRange.first, currentRange.second);
         }
+        //*******
+
         return true;
       case Qt::Key_Up:
-        if(currentRange.second != Extremum::Max) {
-          view->deleteSelection();
-          currentRange.second = Extremum::Max;
-          emit selectRange(currentRange.first, currentRange.second);
-          view->select();
-          setFrequencyText(view->getRange());
+        //*******
+        //if(currentRange.second != Extremum::Max) {
+        //  view->deleteSelection();
+        //  currentRange.second = Extremum::Max;
+        //  emit selectRange(currentRange.first, currentRange.second);
+        //  view->select();
+        //  setFrequencyText(view->getRange());
+        //}
+        if (currentRange.second != Extremum::Max) {
+            view->deleteSelection();
+            if (currentRange.second == Extremum::Min) {
+                currentRange.second = Extremum::Max;
+            }
+            else currentRange.second = Extremum::Min;
+            setFrequencyText(view->getRange());
+            auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
+            viewNew->select();
+            emit selectRange(currentRange.first, currentRange.second);
         }
+        //*******
         return true;
       case Qt::Key_Left:
         if(currentRange.first > 0) {
           view->deleteSelection();
           currentRange.first--;
           emit selectRange(currentRange.first, currentRange.second);
-          view->select();
+          //*******
+          //view->select(); 
+          auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
+          viewNew->select();
+          //*******
           setFrequencyText(view->getRange());
         }
         return true;
@@ -100,7 +132,11 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
           view->deleteSelection();
           currentRange.first++;
           emit selectRange(currentRange.first, currentRange.second);
-          view->select();
+          //*******
+          //view->select();
+          auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
+          viewNew->select();
+          //*******
           setFrequencyText(view->getRange());
         }
         return true;
