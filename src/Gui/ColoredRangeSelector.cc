@@ -124,7 +124,7 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
           auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
           viewNew->select();
           //*******
-          setFrequencyText(view->getRange());
+          setFrequencyText(viewNew->getRange());
         }
         return true;
       case Qt::Key_Right:
@@ -137,7 +137,7 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
           auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
           viewNew->select();
           //*******
-          setFrequencyText(view->getRange());
+          setFrequencyText(viewNew->getRange());
         }
         return true;
       }
