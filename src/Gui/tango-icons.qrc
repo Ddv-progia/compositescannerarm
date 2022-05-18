@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons/actions">
+    <file>icons/actions/document-open-tech.png</file>
     <file>icons/actions/preferences-system.png</file>
     <file>icons/app.png</file>
     <file>icons/Spectr.gif</file>

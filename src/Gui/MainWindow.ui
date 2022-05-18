@@ -299,6 +299,7 @@
    </attribute>
    <addaction name="newAction"/>
    <addaction name="openAction"/>
+   <addaction name="openTechnologicalAction"/>
    <addaction name="saveAction"/>
    <addaction name="saveAsAction"/>
    <addaction name="separator"/>
@@ -525,6 +526,10 @@
    </property>
   </action>
   <action name="openTechnologicalAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/document-open-tech.png</normaloff>:/icons/actions/icons/actions/document-open-tech.png</iconset>
+   </property>
    <property name="text">
     <string>Открыть с технологическими параметрами...</string>
    </property>
