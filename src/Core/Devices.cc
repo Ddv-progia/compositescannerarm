@@ -37,7 +37,9 @@ uts::devtalk::CoilPrx devices::coil;
 devices::StepMotorPtr devices::xAxisMotor;
 devices::StepMotorPtr devices::yAxisMotor;
 uts::devtalk::utscp::APLSystemPrx devices::aplSystemPrx;
+uts::devtalk::utscp::APLSystemPrx devices::aplSystem1112Prx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevicePrx;
+uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevice1112Prx;
 
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 
@@ -54,18 +56,23 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
   //name = "APL-universal" address = "10.0.254.222" port = "1111" >
   //auto timeOut = uts::ice::create<uts::devtalk::TimeOut>();
 
-  if (conf.coil == 2022) {
+  if (conf.coil == 2022) {  // Если версия катушки 2022, значит катушка управляется платой APL
       //auto coilFactory1 = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
       auto coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
       //coil = coilFactory->make(uts::devtalk::SerialDeviceProtocolVersion8, motorPort, conf.coil);
       if (aplMultiDeviceFactory) {
           //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
           aplSystemPrx = aplMultiDeviceFactory->make("APL-universal", "10.0.254.223", std::stoi("1111"));
+          aplSystem1112Prx = aplMultiDeviceFactory->make("APL-universal", "10.0.254.223", std::stoi("1112"));
           //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
           aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
           std::this_thread::sleep_for(std::chrono::milliseconds(1000));
           if (!aplMultiDevicePrx)
-              throw std::exception("Не возможно получить driver APLMultiDevicePrx");
+              throw std::exception("Невозможно получить driver APLMultiDevicePrx");
+          aplMultiDevice1112Prx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystem1112Prx, "APL-Multi-Device");
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+          if (!aplMultiDevice1112Prx)
+              throw std::exception("Невозможно получить driver aplMultiDevice1112Prx");
           //coil = coilFactory->makeCoil("1", aplMultiDevicePrx);
           //objectKeeper.registerObject(coil);
 
@@ -125,54 +132,54 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
 //*******
 //   Вернуть  audioDataCollector и пр. !!!
 //*******
-  //audioDataCollector = audioDataCollectorFactory->getInstance(conf.audioDataCollector);
-  //auto adcs = audioDataCollectorFactory->getNames();
-  //auto serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
+  audioDataCollector = audioDataCollectorFactory->getInstance(conf.audioDataCollector);
+  adcs = audioDataCollectorFactory->getNames();
+  auto serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
 
-  //auto motorPortConfig = new uts::devtalk::WindowsSerialPortConfig; 
-  //motorPortConfig->baudRate = 9600;
-  //motorPortConfig->dataBits = uts::devtalk::SerialPort::DataBits8;
-  //motorPortConfig->deviceName = conf.comPort;
-  //motorPortConfig->handshake = uts::devtalk::SerialPort::HandshakeNo;
-  //motorPortConfig->parity = uts::devtalk::SerialPort::ParityNone;
-  //motorPortConfig->stopBits = uts::devtalk::SerialPort::StopBits1;
-  //motorPortConfig->readIntervalTimeout = 4000;
-  //motorPortConfig->readTotalTimeoutConstant = 100;
-  //motorPortConfig->readTotalTimeoutMultiplier = 1;
-  //motorPortConfig->writeTotalTimeoutConstant = 0;
-  //motorPortConfig->writeTotalTimeoutMultiplier = 0;
-  //auto motorPort = serialPortFactory->make(motorPortConfig);
-  //objectKeeper.registerObject(motorPort);
+  auto motorPortConfig = new uts::devtalk::WindowsSerialPortConfig; 
+  motorPortConfig->baudRate = 9600;
+  motorPortConfig->dataBits = uts::devtalk::SerialPort::DataBits8;
+  motorPortConfig->deviceName = conf.comPort;
+  motorPortConfig->handshake = uts::devtalk::SerialPort::HandshakeNo;
+  motorPortConfig->parity = uts::devtalk::SerialPort::ParityNone;
+  motorPortConfig->stopBits = uts::devtalk::SerialPort::StopBits1;
+  motorPortConfig->readIntervalTimeout = 4000;
+  motorPortConfig->readTotalTimeoutConstant = 100;
+  motorPortConfig->readTotalTimeoutMultiplier = 1;
+  motorPortConfig->writeTotalTimeoutConstant = 0;
+  motorPortConfig->writeTotalTimeoutMultiplier = 0;
+  auto motorPort = serialPortFactory->make(motorPortConfig);
+  objectKeeper.registerObject(motorPort);
 
-  //auto serialMotorFactory = getObject<uts::devtalk::SerialStepMotorFactoryPrx>(comm, "Factory/SerialStepMotor");
-  //
-  //uts::devtalk::SerialStepMotorConfig xcfg;
-  //xcfg.port = motorPort;
-  //xcfg.address = conf.xStepMotor.address;
-  //xcfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
-  //auto xAxisPrx = serialMotorFactory->make(xcfg);
+  auto serialMotorFactory = getObject<uts::devtalk::SerialStepMotorFactoryPrx>(comm, "Factory/SerialStepMotor");
+  
+  uts::devtalk::SerialStepMotorConfig xcfg;
+  xcfg.port = motorPort;
+  xcfg.address = conf.xStepMotor.address;
+  xcfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
+  auto xAxisPrx = serialMotorFactory->make(xcfg);
 
-  //uts::devtalk::SerialStepMotorConfig ycfg;
-  //ycfg.port = motorPort;
-  //ycfg.address = conf.yStepMotor.address;
-  //ycfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
-  //auto yAxisPrx = serialMotorFactory->make(ycfg);
-  //
-  //xAxisMotor = std::make_shared<devices::StepMotor>(xAxisPrx, conf.xStepMotor.stepsPerRevolution, conf.xStepMotor.motorReduction, conf.xStepMotor.toothStep, conf.xStepMotor.toothCount);
-  //yAxisMotor = std::make_shared<devices::StepMotor>(yAxisPrx, conf.yStepMotor.stepsPerRevolution, conf.yStepMotor.motorReduction, conf.yStepMotor.toothStep, conf.yStepMotor.toothCount);
-  //objectKeeper.registerObject(xAxisPrx);
-  //objectKeeper.registerObject(yAxisPrx);
+  uts::devtalk::SerialStepMotorConfig ycfg;
+  ycfg.port = motorPort;
+  ycfg.address = conf.yStepMotor.address;
+  ycfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
+  auto yAxisPrx = serialMotorFactory->make(ycfg);
+  
+  xAxisMotor = std::make_shared<devices::StepMotor>(xAxisPrx, conf.xStepMotor.stepsPerRevolution, conf.xStepMotor.motorReduction, conf.xStepMotor.toothStep, conf.xStepMotor.toothCount);
+  yAxisMotor = std::make_shared<devices::StepMotor>(yAxisPrx, conf.yStepMotor.stepsPerRevolution, conf.yStepMotor.motorReduction, conf.yStepMotor.toothStep, conf.yStepMotor.toothCount);
+  objectKeeper.registerObject(xAxisPrx);
+  objectKeeper.registerObject(yAxisPrx);
 
-  //auto coilFactory = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
-  //coil = coilFactory->make(uts::devtalk::SerialDeviceProtocolVersion8, motorPort, conf.coil);
-  //objectKeeper.registerObject(coil);
+  auto coilFactory = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
+  coil = coilFactory->make(uts::devtalk::SerialDeviceProtocolVersion8, motorPort, conf.coil);
+  objectKeeper.registerObject(coil);
 //*******
 // Возвращаем до вот здесь
 
 
-  bool simulate = false;
+  bool simulate = false; //*******
   //if (!ctx.simulate) {
-  if (!simulate) {
+  if (!simulate) {       //*******
       //auto mk = [=]() -> uts::devtalk::utscp::APLSystemPrx {
       //    //auto factory = getObjectChecked<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(ctx.node, factoryName);
       //    auto factory = getObjectChecked<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
@@ -210,71 +217,95 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
   //    if (!aplMultiDevicePrx)
   //        throw std::exception("Не возможно получить driver APLMultiDevicePrx");
   {
-      QString mess = "";
-      std::vector<QString > pinStrCollection1;
-      std::vector<QString > pinStrCollection2;
-      //for (auto i = 1; i < 53; i++) {
-      //    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-      //    auto  strI = std::to_string(i);
-      //    mess += QString::fromUtf8(("pin" + strI + "= ").c_str());
-      //    auto t(uts::devtalk::ToT(2, 1).timeOut());
-      //    auto pin = aplMultiDevicePrx->getPin(strI, t);
-      //    mess += pin ? "1 \n" : "0 \n";
+      //*******
+      //QString mess = "";
+      //std::vector<QString > pinStrCollection1;
+      //std::vector<QString > pinStrCollection2;
+      ////for (auto i = 1; i < 53; i++) {
+      ////    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      ////    auto  strI = std::to_string(i);
+      ////    mess += QString::fromUtf8(("pin" + strI + "= ").c_str());
+      ////    auto t(uts::devtalk::ToT(2, 1).timeOut());
+      ////    auto pin = aplMultiDevicePrx->getPin(strI, t);
+      ////    mess += pin ? "1 \n" : "0 \n";
+      ////};
+      //int istart = 0;
+      //int ifinish = 56;
+
+      //for (auto i = istart; i < ifinish; i++) {
+      //    auto  strI = QString::number(i);
+      //    //auto t = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
+      //    auto t = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
+
+      //    //auto t(uts::devtalk::ToT(2, 1).timeOut());
+      //    auto pin = aplMultiDevicePrx->getPin(strI.toStdString(), t);
+      //    QString str;
+      //    if (pin) {
+      //        str = "pin" + strI + "= " + "1";
+      //    }
+      //    else {
+      //        str = "pin" + strI + "= " + "0";
+      //    }
+      //    pinStrCollection1.push_back(str);
       //};
-      int istart = 0;
-      int ifinish = 56;
-
-      for (auto i = istart; i < ifinish; i++) {
-          auto  strI = QString::number(i);
-          //auto t = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
-          auto t = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
-
-          //auto t(uts::devtalk::ToT(2, 1).timeOut());
-          auto pin = aplMultiDevicePrx->getPin(strI.toStdString(), t);
-          QString str;
-          if (pin) {
-              str = "pin" + strI + "= " + "1";
-          }
-          else {
-              str = "pin" + strI + "= " + "0";
-          }
-          pinStrCollection1.push_back(str);
-      };
   
-      QMessageBox::information(nullptr, "info", "Wait for 'enter'");
-      for (auto i = istart; i < ifinish; i++) {
-          auto  strI = QString::number(i);
-          auto t = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
-          //auto t = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
-          //auto t(uts::devtalk::ToT(2, 1).timeOut());
-          auto pin = aplMultiDevicePrx->getPin(strI.toStdString(), t);
-          QString str;
-          if (pin) {
-              str = "pin" + strI + "= " + "1";
-          }
-          else {
-              str = "pin" + strI + "= " + "0";
-          }
-          pinStrCollection2.push_back(str);
-      };
-      for (auto i = 0; i < pinStrCollection1.size(); i++) {
-          mess += pinStrCollection1[i] + "   " + pinStrCollection2[i] + " \n";
-      }
+      //QMessageBox::information(nullptr, "info", "Wait for 'enter'");
+      //for (auto i = istart; i < ifinish; i++) {
+      //    auto  strI = QString::number(i);
+      //    auto t = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
+      //    //auto t = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
+      //    //auto t(uts::devtalk::ToT(2, 1).timeOut());
+      //    auto pin = aplMultiDevicePrx->getPin(strI.toStdString(), t);
+      //    QString str;
+      //    if (pin) {
+      //        str = "pin" + strI + "= " + "1";
+      //    }
+      //    else {
+      //        str = "pin" + strI + "= " + "0";
+      //    }
+      //    pinStrCollection2.push_back(str);
+      //};
+      //for (auto i = 0; i < pinStrCollection1.size(); i++) {
+      //    mess += pinStrCollection1[i] + "   " + pinStrCollection2[i] + " \n";
+      //}
 
-      //auto pin = aplMultiDevicePrx->getPin("48", timeOut);
-      //QMessageBox::information(nullptr, "getPin", pin ? "pin = 1" : "pin = 0");
-      QMessageBox::information(nullptr, "getPins", mess);
-      auto timeOut2 = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
-      //auto timeOut3 = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
-      //auto timeOut4 = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
-      //auto t2(uts::devtalk::ToT(2, 2).timeOut());
-      auto otvet = aplMultiDevicePrx->askCommand("1", 32, 0, timeOut2);
-      std::string str;
-      for (auto i = 0; i < otvet.size(); i++) {
-          str += std::to_string(otvet[i]) + " ";
-      }
-      QString str1 = QString::fromUtf8(str.c_str());
-      QMessageBox::information(nullptr, "askCommand", str1);
+      ////auto pin = aplMultiDevicePrx->getPin("48", timeOut);
+      ////QMessageBox::information(nullptr, "getPin", pin ? "pin = 1" : "pin = 0");
+      //QMessageBox::information(nullptr, "getPins", mess);
+      //auto timeOut2 = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
+      ////auto timeOut3 = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
+      ////auto timeOut4 = uts::ice::create<uts::devtalk::CompletionWaitTiming>(2.0, 3.0, IceUtil::None);
+      ////auto t2(uts::devtalk::ToT(2, 2).timeOut());
+      //auto otvet = aplMultiDevicePrx->askCommand("1", 32, 0, timeOut2);
+      //std::string str;
+      //for (auto i = 0; i < otvet.size(); i++) {
+      //    str += std::to_string(otvet[i]) + " ";
+      //}
+      //QString str1 = QString::fromUtf8(str.c_str());
+      //QMessageBox::information(nullptr, "askCommand", str1);
+
+      //auto otvet3 = aplSystem1112Prx->runCommand("gyro");
+      //str = std::to_string(otvet3) + " ";
+      //QString str3 = QString::fromUtf8(str.c_str());
+      //QMessageBox::information(nullptr, "gyro ", str3);
+
+      //auto otvet4 = aplMultiDevicePrx->getEncoders("1", timeOut2);
+      //str = "";
+      //for (auto i = 0; i < otvet4.size();i++) {
+      //    str += std::to_string(otvet4[i]) + " ";
+      //}
+      //QString str4 = QString::fromUtf8(str.c_str());
+      //QMessageBox::information(nullptr, "getEncoders ", str4);
+
+      //auto otvet5 = aplMultiDevicePrx->getGyro("1", timeOut2);
+      //str = "";
+      //for (auto i = 0; i < otvet5.size();i++) {
+      //    str += std::to_string(otvet5[i]) + " ";
+      //}
+      //QString str5 = QString::fromUtf8(str.c_str());
+      //QMessageBox::information(nullptr, "getGyro ", str5);
+      //*******
+
   }
 
   uts::devtalk::drivers::utscp::APLMultiDevicePrx aplMultiDevicePrx;
