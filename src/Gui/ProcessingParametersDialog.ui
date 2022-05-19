@@ -298,6 +298,32 @@
             </spacer>
            </item>
            <item>
+            <widget class="QComboBox" name="changeExtremumComboBox">
+             <item>
+              <property name="text">
+               <string>Max</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Min</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Aver</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="changeExtremumPushButton">
+             <property name="text">
+              <string>Назначить Extremum</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QSpinBox" name="splitRangeSpinBox">
              <property name="minimum">
               <number>2</number>

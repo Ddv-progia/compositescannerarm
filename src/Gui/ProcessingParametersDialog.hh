@@ -44,6 +44,7 @@ private:
 
   Q_SLOT void rangesAdd();
   Q_SLOT void rangesSplit();
+  Q_SLOT void rangesChangeExtremum();
   Q_SLOT void rangesRemove();
   Q_SLOT void rangesClear();
   Q_SLOT void rangesMoveTop();

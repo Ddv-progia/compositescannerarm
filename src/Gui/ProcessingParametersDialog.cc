@@ -569,6 +569,7 @@ ProcessingParametersDialog::ProcessingParametersDialog(const ProcessingParameter
   connect(ui.rangesMoveDownButton, SIGNAL(clicked()), this, SLOT(rangesMoveDown()));
   connect(ui.rangesMoveBottomButton, SIGNAL(clicked()), this, SLOT(rangesMoveBottom()));
   connect(ui.splitRangeButton, SIGNAL(clicked()), this, SLOT(rangesSplit()));
+  connect(ui.changeExtremumPushButton, SIGNAL(clicked()), this, SLOT(rangesChangeExtremum()));
   connect(ui.defectsAddButton, SIGNAL(clicked()), this, SLOT(defectsAdd()));
   connect(ui.defectsRemoveButton, SIGNAL(clicked()), this, SLOT(defectsRemove()));
   connect(ui.defectsClearButton, SIGNAL(clicked()), this, SLOT(defectsClear()));
@@ -729,6 +730,22 @@ void ProcessingParametersDialog::rangesAdd()
   } else {
     ui.rangesTableView->model()->insertRow(ui.rangesTableView->model()->rowCount());
   }
+}
+
+void ProcessingParametersDialog::rangesChangeExtremum()
+{
+    auto selection = ui.rangesTableView->selectionModel();
+    if (selection->selectedRows().size()<1)
+        return;
+    auto extremum = ui.changeExtremumComboBox->currentIndex();
+    QModelIndexList selectedRows = ui.rangesTableView->selectionModel()->selectedRows();
+    for (int i = 0; i < selectedRows.count(); i++)
+    {
+        QModelIndex index = selectedRows.at(i);
+        ui.rangesTableView->model()->setData(ui.rangesTableView->model()->index(index.row(), 2), extremum);
+    }
+    ui.rangesTableView->model()->dataChanged(selectedRows.at(0), selectedRows.at(selectedRows.count()-1));
+    //ui.rangesTableView->model()->submit();
 }
 
 void ProcessingParametersDialog::rangesSplit()
