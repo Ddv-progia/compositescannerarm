@@ -734,6 +734,8 @@ void ProcessingParametersDialog::rangesAdd()
 void ProcessingParametersDialog::rangesSplit()
 {
     auto selection = ui.rangesTableView->selectionModel();
+    if (selection->selectedRows().size()<1)
+        return;
     auto row = selection->selectedRows().front().row();
     auto from = ui.rangesTableView->model()->index(row, 0).data().toInt();
     auto to = ui.rangesTableView->model()->index(row, 1).data().toInt();
