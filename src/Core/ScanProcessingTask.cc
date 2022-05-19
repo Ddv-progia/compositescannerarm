@@ -87,6 +87,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
     
     auto step = 1000; 
     //auto step = 250;
+    //auto step = 500;
 
     for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
@@ -254,12 +255,6 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.endIndex = stopIndex;
   normalizedRange.step = step;
   normalizedRange.extremum = extremumOfRangesIn;
-  //if (rangeIndex< extremumOfRangesIn.size())
-  //  normalizedRange.extremum = extremumOfRangesIn[rangeIndex];
-  //  //normalizedRange.extremum = params.extremumOfRanges[rangeIndex];
-  //else
-  //  normalizedRange.extremum = ::Extremum::Max;
-
   
 
   normalizedRange.lineCoordinates.resize(linesCount);
@@ -285,7 +280,6 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
       normalizedRange.view = normalizedRange.minView;
   }
   else normalizedRange.view = normalizedRange.averView;
-  //normalizedRange.view =  normalizedRange.maxView;
 }
 
 float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx)
@@ -494,7 +488,6 @@ RangeScanLine ScanProcessingTask::findAverageLine(std::vector<RangeScanLine>& ra
   result.subBegin = rangedLines.begin();
   result.subEnd = rangedLines.end();
 
-
   for(auto& iter = rangedLines.begin();iter<rangedLines.end();iter++){
 	if(iter->range.from == rangedLines.front().range.from && iter->range.to == rangedLines.back().range.to) continue;
     if(floor(iter->range.from/500)==floor(range.from/500))
@@ -536,25 +529,31 @@ void ScanProcessingTask::selectRangesFromSpec(Scan& scan)
     for(auto& range : scan.parameters.ranges) {
       rangedLine.push_back(findAverageLine(line,range));
     }
-    ////*******
+    //*******
     //if (scan.parameters.shouldNormalize) {
     //    auto normLine = line.back();
-    //    normLine.subBegin = line.end() - 1;
-    //    normLine.subEnd = line.end();
-    //    rangedLine.push_back(normLine); //последняя линия - сумма нормирования
+    //    //normLine.subBegin = line.end() - 1; //было так. Непонятно зачем. 
+    //    //normLine.subEnd = line.end();       //
+    //    //rangedLine.push_back(normLine);     //последняя линия - сумма нормирования 
+    //        //normLine.subBegin = line.begin(); // так работает //******* 
+    //        //normLine.subEnd = line.end();     // так работает //******* 
+    //        //rangedLine.push_back(normLine);   // так работает //******* 
+    //    rangedLine.push_back(findAverageLine(line, normLine.range));  // сделали так - усредняем по всему диапазону //******* 
     //}
-    //scan.ranges.push_back(rangedLine);
-    ////*******
+    //*******
+    scan.ranges.push_back(rangedLine);
     for(auto& range : commonRanges){
       commonRangedLine.push_back(findAverageLine(line,range));
     }
-    scan.ranges.push_back(rangedLine); //******* заремарить, если раскомменчивается участок выше
 	if(scan.parameters.shouldNormalize){
 		auto normLine = line.back();
-		normLine.subBegin = line.end()-1;
-		normLine.subEnd = line.end();
-		commonRangedLine.push_back(normLine); //последняя линия - сумма нормирования
-	}
+		////normLine.subBegin = line.end()-1; //было так. Непонятно зачем. 
+		////normLine.subEnd = line.end();     //было так. Непонятно зачем. 
+		//normLine.subBegin = line.begin(); //так работает //******* 
+		//normLine.subEnd = line.end();     //так работает //******* 
+		//commonRangedLine.push_back(normLine); //последняя линия - сумма нормирования
+        commonRangedLine.push_back(findAverageLine(line, normLine.range)); // сделали так - усредняем по всему диапазону //******* 
+    }
     scan.commonRanges.push_back(commonRangedLine);
   }
 }
