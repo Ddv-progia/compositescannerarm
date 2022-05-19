@@ -96,6 +96,8 @@ struct DefectSearchingParameters is
 	separationKernel : Kernel
 	edgesApproximationType : Integer
 	defectRanges : Std::Vector(DefectSearchingRange)
+	minDefectArea: Double_Precision_Real
+	isDefectInside: Boolean
 end
 
 struct ColorStop is

@@ -286,13 +286,25 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
                 unsigned char* const line(defectImage.ptr<unsigned char>(i));
                 for (auto j = 0; j < 3 * defectView.view.size(); j += 3) {
                     auto value = defectView.view[j / 3][i];
-                    if (value <= defectRange.maximumValue && value >= defectRange.minimumValue) {
-                        line[j] = 255;
-                        line[j + 1] = 255;
-                        line[j + 2] = 255;
+                    if (scan->parameters.defectSearching.isDefectInside) {
+                        if (value <= defectRange.maximumValue && value >= defectRange.minimumValue) {
+                            line[j] = 255;
+                            line[j + 1] = 255;
+                            line[j + 2] = 255;
+                        }
+                        else {
+                            continue;
+                        }
                     }
                     else {
-                        continue;
+                        if (value >= defectRange.maximumValue || value <= defectRange.minimumValue) {
+                            line[j] = 255;
+                            line[j + 1] = 255;
+                            line[j + 2] = 255;
+                        }
+                        else {
+                            continue;
+                        }
                     }
                 }
             }
@@ -302,7 +314,8 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
         defects.clear();
         for (auto& contour : contourList)
             addDefect(contour);
-        filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
+        filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
+        //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
     }
 }
 

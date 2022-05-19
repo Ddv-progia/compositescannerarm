@@ -673,6 +673,8 @@ void ProcessingParametersDialog::fillWidgets()
   ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
   ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
   ui.approximationComboBox->setCurrentIndex(this->params.defectSearching.edgesApproximationType-1);
+  ui.defectInterpretationComboBox->setCurrentIndex((int)this->params.defectSearching.isDefectInside);
+  ui.minAreaOfDefectDblSpinBox->setValue(this->params.defectSearching.minDefectArea);
 }
 
 void ProcessingParametersDialog::updateParameters()
@@ -712,6 +714,9 @@ void ProcessingParametersDialog::updateParameters()
   params.defectSearching.blurWidth = ui.blurWEdit->text().toInt();
   params.defectSearching.useSeparation = ui.separationCheckBox->isChecked();
   params.defectSearching.useUnion = ui.unionCheckBox->isChecked();
+
+  params.defectSearching.isDefectInside = (bool)ui.defectInterpretationComboBox->currentIndex();
+  params.defectSearching.minDefectArea = ui.minAreaOfDefectDblSpinBox->value();
 
   //CV_CHAIN_APPROX_NONE=1,
   //CV_CHAIN_APPROX_SIMPLE=2,
