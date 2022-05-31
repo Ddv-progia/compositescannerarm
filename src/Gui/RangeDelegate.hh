@@ -29,6 +29,7 @@ class DefectRangeDelegate : public QStyledItemDelegate
               QString str = "Max";
               if (extremums[i] == ::Extremum::Aver) str = "Aver";
               else if (extremums[i] == ::Extremum::Min) str = "Min";
+              else if (extremums[i] == ::Extremum::Diff) str = "Diff";
               i++;
               cb->addItem(QString("%1 - %2 : %3").arg(r.from).arg(r.to).arg(str));
           }

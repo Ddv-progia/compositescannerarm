@@ -139,6 +139,7 @@ private:
   QGridLayout* widgetLayout;
   void swapItemsByIndexes(int firstItemIndex, int secondItemIndex);
   Q_SLOT void setAdditionalGraphicsVisibility(bool isVisible);
+  //Q_SLOT void onChangeFactorSpinbox();
 
   void updateRangeViewPoint();
   void updateResidualsViewPoint();

@@ -212,22 +212,27 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.minView.resize(be);
   normalizedRange.view.resize(be);
   normalizedRange.averView.resize(be); //*******
+  normalizedRange.diffView.resize(be); //*******
 
   normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
   normalizedRange.min = normalizedRange.max;
   normalizedRange.aver = normalizedRange.max; //*******
+  normalizedRange.diff = normalizedRange.max; //*******
   namespace ba = boost::accumulators;
   ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max>> accDiff;
 
   for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
     for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
       float maxPeak = 0.0;
       float minPeak = 0.0;
       float justPeak = 0.0; //*******
+      float diffPeak = 0.0; //*******
       if(scan->parameters.useSubRanges){
         //*******
         //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+        diffPeak = maxPeak - minPeak;
         //minPeak = peaks.first;
         //maxPeak = peaks.second;
         //*******
@@ -235,18 +240,24 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
         maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         minPeak = maxPeak;
         justPeak = maxPeak; //*******
+        diffPeak = maxPeak; //*******
       }
       normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
       normalizedRange.minView[peakIndex][lineIndex] = minPeak;
-      normalizedRange.averView[peakIndex][lineIndex] = justPeak;
+      normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
+      normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
       //normalizedRange.aver = justPeak; //*******
-      acc(justPeak); 
+      acc(justPeak); //******* 
+      accDiff(diffPeak); //******* 
       if(maxPeak> normalizedRange.max) normalizedRange.max = maxPeak;
       if(minPeak< normalizedRange.min) normalizedRange.min = minPeak;
     }
   }
   auto average = ba::mean(acc);
   normalizedRange.aver = average; //******* среднее по всем средним
+  //normalizedRange.diff = ba::mean(accDiff); //******* среднее по всем разницам
+  //normalizedRange.diff = ba::max(accDiff); //******* максимум по всем разницам
+  normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //******* 
 
   normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
   normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
@@ -278,6 +289,8 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
     }
   else if (normalizedRange.extremum == ::Extremum::Min) {
       normalizedRange.view = normalizedRange.minView;
+  }  else if (normalizedRange.extremum == ::Extremum::Diff) {
+      normalizedRange.view = normalizedRange.diffView;
   }
   else normalizedRange.view = normalizedRange.averView;
 }
@@ -578,7 +591,6 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan)
     stageProgressed();
   }
 }
-
 
 void ScanProcessingTask::findRelativeSignals(Scan& scan,const std::vector<SpecNormalizationParams>& params)
 {

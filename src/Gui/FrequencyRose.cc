@@ -647,7 +647,7 @@ Q_SLOT void FrequencyRoseWidget::selectRoseType()
   this->setLayout(layout);
 }
 
-FrequencyRoseWidget::FrequencyRoseWidget(RangedMultiArray& newData,std::vector<ColorStop>& newColorList,QWidget* parent):data(newData),colorList(newColorList),QDialog(parent)
+FrequencyRoseWidget::FrequencyRoseWidget(RangedMultiArray& newData,std::vector<ColorStop>& newColorList, double& factor, QWidget* parent):data(newData),colorList(newColorList),QDialog(parent)
 {
   setWindowTitle(parent->windowTitle());
   layout = new QVBoxLayout;
@@ -666,7 +666,7 @@ FrequencyRoseWidget::FrequencyRoseWidget(RangedMultiArray& newData,std::vector<C
   factorSpinBox->setSingleStep(1.0);
 
   //*******
-  factorSpinBox->setValue(10.0);
+  factorSpinBox->setValue(factor);
   //factorSpinBox->setValue(1.0);
   //*******
 

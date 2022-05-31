@@ -148,14 +148,14 @@ class FrequencyRoseWidget:public QDialog //отображение окна с розой на экране, д
   QComboBox* typeCombo;
   QDoubleSpinBox* positiveThreshold;
   QDoubleSpinBox* negativeThreshold;
-  QDoubleSpinBox* factorSpinBox;
   QVBoxLayout* layout;
   RangedMultiArray data;
   std::vector<ColorStop> colorList;
 
   Q_SLOT void selectRoseType();
 public:
-  FrequencyRoseWidget(RangedMultiArray& newData,std::vector<ColorStop>& newColorList,QWidget* parent = 0);
+	QDoubleSpinBox* factorSpinBox;
+	FrequencyRoseWidget(RangedMultiArray& newData,std::vector<ColorStop>& newColorList, double& factor, QWidget* parent = 0);
 
   Q_SLOT void setLabelText(FrequencyRange range,double value);
   Q_SLOT void clearText();

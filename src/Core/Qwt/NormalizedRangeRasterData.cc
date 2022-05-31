@@ -5,7 +5,7 @@
 #include <iterator>
 #include <limits>
 #include <boost/range/algorithm/lower_bound.hpp>
-#include <iostream> //*******
+//#include <iostream> //*******
 
 #include "Core/Qwt/NormalizedRangeRasterData.hh"
 
@@ -26,7 +26,7 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
 
   float minVal = std::numeric_limits<float>::max();
   float maxVal = -std::numeric_limits<float>::max();
-  std::cout << static_cast<int>(range.extremum); 
+ /* std::cout << static_cast<int>(range.extremum); */
   for (std::size_t j = 0; j < range.view.shape()[1]; j++) {
     for (std::size_t i = 0; i < range.view.shape()[0]; i++) {
       minVal = std::min(minVal, range.view[i][j]);

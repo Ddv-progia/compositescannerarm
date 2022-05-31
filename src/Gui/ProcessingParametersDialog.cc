@@ -111,6 +111,9 @@ namespace {
                 return QString("Aver");
             case ::Extremum::Min:
                 return QString("Min");
+            case ::Extremum::Diff:
+                return QString("Diff");
+            default:
             case ::Extremum::Max:
                 return QString("Max");
             }
@@ -145,7 +148,9 @@ namespace {
                 break;
             case 2:
                 extremums[index.row()] = Extremum::Aver;
-                //extremums[index.row()] = Extremum::Min;
+                break;
+            case 3:
+                extremums[index.row()] = Extremum::Diff;
                 break;
             }
           return true;
@@ -161,7 +166,6 @@ namespace {
       ranges.insert(ranges.begin() + row, count, FrequencyRange{ 0, 0 });
       extremums.insert(extremums.begin() + row, count, Extremum::Max);
       endInsertRows();
-
       return true;
     }
 
@@ -193,7 +197,6 @@ namespace {
       ranges.erase(ranges.begin() + row, ranges.begin() + row + count);
       extremums.erase(extremums.begin() + row, extremums.begin() + row + count);
       endRemoveRows();
-
       return true;
     }
   };
@@ -269,6 +272,7 @@ namespace {
                 str = "Max";
             }
             else if (extremums[defects[index.row()].red.range] == ::Extremum::Aver) str = "Aver";
+            else if (extremums[defects[index.row()].red.range] == ::Extremum::Diff) str = "Diff";
             return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].red.range].from).arg(ranges[defects[index.row()].red.range].to).arg(str);
         case 2: return defects[index.row()].red.limit;
         case 3: return defects[index.row()].red.amplification;
@@ -279,6 +283,7 @@ namespace {
                 str = "Max";
             }
             else if (extremums[defects[index.row()].blue.range] == ::Extremum::Aver) str = "Aver";
+            else if (extremums[defects[index.row()].blue.range] == ::Extremum::Diff) str = "Diff";
             return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].blue.range].from).arg(ranges[defects[index.row()].blue.range].to).arg(str);
         case 6: return defects[index.row()].blue.limit;
         case 7: return defects[index.row()].blue.amplification;
@@ -289,6 +294,7 @@ namespace {
                 str = "Max";
             }
             else if (extremums[defects[index.row()].green.range] == ::Extremum::Aver) str = "Aver";
+            else if (extremums[defects[index.row()].green.range] == ::Extremum::Diff) str = "Diff";
             return QString("%1 - %2 : %3").arg(ranges[defects[index.row()].green.range].from).arg(ranges[defects[index.row()].green.range].to).arg(str);
         case 10: return defects[index.row()].green.limit;
         case 11: return defects[index.row()].green.amplification;
@@ -460,7 +466,7 @@ namespace {
                 QString str = "Max";
                 if (extremum == ::Extremum::Min ) str = "Min";
                 if (extremum == ::Extremum::Aver ) str = "Aver";
-
+                if (extremum == ::Extremum::Diff ) str = "Diff";
 				return QString("%1-%2 : %3").arg(range.from).arg(range.to).arg(str);
 			}
 		case 1: return QString::number(defectRanges[index.row()].minimumValue);

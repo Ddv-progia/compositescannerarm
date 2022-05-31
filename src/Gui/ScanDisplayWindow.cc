@@ -464,6 +464,13 @@ void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
             }
             break;
         }
+        case Extremum::Diff: {
+            for (auto& range : scan->commonNormalizedRanges) {
+                range.view = range.diffView;
+                range.extremum = Extremum::Diff;
+            }
+            break;
+        }
         case Extremum::Min: {
             for (auto& range : scan->commonNormalizedRanges) {
                 range.view = range.minView;
@@ -682,8 +689,10 @@ void ScanDisplayWindow::getRegionFrequencyRose(const QRectF& rect)
     rangedPlots.push_back(std::make_pair(scan->normalizedSpec.front()[sNum].range, plot));
   }
 
-  FrequencyRoseWidget* rose = new FrequencyRoseWidget(rangedPlots, scan->parameters.colorStopsList, this);
+  FrequencyRoseWidget* rose = new FrequencyRoseWidget(rangedPlots, scan->parameters.colorStopsList, scan->parameters.factorForFrequencyRoseWidget, this);
+  rose->factorSpinBox->setValue(scan->parameters.factorForFrequencyRoseWidget);
   rose->show();
+  scan->parameters.factorForFrequencyRoseWidget = rose->factorSpinBox->value();
 }
 
 void ScanDisplayWindow::swapItemsByIndexes(int firstItemIndex, int secondItemIndex)
@@ -756,7 +765,7 @@ void ScanDisplayWindow::saveAs(BackgroundTaskExecutor& taskExecutor)
 
 void ScanDisplayWindow::createColoredRangeSelector()
 {
-  std::vector<float> mins, maxs, avers;
+  std::vector<float> mins, maxs, avers, diffs;
 
   double max = 0.0;
   double min = 0.0;
@@ -771,12 +780,13 @@ void ScanDisplayWindow::createColoredRangeSelector()
     mins.push_back(range.min);
     maxs.push_back(range.max);
     avers.push_back(range.aver);
+    diffs.push_back(range.diff);
   }
   QwtColorMap* colorMap = new FixedColorMap(scan->parameters.colorStopsList);//(min,max);
   auto commonRanges = constructCommonRanges();
   if(scan->parameters.shouldNormalize)
     commonRanges.push_back(FrequencyRange{ commonRanges.front().from, commonRanges.back().to });
-  auto selector = new ColoredRangeSelector(maxs, mins, avers, commonRanges, colorMap);
+  auto selector = new ColoredRangeSelector(maxs, mins, avers, diffs, commonRanges, colorMap);
   auto layout = new QHBoxLayout;
   layout->setContentsMargins(1, 1, 1, 1);
 
@@ -821,6 +831,9 @@ void ScanDisplayWindow::updateRangesPlot()
           break;
       case Extremum::Aver:
           scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].averView;
+          break;
+      case Extremum::Diff:
+          scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].diffView;
           break;
       }
   }
@@ -1049,6 +1062,10 @@ void ScanDisplayWindow::updatePlotList()
               else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Max) {
                   path = "icons/button_max.ico";
                   strExtremum = " Max";
+              }
+              else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Diff) {
+                  path = "icons/button_diff.ico";
+                  strExtremum = " Diff";
               }
           }
           plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to) + strExtremum);

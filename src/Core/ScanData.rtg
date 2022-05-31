@@ -15,7 +15,8 @@ native Uint8 is "::uint8_t" header "stdint.h"
 enum Extremum is
 	Max,
 	Min,
-	Aver
+	Aver,
+	Diff
 
 enum ScanProcessingStage is
 	RawDataObtained,
@@ -151,6 +152,8 @@ struct ProcessingParameters is
   defectClassification : Std::Vector(DefectType)
   defectRendering : DefectRenderingParameters
   defectSearching : DefectSearchingParameters
+
+  factorForFrequencyRoseWidget: Double_Precision_Real
 end
 
 
@@ -223,11 +226,13 @@ struct NormalizedRange is
   min : Double_Precision_Real
   max : Double_Precision_Real
   aver : Double_Precision_Real
+  diff : Double_Precision_Real
   step :  Unsigned_Integer
   maxView : MultiArray(Single_Precision_Real)
   extremum : Extremum
   minView : MultiArray(Single_Precision_Real)
   averView : MultiArray(Single_Precision_Real)
+  diffView : MultiArray(Single_Precision_Real)
 end
 
 struct Polynomial is
