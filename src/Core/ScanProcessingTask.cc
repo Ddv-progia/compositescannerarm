@@ -232,7 +232,18 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
         //*******
         //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-        diffPeak = maxPeak - minPeak;
+        //diffPeak = maxPeak - minPeak;
+        diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
+
+
+        //******* Преобразуем среднее по заданию Сергея Ивановича begin
+        int N = 0;
+        for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
+            N++;
+        }
+        justPeak = justPeak * std::sqrt(N);
+        //******* Преобразуем среднее по заданию Сергея Ивановича end
+
         //minPeak = peaks.first;
         //maxPeak = peaks.second;
         //*******
