@@ -164,6 +164,7 @@ splitFrequencyRanges(std::vector<float>::const_iterator srcBegin,
   // Преобразование основного массива пиков
   fftwf_plan mainPlan = fftwf_plan_dft_r2c_1d(maxFFTLength, inputFrame, fft, FFTW_ESTIMATE);
   for (std::size_t i = 1; i < peaks.size() - 1; i++) {
+    //std::fill(inputFrame, inputFrame + maxFFTLength, 0); //*******
     std::copy(srcBegin + peaks[i].beginIndex, srcBegin  + peaks[i].endIndex, inputFrame);
     fftwf_execute(mainPlan);
 
@@ -173,7 +174,7 @@ splitFrequencyRanges(std::vector<float>::const_iterator srcBegin,
   // Преобразование последнего пика, если он не единственный
   if (peaks.size() > 1) {
     std::copy(srcBegin + peaks.back().beginIndex, srcBegin + peaks.back().endIndex, inputFrame);
-    fftwf_plan lastPlan = fftwf_plan_dft_r2c_1d(peakLength(peaks.back()), inputFrame, fft, FFTW_ESTIMATE);
+    fftwf_plan lastPlan = fftwf_plan_dft_r2c_1d(peakLength(peaks.back()), inputFrame, fft, FFTW_ESTIMATE); 
     //fftwf_execute(firstPlan);
     //*******
     fftwf_execute(lastPlan);
@@ -198,7 +199,13 @@ std::vector<FrequencyRange> constructFrequencyRanges(int beginFreq, int endFreq,
 {
   std::vector<FrequencyRange> result;
   for(auto i = beginFreq;i<endFreq;i+=step){
-    result.push_back(FrequencyRange{ (double)i, (double)i + step });
+      //*******
+      auto start = i;
+      if (i == 0)
+          start = 100; // не хотим использовать "нулевые" частоты при формировании видов.
+    result.push_back(FrequencyRange{ (double)start, (double)i + step });
+    //result.push_back(FrequencyRange{ (double)i, (double)i + step }); 
+    //*******
   }
   return result;
 }
