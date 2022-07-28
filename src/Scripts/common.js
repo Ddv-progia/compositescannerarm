@@ -66,9 +66,75 @@ StepMotor.prototype.scan_by = function(target, ps)
 
 var COMMON_SAMPLE_RATE = 44000
 var COMMON_SCAN_STEP = 5
+var common_scan_is_run = false
 
 var x = new StepMotor(builtin_xAxisMotor)
 var y = new StepMotor(builtin_yAxisMotor)
+
+var COMMON_TIME_FOR_SCAN_MANUALLY_LINE = 1000
+var COMMON_COUNT_LINE_FOR_SCAN_MANUALLY = 10
+var start_x = 0.0
+var start_y = 0.0
+var start_z = 0.0
+var finish_x = 0.0
+var finish_y = 0.0
+var finish_z = 0.0
+var stopScan = false
+
+function readCoordinatesFromScannerArm()
+{
+	var x = 0
+	var y = start_y
+	var z = start_z++
+	return [x,y,z]
+}
+
+function readFinishCoordinatesFromScannerArm()
+{
+	var x = start_x+100
+	var y = start_y
+	start_y = start_y + (params.scan_step || COMMON_SCAN_STEP)
+	var z = start_z++
+	return [x,y,z]
+}
+
+function scan_else_manually(params)
+{  
+	if (common_scan_is_run) { 
+		alert('задержка прошла');
+		[finish_x, finish_y, finish_z] = readFinishCoordinatesFromScannerArm(); 		
+		
+		audioDataCollector.stop(start_x, finish_x, finish_y || -1)
+	}
+	common_scan_is_run = true
+	[start_x, start_y, start_z] = readCoordinatesFromScannerArm()
+	audioDataCollector.start(params.sample_rate || COMMON_SAMPLE_RATE)
+}
+
+
+function scan_manually(params)
+{  
+	common_scan_is_run = true
+	alert('scan_manually started');	
+    if (typeof params != 'undefined') {
+        if (typeof params.sample_rate != 'undefined') audioDataCollector.start(params.sample_rate)
+			else audioDataCollector.start(COMMON_SAMPLE_RATE)
+        if (typeof params.time_for_scan_manually_line != 'undefined') setInterval(scan_else_manually, params.time_for_scan_manually_line, params)
+			else 	setInterval(scan_else_manually, COMMON_TIME_FOR_SCAN_MANUALLY_LINE, params)
+	}
+	
+	// audioDataCollector.start(params.sample_rate || COMMON_SAMPLE_RATE)
+	// setInterval(scan_else_manually, params.time_for_scan_manually_line || COMMON_TIME_FOR_SCAN_MANUALLY_LINE, params)
+	var i = COMMON_COUNT_LINE_FOR_SCAN_MANUALLY;
+	alert('do-while started!');	
+	do {
+		alert(i);	
+		sleep(1)
+		i--
+	} while ((! stopScan)OR(i>0)); 
+	common_scan_is_run = false
+
+}
 
 function scan_rect(target_x, target_y, params)
 {  

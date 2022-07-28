@@ -38,6 +38,9 @@ end
 struct Peak is
   beginIndex : Unsigned_Integer
   endIndex : Unsigned_Integer
+  x : Double_Precision_Real= { 0.0 }
+  y : Double_Precision_Real= { 0.0 }
+  z : Double_Precision_Real= { 0.0 }
 end
 
 
@@ -163,6 +166,11 @@ struct SourceScanLine is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+
+
 
 end
 
@@ -172,6 +180,9 @@ struct RawScanLineInfo is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
 end
 
@@ -187,6 +198,9 @@ struct SourceScanLineSlice is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
 end
 
@@ -195,6 +209,9 @@ struct PeaksLine is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
 end
 
@@ -207,6 +224,9 @@ struct RangeScanLine is
   finalCoordinate :  Double_Precision_Real
   sourceLineSize :  Unsigned_Integer
   lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
   range :  FrequencyRange
   subBegin : Std::Vector(RangeScanLine)::Iterator
@@ -233,6 +253,10 @@ struct NormalizedRange is
   minView : MultiArray(Single_Precision_Real)
   averView : MultiArray(Single_Precision_Real)
   diffView : MultiArray(Single_Precision_Real)
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+
 end
 
 struct Polynomial is

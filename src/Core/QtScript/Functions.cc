@@ -17,3 +17,14 @@ QScriptValue script::sleep(QScriptContext* ctx, QScriptEngine* engine)
   boost::this_thread::sleep_for(boost::chrono::seconds(seconds));
   return QScriptValue();
 }
+
+QScriptValue script::pause(QScriptContext* ctx, QScriptEngine* engine)
+{
+  if (ctx->argumentCount() != 1) {
+    return ctx->throwError("pause() требует один числовой аргумент");
+  }
+
+  auto msseconds = ctx->argument(0).toInt32();
+  boost::this_thread::sleep_for(boost::chrono::milliseconds(msseconds));
+  return QScriptValue();
+}
