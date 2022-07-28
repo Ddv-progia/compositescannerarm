@@ -158,6 +158,10 @@ CoilManualControlDialog::CoilManualControlDialog(QWidget* parent)
   panelsLayout->addStretch();
   setLayout(panelsLayout);
   
+  addControlPanelWithIndex(35);
+  addControlPanelWithIndex(34);
+  addControlPanelWithIndex(19);
+  addControlPanelWithIndex(18);
   addControlPanelWithIndex(31);
   addControlPanelWithIndex(30);
   addControlPanelWithIndex(29);
