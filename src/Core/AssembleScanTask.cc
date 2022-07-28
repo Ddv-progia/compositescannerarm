@@ -49,9 +49,9 @@ namespace {
     UINT32 sampleRate;
     mediaType->GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND, &sampleRate);
 
-    if (numberOfChannels > 1) {
-      throw QString("Неподдерживаемое количество каналов: %1").arg(numberOfChannels);
-    }
+    //if (numberOfChannels > 1) {
+    //  throw QString("Неподдерживаемое количество каналов: %1").arg(numberOfChannels);
+    //}
 
     UINT32 bitsPerSample;
     mediaType->GetUINT32(MF_MT_AUDIO_BITS_PER_SAMPLE, &bitsPerSample);

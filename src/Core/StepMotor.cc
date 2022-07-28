@@ -132,7 +132,7 @@ void devices::StepMotor::moveOutOfZero(double velocity, double startAcceleration
 
 void devices::StepMotor::stop()
 {
-  motor->stop();
+  if (this && motor != NULL)  motor->stop();
 }
 
 double devices::StepMotor::getGearRatio() const
