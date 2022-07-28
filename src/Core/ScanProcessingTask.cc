@@ -175,6 +175,7 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
   std::size_t stopIndex;
   std::tie(step, startIndex, stopIndex) = getNormalizedIndexes(scan);
   if (step == 0 && startIndex == 0 && stopIndex == 0) return;
+  if (step == 0) step=1000; //******* TODO разобраться с вылетом при step=0
   auto rangesCount = scan.parameters.ranges.size();
   auto commonRangesCount = scan.commonRanges.front().size();
   scan.normalizedRanges.resize(rangesCount);
@@ -754,6 +755,7 @@ void ScanProcessingTask::operator() ()
   case ScanProcessingStage::ModelSubstracted:
     emit stageStarted("Выделение дефектных точек", scan->parameters.defectPoints.size());
     scan->rawDefectPoints.clear();
+
     for (auto const& dp : scan->parameters.defectPoints) {
       scan->rawDefectPoints.push_back(selectDefectPoints(dp, scan->rangesResiduals));
       emit stageProgressed();
