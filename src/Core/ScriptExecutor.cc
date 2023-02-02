@@ -21,9 +21,9 @@ void ScriptExecutor::runScript(const QString& code, const QString& filename, boo
     if (! scriptEngine->uncaughtException().isUndefined()) {
       try{
         devices::audioDataCollector->stop();
-        devices::xAxisMotor->stop();
-        devices::yAxisMotor->stop();
-        devices::coil->stop();
+        //devices::xAxisMotor->stop();
+        //devices::yAxisMotor->stop();
+        devices::coile->stop();
       }catch(...){
       }
 

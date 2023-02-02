@@ -106,8 +106,6 @@ add_executable(CompositeScanner #WIN32
   Core/ScriptExecutor.cc
   Core/ScriptExecutor.hh
   Core/ScriptSettings.rtg
-  Core/StepMotor.cc
-  Core/StepMotor.hh
   Core/WMACompression.cc
   Core/WMACompression.hh
   Core/ImageProcessing.cc
@@ -121,8 +119,6 @@ add_executable(CompositeScanner #WIN32
   Core/QtScript/Functions.hh
   Core/QtScript/ProgressReporter.cc
   Core/QtScript/ProgressReporter.hh
-  Core/QtScript/StepMotor.cc
-  Core/QtScript/StepMotor.hh
 
   Core/Qwt/ColumnPolynomialRasterData.cc
   Core/Qwt/ColumnPolynomialRasterData.hh
@@ -203,6 +199,7 @@ SOURCE_GROUP(Gui REGULAR_EXPRESSION Gui/.*)
 SOURCE_GROUP("" FILES main.cc)
 
 target_link_libraries(CompositeScanner
+  ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${BERKELEY_DB_LIBRARIES}
   ${Boost_LIBRARIES}
   #${QWT_LIBRARIES}

@@ -19,7 +19,7 @@ namespace script {
     Q_PROPERTY(double workingHalfPeriod READ getWorkingHalfPeriod WRITE setWorkingHalfPeriod)
     Q_PROPERTY(double minimumLevel READ getMinimumLevel WRITE setMinimumLevel)
   public:
-    Coil(const uts::devtalk::CoilPrx& prx, QScriptEngine* scriptEngine);
+    Coil(const uts::devtalk::device::utscp::APLCoilPrx& prx, QScriptEngine* scriptEngine);
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void startSingle();
@@ -28,7 +28,7 @@ namespace script {
     Q_INVOKABLE void searchWorkingRange();
 
   private:
-    uts::devtalk::CoilPrx prx;
+    uts::devtalk::device::utscp::APLCoilPrx prx;
     QScriptEngine* scriptEngine;
 
     double getHalfPeriod() const;

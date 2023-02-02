@@ -8,7 +8,7 @@
 #include "Core/Devices.hh"
 #include "Gui/CoilManualControl.hh"
 
-CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coil, int currentIndex, QWidget* parent)
+CoilCommandPanel::CoilCommandPanel(const uts::devtalk::device::utscp::APLCoilPrx& coil, int currentIndex, QWidget* parent)
   : QWidget(parent), coil(coil)
 {
   ui.setupUi(this);
@@ -178,17 +178,18 @@ CoilManualControlDialog::CoilManualControlDialog(QWidget* parent)
 
 CoilCommandPanel* CoilManualControlDialog::addControlPanelWithIndex(int index)
 {
-  auto ccp = new CoilCommandPanel(devices::coil, index);
-  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
-  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
-  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
-  return ccp;
+  //auto ccp = new CoilCommandPanel(devices::coile, index);
+  //connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+  //connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+  //panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+  //return ccp;
+    return nullptr;
 }
 
 void CoilManualControlDialog::addControlPanel()
 {
-  auto ccp = new CoilCommandPanel(devices::coil);
-  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
-  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
-  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+  //auto ccp = new CoilCommandPanel(devices::coile);
+  //connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+  //connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+  //panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
 }

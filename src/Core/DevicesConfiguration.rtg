@@ -7,19 +7,7 @@ module Core.DevicesConfiguration is
 import Builtin
 import Std.String
 
-struct StepMotorConfiguration is
-  address : Integer
-  stepsPerRevolution : Integer
-	motorReduction : Double_Precision_Real
-	toothStep : Double_Precision_Real
-	toothCount : Double_Precision_Real
-end
-
 struct DevicesConfiguration is
   audioDataCollector : Std::String
-  comPort : Std::String
-  xStepMotor : StepMotorConfiguration
-  yStepMotor : StepMotorConfiguration
   coil: Integer
-
 end

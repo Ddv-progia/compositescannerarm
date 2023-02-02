@@ -55,15 +55,9 @@ int main(int argc, char* argv[])
   auto communicator = Ice::initialize(argc, argv, initData);
   
   try {
-    namespace urb = uts::reflection::binding;
-    QString path = getConfigurationPathname("Devices-Configuration.xml");
-    //*******
-    path = "Devices-Configuration.xml";
-    //*******
-    //QMessageBox::warning(nullptr, path, path);
-    //PersistentVariable<DevicesConfiguration> conf(getConfigurationPathname("Devices-Configuration.xml").toStdString(), "Devices-Configuration");
+    Configuration::init(argc, argv);
+    QString path = Configuration::getConfigurationPathname("etc/Devices-Configuration.xml");
     PersistentVariable<DevicesConfiguration> conf(path.toStdString(), "Devices-Configuration");
-
     conf.load();
     devices::setup(*conf, communicator, *objectKeeper);
 
@@ -72,7 +66,11 @@ int main(int argc, char* argv[])
   } catch (Ice::Exception& exc) {
     QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
   }
+  QFile file(Configuration::getConfigurationPathname("etc/style.css"));
 
+  //if (file.exists())
+      //if (file.open(QFile::ReadOnly))
+          //app.setStyleSheet(QLatin1String(file.readAll()));
 
   MainWindow mw(bte, scanFactory);
   mw.show();

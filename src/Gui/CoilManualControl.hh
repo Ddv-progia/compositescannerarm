@@ -19,7 +19,7 @@ class CoilCommandPanel : public QWidget
 {
   Q_OBJECT
 public:
-  explicit CoilCommandPanel(const uts::devtalk::CoilPrx& coil, int currentIndex = 1, QWidget* parent = 0);
+  explicit CoilCommandPanel(const uts::devtalk::device::utscp::APLCoilPrx& coil, int currentIndex = 1, QWidget* parent = 0);
 
 protected:
   Q_SIGNAL void addControlPanel();
@@ -27,7 +27,7 @@ protected:
 
 private:
   Ui::SingleCommandPanel ui;
-  uts::devtalk::CoilPrx coil;
+  uts::devtalk::device::utscp::APLCoilPrx coil;
   std::vector<std::pair<QString, std::function<void ()>>> commands;
   
   QTimer* periodicCommandExecutionTimer;

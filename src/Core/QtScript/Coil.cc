@@ -5,7 +5,7 @@
 #include <limits>
 #include "Core/QtScript/Coil.hh"
 
-script::Coil::Coil(const uts::devtalk::CoilPrx& prx, QScriptEngine* scriptEngine)
+script::Coil::Coil(const uts::devtalk::device::utscp::APLCoilPrx& prx, QScriptEngine* scriptEngine)
   : prx(prx), scriptEngine(scriptEngine)
 { }
 

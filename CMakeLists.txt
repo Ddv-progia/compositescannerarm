@@ -20,7 +20,7 @@ string(REPLACE "/debug" "/debug:fastlink" CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBIN
 string(REPLACE "/debug" "/debug:fastlink" CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO}")
 
 find_package(BerkeleyDB REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost 1.68 COMPONENTS filesystem log log_setup program_options system thread unit_test_framework REQUIRED)
 find_package(FFTW3 REQUIRED)
 find_package(Qt5 REQUIRED Core Gui Widgets Network Xml Sql PrintSupport Script ScriptTools)
 find_package(Qwt REQUIRED)

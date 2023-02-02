@@ -55,6 +55,9 @@
 			<To>5.5e03</To>
 		</Item>
 	</Ranges>
+	<Extremum-Of-Ranges>
+		<Item>0</Item>
+	</Extremum-Of-Ranges>
 	<Defect-Points>
 		<Item>
 			<Title>FooBar</Title>
@@ -539,5 +542,8 @@
 				<Maximum-Value>1.0e02</Maximum-Value>
 			</Item>
 		</Defect-Ranges>
+		<Min-Defect-Area>0.1</Min-Defect-Area>
+		<Is-Defect-Inside>True</Is-Defect-Inside>
 	</Defect-Searching>
+	<Factor-For-Frequency-Rose-Widget>0.2</Factor-For-Frequency-Rose-Widget>
 </Processing-Parameters>

@@ -21,11 +21,4 @@ protected:
 private:
   Ui::ManualControlDialog ui;
 
-  Q_SLOT void moveXPlus();
-  Q_SLOT void moveXMinus();
-  Q_SLOT void moveYMinus();
-  Q_SLOT void moveYPlus();
-  Q_SLOT void stop();
-  void stopX();
-  void stopY();
 };

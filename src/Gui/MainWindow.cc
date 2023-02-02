@@ -26,7 +26,6 @@
 #include "Core/QtScript/AudioDataCollector.hh"
 #include "Core/QtScript/Coil.hh"
 #include "Core/QtScript/Functions.hh"
-#include "Core/QtScript/StepMotor.hh"
 #include "Gui/AssembleScanDialog.hh"
 #include "Gui/AssignColorForColorBarDialog.hh"
 #include "Gui/CoilManualControl.hh"
@@ -41,10 +40,8 @@
 MainWindow::MainWindow(BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor),
   scanFactory(scanFactory), 
-  //processingParameters(getConfigurationPathname("Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
-  //scripts(getConfigurationPathname("Scripts.xml").toStdString(), "Scripts")
-  processingParameters("Processing-Parameters.xml", "Processing-Parameters"),
-  scripts("Scripts.xml", "Scripts")
+  processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
+  scripts(Configuration::getConfigurationPathname("etc/Scripts.xml").toStdString(), "Scripts")
 {
   ui.setupUi(this);
   ui.backgroundTasksBox->hide();
@@ -55,8 +52,6 @@ MainWindow::MainWindow(BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFa
   prepareScriptEnvironment();
   connectSignals();
   loadConfiguration();
-
-
 }
 
 MainWindow::~MainWindow()
@@ -75,14 +70,8 @@ void MainWindow::prepareScriptEnvironment()
 
   scriptEngine->globalObject().setProperty("audioDataCollector", 
                                             scriptEngine->newQObject(audioDataCollector, QScriptEngine::ScriptOwnership));
-  scriptEngine->globalObject().setProperty("builtin_xAxisMotor", 
-                                           scriptEngine->newQObject(new script::StepMotor(devices::xAxisMotor, scriptEngine),
-                                                                    QScriptEngine::ScriptOwnership));
-  scriptEngine->globalObject().setProperty("builtin_yAxisMotor", 
-                                           scriptEngine->newQObject(new script::StepMotor(devices::yAxisMotor, scriptEngine),
-                                                                    QScriptEngine::ScriptOwnership));
   scriptEngine->globalObject().setProperty("builtin_coil", 
-                                           scriptEngine->newQObject(new script::Coil(devices::coil, scriptEngine),
+                                           scriptEngine->newQObject(new script::Coil(devices::coile, scriptEngine),
                                                                     QScriptEngine::ScriptOwnership));
   scriptEngine->globalObject().setProperty("progressReporter", scriptEngine->newQObject(scriptProgressReporter));
   scriptEngine->globalObject().setProperty("sleep",
@@ -192,7 +181,7 @@ void MainWindow::unhighlightScriptLine()
 void MainWindow::updateCoordinates()
 {
   try {
-    if (devices::xAxisMotor) {
+    /*if (devices::xAxisMotor) {
       ui.xLabel->setText(QString::number(devices::xAxisMotor->getMachineCoordinate()));
       ui.x0Label->setText(QString::number(devices::xAxisMotor->getTechnologicalCoordinate()));
     }
@@ -200,15 +189,15 @@ void MainWindow::updateCoordinates()
     if (devices::yAxisMotor) {
       ui.yLabel->setText(QString::number(devices::yAxisMotor->getMachineCoordinate()));
       ui.y0Label->setText(QString::number(devices::yAxisMotor->getTechnologicalCoordinate()));
-    }
+    }*/
   } catch (...) {
   }
 }
 
 void MainWindow::setTechnologicalZero()
 {
-  devices::xAxisMotor->setTechnologicalZero();
-  devices::yAxisMotor->setTechnologicalZero();
+  //devices::xAxisMotor->setTechnologicalZero();
+  //devices::yAxisMotor->setTechnologicalZero();
 }
 
 void MainWindow::taskStarted(const QString& name, int stageCount)
@@ -447,9 +436,7 @@ void MainWindow::stop()
 {
   scriptExecutor->stop();
   devices::audioDataCollector->stop();
-  devices::coil->stop();
-  devices::xAxisMotor->stop();
-  devices::yAxisMotor->stop();
+  devices::coile->stop();
 }
 
 void MainWindow::initialize()

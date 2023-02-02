@@ -6,4 +6,10 @@
 
 #include <QtCore/QString>
 
-QString getConfigurationPathname(const QString& basename);
+class Configuration {
+	static QString m_configPath;
+public:
+	static void init(int argc, char* argv[]);
+	static QString getConfigurationPathname(const QString& basename);
+};
+

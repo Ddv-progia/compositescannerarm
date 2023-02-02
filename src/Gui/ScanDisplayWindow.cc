@@ -32,6 +32,7 @@
 #include <QTableWidget>
 #include <QPicture>
 #include <UCL/PlotView/View.hh>
+#include <UCL/Stylesheets/Cascade.hh>
 //#include <opencv/cv.h>
 //#include <opencv/highgui.h>
 
@@ -1223,8 +1224,8 @@ void ScanDisplayWindow::showPlots()
 {
   auto model = std::make_shared<ScanDataRangesModel>(scan);
   auto plotView = new uts::plotting::PlotCollectionView;
-  //FIX
-  //plotView->setStylesheetProvider(std::make_shared<uts::plotting::CascadingStylesheetFileProvider>(getConfigurationPathname("RangesStylesheet.xml")));
+  auto stylesheet = uts::stylesheets::cascadingStylesheetFromFile(Configuration::getConfigurationPathname("etc/RangesStylesheet.xml"));
+  plotView->setStylesheet(stylesheet);
   plotView->setModel(model);
 
 

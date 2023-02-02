@@ -161,7 +161,7 @@ void AssignColorForColorBarDialog::distributeHSV() {
 }
 
 void AssignColorForColorBarDialog::saveParamsToXMLFile() {
-    QFile xmlFile("paramsColorStopsList.xml");
+    QFile xmlFile("etc/paramsColorStopsList.xml");
     if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
     {
         qDebug() << "Already opened or there is another issue";
@@ -184,7 +184,7 @@ void AssignColorForColorBarDialog::saveParamsToXMLFile() {
 }
 
 void AssignColorForColorBarDialog::saveToXMLFile() {
-    QFile xmlFile("colorValues.xml");
+    QFile xmlFile("etc/colorValues.xml");
     if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
     {
         qDebug() << "Already opened or there is another issue";
@@ -213,7 +213,7 @@ void AssignColorForColorBarDialog::saveToXMLFile() {
 
 void AssignColorForColorBarDialog::loadFromXMLFile() {
     QDomDocument documentXML;
-    QFile xmlFile("colorValues.xml");
+    QFile xmlFile("etc/colorValues.xml");
     if (!xmlFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "Already opened or there is another issue";
@@ -247,7 +247,7 @@ void AssignColorForColorBarDialog::loadFromXMLFile() {
 
 void AssignColorForColorBarDialog::loadParamsFromXMLFile() {
     QDomDocument documentXML;
-    QFile xmlFile("paramsColorStopsList.xml");
+    QFile xmlFile("etc/paramsColorStopsList.xml");
     if (!xmlFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "Already opened or there is another issue";
