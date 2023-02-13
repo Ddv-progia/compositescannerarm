@@ -23,7 +23,7 @@ void ScriptExecutor::runScript(const QString& code, const QString& filename, boo
         devices::audioDataCollector->stop();
         //devices::xAxisMotor->stop();
         //devices::yAxisMotor->stop();
-        devices::coile->stop();
+        //devices::coile->stop();
       }catch(...){
       }
 

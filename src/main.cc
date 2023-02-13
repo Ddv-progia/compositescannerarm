@@ -50,8 +50,8 @@ int main(int argc, char* argv[])
   Ice::InitializationData initData;
   initData.properties = Ice::createProperties();
   initData.properties->setProperty("Ice.ImplicitContext", "Shared");
-  initData.properties->setProperty("Ice.MessageSizeMax", "10240000");
-  initData.properties->setProperty("Ice.Default.Locator", "IceGrid/Locator:tcp -p 4062 -h localhost");
+  initData.properties->setProperty("Ice.MessageSizeMax", "500000000");
+  initData.properties->setProperty("Ice.Default.Locator", "Composite-Scanner-Arm-Grid/Locator:tcp -h localhost -p 4062");
   auto communicator = Ice::initialize(argc, argv, initData);
   
   try {
@@ -66,8 +66,7 @@ int main(int argc, char* argv[])
   } catch (Ice::Exception& exc) {
     QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
   }
-  QFile file(Configuration::getConfigurationPathname("etc/style.css"));
-
+  //QFile file(Configuration::getConfigurationPathname("etc/style.css"));
   //if (file.exists())
       //if (file.open(QFile::ReadOnly))
           //app.setStyleSheet(QLatin1String(file.readAll()));

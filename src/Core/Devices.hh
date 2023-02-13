@@ -21,9 +21,7 @@ namespace devices {
   extern uts::devtalk::AudioDataCollectorPrx audioDataCollector;
   extern uts::devtalk::device::utscp::APLCoilPrx coile;
   extern uts::devtalk::utscp::APLSystemPrx aplSystemPrx;
-  extern uts::devtalk::utscp::APLSystemPrx aplSystem1112Prx;
   extern uts::devtalk::drivers::utscp::APLMultiDevicePrx aplMultiDevicePrx;
-  extern uts::devtalk::drivers::utscp::APLMultiDevicePrx aplMultiDevice1112Prx;
 
   void setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper);
 }

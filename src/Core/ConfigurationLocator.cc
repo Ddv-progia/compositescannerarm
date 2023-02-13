@@ -25,7 +25,7 @@ void Configuration::init(int argc, char* argv[]) {
         configRoot = vm["config-root"].as<std::string>();
     }
     else {
-        QMessageBox::critical(nullptr, "Ошибка", "Не задан конфигурационный каталог");
+        QMessageBox::critical(nullptr, "РћС€РёР±РєР°", "РќРµ Р·Р°РґР°РЅ РєРѕРЅС„РёРіСѓСЂР°С†РёРѕРЅРЅС‹Р№ РєР°С‚Р°Р»РѕРі");
         exit(1);
     }
     m_configPath = QString::fromStdString(configRoot);

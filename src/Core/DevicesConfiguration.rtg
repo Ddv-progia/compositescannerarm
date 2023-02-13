@@ -7,7 +7,14 @@ module Core.DevicesConfiguration is
 import Builtin
 import Std.String
 
+struct SystemSettings is
+    name      : Std::String
+	address   : Std::String
+	port      : Integer
+end
+
 struct DevicesConfiguration is
+  aplSystem          : SystemSettings
   audioDataCollector : Std::String
   coil: Integer
 end

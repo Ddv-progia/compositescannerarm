@@ -34,7 +34,7 @@ void ScanFactory::finishScan(boost::optional<QString &> name)
 	  auto scan = std::make_shared<Scan>();
 	  scan->processingStage = ScanProcessingStage::RawDataObtained;
     if(!name){
-	    scan->scanName = "New scan";
+	  scan->scanName = "New scan";
       saveToTempDirectory(rangeScanLines);
     } else
       scan->scanName = name->toStdString();

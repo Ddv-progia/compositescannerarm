@@ -2,7 +2,7 @@
  * Core/QtScript/Coil.cc
  */
 
-#include <limits>
+/*#include <limits>
 #include "Core/QtScript/Coil.hh"
 
 script::Coil::Coil(const uts::devtalk::device::utscp::APLCoilPrx& prx, QScriptEngine* scriptEngine)
@@ -138,3 +138,4 @@ void script::Coil::setMode(F f, Ice::Long timeout)
     }
   });
 }
+*/

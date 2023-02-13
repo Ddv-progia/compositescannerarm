@@ -1,12 +1,14 @@
 /*
  * Core/QtScript/AudioDataCollector.cc
  */
-
+#include <qmessagebox.h>
 #include "Core/QtScript/AudioDataCollector.hh"
 
 script::AudioDataCollector::AudioDataCollector(const uts::devtalk::AudioDataCollectorPrx& collector, QScriptEngine* scriptEngine)
-  : collector(collector), scriptEngine(scriptEngine)
-{ }
+  :  scriptEngine(scriptEngine)
+{ 
+    this->collector = collector;
+}
 
 void script::AudioDataCollector::start(int sampleRate)
 {
@@ -39,6 +41,8 @@ void script::AudioDataCollector::wrapExceptions(F f)
     scriptEngine->currentContext()->throwError(QString::fromUtf8(e.reason.c_str()));
   } catch (Ice::Exception& e) {
     scriptEngine->currentContext()->throwError(QString::fromUtf8(e.what()));
+  }catch (...) {
+      scriptEngine->currentContext()->throwError("Неизвестное исключение");
   }
 }
 

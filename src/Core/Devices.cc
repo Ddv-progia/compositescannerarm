@@ -19,6 +19,8 @@
 
 #include <UCL/Ice/Create.hh>
 #include <thread>
+#include <algorithm>
+#include <QDebug.h>
 
 namespace {
 
@@ -33,41 +35,42 @@ namespace {
 uts::devtalk::AudioDataCollectorPrx devices::audioDataCollector;
 uts::devtalk::device::utscp::APLCoilPrx  devices::coile;
 uts::devtalk::utscp::APLSystemPrx devices::aplSystemPrx;
-uts::devtalk::utscp::APLSystemPrx devices::aplSystem1112Prx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevicePrx;
-uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevice1112Prx;
-
+uts::devtalk::AudioDataCollectorFactoryPrx audioDataCollectorFactory;
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 {
-    auto audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
-    audioDataCollector = audioDataCollectorFactory->getInstance(conf.audioDataCollector);
+    audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
+    //audioDataCollector = audioDataCollectorFactory->getInstance(conf.audioDataCollector);
     auto adcs = audioDataCollectorFactory->getNames();
+    if(adcs.empty())
+        throw std::exception("Устройств записи звука не найдено");
+    auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
+    if (name == adcs.end()) {
+        QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
+        for (auto value : adcs)
+            devices += QString::fromStdString(value) + "\n";
+        QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
+            QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
+        name = adcs.begin();
+    }
+    audioDataCollector = audioDataCollectorFactory->getInstance(*name);
 
-    QMessageBox::critical(0, "Ошибка", QString::fromStdString(adcs.back()));
     uts::devtalk::utscp::UnitestAPLSystemFactoryPrx aplMultiDeviceFactory = getObject<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
-    uts::devtalk::utscp::UnitestAPLCoilFactoryPrx coilFactory = coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
-
+    uts::devtalk::utscp::UnitestAPLCoilFactoryPrx coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
+    
     if (aplMultiDeviceFactory) {
-        aplSystemPrx = aplMultiDeviceFactory->make("APL-universal", "10.0.254.223", 1111);
-        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        aplSystem1112Prx = aplMultiDeviceFactory->make("APL-universal", "10.0.254.223", 1112);
-        //aplSystemPrx = aplSystem1112Prx;// временно! !!!! для работы ЗАРЕМАРИТЬ
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        aplSystemPrx = aplMultiDeviceFactory->make(conf.aplSystem.name, conf.aplSystem.address, conf.aplSystem.port);
         aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (!aplMultiDevicePrx)
             throw std::exception("Невозможно получить driver APLMultiDevicePrx");
-        aplMultiDevice1112Prx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystem1112Prx, "APL-Multi-Device");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (!aplMultiDevice1112Prx)
-            throw std::exception("Невозможно получить driver aplMultiDevice1112Prx");
-            
+
         try{
-            if (coilFactory) { 
+            if (coilFactory && aplMultiDevicePrx) {
                 coile = coilFactory->make("1", aplMultiDevicePrx);
                 objectKeeper.registerObject(coile);
             }
-
         }
         catch (uts::devtalk::CommunicationException& exc) {
             QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.reason.c_str()));
@@ -75,12 +78,12 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
         catch (Ice::Exception& exc) {
             QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
         }
-
+        /*std:: cout << " Level " <<coile->switchOnGenerator();*/
     }
 
   bool simulate = false; 
   //if (!ctx.simulate) {
-  if (!simulate) {
+  /*if (!simulate) {
       //auto mk = [=]() -> uts::devtalk::utscp::APLSystemPrx {
       //    //auto factory = getObjectChecked<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(ctx.node, factoryName);
       //    auto factory = getObjectChecked<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
@@ -102,11 +105,10 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
       //    ctx.proxyRegistry->addLazy(nameAPLSystem + "/" + objectName, mkFacet);
       //    DEVTALK_CAND_LOG_CTX(info) << "Добавлен фасад " << facetName << " для устройства Unitest-APL-System " << nameAPLSystem << ": " << objectName;
       //}
-  }
+  }*/
 
-  if (aplSystem1112Prx && aplMultiDevicePrx)
+  if (aplSystemPrx && aplMultiDevicePrx)
   {
-      //*******
       std::string str;
       //////auto otvet3 = aplSystem1112Prx->runCommand("gyro");
       ////auto otvet3 = aplSystem1112Prx->runCommand("logstart 4 10000 10");
@@ -115,7 +117,7 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
       //QString str3 = QString::fromUtf8(str.c_str());
       //QMessageBox::information(nullptr, "logstart ", str3);
 
-      try {
+      /*try {
           auto timeOut2 = uts::ice::create<uts::devtalk::TimeOut>(1000.0, 2000.0);
           auto otvet4 = aplMultiDevicePrx->getEncoders("1", timeOut2);
           str = "";
@@ -153,8 +155,6 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
       }
       catch (Ice::Exception& exc) {
           QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
-      }
-
-      //*******
+      }*/
   }
 }

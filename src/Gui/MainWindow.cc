@@ -70,9 +70,9 @@ void MainWindow::prepareScriptEnvironment()
 
   scriptEngine->globalObject().setProperty("audioDataCollector", 
                                             scriptEngine->newQObject(audioDataCollector, QScriptEngine::ScriptOwnership));
-  scriptEngine->globalObject().setProperty("builtin_coil", 
-                                           scriptEngine->newQObject(new script::Coil(devices::coile, scriptEngine),
-                                                                    QScriptEngine::ScriptOwnership));
+  //scriptEngine->globalObject().setProperty("builtin_coil", 
+                                           //scriptEngine->newQObject(new script::Coil(devices::coile, scriptEngine),
+                                                                    //QScriptEngine::ScriptOwnership));
   scriptEngine->globalObject().setProperty("progressReporter", scriptEngine->newQObject(scriptProgressReporter));
   scriptEngine->globalObject().setProperty("sleep",
                                            scriptEngine->newFunction(script::sleep));
@@ -123,9 +123,9 @@ void MainWindow::connectSignals()
   connect(&taskExecutor, SIGNAL(stageProgressed()), this, SLOT(taskStageProgressed()), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(finished()), this, SLOT(taskFinished()), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(terminated(const QString&)), this, SLOT(taskTerminated(const QString&)), Qt::QueuedConnection);
-//*******
+
   //connect(scriptExecutor, SIGNAL(scriptStarted()), &scanFactory, SLOT(startNewScan()), Qt::QueuedConnection);
-//*******
+
   connect(scriptExecutor, SIGNAL(errorMessage(const QString&)), this, SLOT(showScriptErrorMessage(const QString&)), Qt::QueuedConnection);
   connect(scriptExecutor, SIGNAL(lineChanged(int)), this, SLOT(highlightScriptLine(int)), Qt::QueuedConnection);
   connect(scriptExecutor, SIGNAL(scriptFinished()), this, SLOT(unhighlightScriptLine()), Qt::QueuedConnection);
@@ -436,7 +436,7 @@ void MainWindow::stop()
 {
   scriptExecutor->stop();
   devices::audioDataCollector->stop();
-  devices::coile->stop();
+  //devices::coile->stop();
 }
 
 void MainWindow::initialize()

@@ -43,7 +43,8 @@ namespace script {
     QLabel* label;
     QScriptEngine* scriptEngine;
   public:
-    TestLabel(QLabel* newLabel,QScriptEngine* scriptEngine):label(newLabel),scriptEngine(scriptEngine)
+    TestLabel(QLabel* newLabel,QScriptEngine* scriptEngine)
+        :label(newLabel),scriptEngine(scriptEngine)
     {}
     Q_INVOKABLE void show()
     {

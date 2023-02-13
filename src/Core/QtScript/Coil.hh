@@ -2,7 +2,7 @@
  * Core/QtScript/Coil.hh
  */
 
-#pragma once
+/*#pragma once
 
 #include <DevTalk/Device/Coil.hh>
 #include <QtCore/QObject>
@@ -51,3 +51,4 @@ namespace script {
   };
 
 }
+*/

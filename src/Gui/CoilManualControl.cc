@@ -178,12 +178,11 @@ CoilManualControlDialog::CoilManualControlDialog(QWidget* parent)
 
 CoilCommandPanel* CoilManualControlDialog::addControlPanelWithIndex(int index)
 {
-  //auto ccp = new CoilCommandPanel(devices::coile, index);
-  //connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
-  //connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
-  //panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
-  //return ccp;
-    return nullptr;
+  auto ccp = new CoilCommandPanel(devices::coile, index);
+  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+  return ccp;
 }
 
 void CoilManualControlDialog::addControlPanel()
