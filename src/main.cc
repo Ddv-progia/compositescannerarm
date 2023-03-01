@@ -27,6 +27,7 @@
 #include "Core/PersistentVariable.hh"
 
 
+
 int main(int argc, char* argv[])
 {
   BackgroundTaskExecutor bte;
@@ -70,8 +71,8 @@ int main(int argc, char* argv[])
   //if (file.exists())
       //if (file.open(QFile::ReadOnly))
           //app.setStyleSheet(QLatin1String(file.readAll()));
-
-  MainWindow mw(bte, scanFactory);
+  realtime::RTContext rtCtxt(communicator);
+  MainWindow mw(rtCtxt,bte, scanFactory);
   mw.show();
   app.exec();
 

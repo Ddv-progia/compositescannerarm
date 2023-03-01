@@ -144,6 +144,15 @@ add_executable(CompositeScanner #WIN32
   Core/Qwt/SourceScanLineSeriesData.hh
   Core/Qwt/VerticalPolinomialSeriesData.cc
   Core/Qwt/VerticalPolinomialSeriesData.hh
+  
+  RealTime/RTReceiverI.cc
+  RealTime/RTReceiverI.h
+  RealTime/RTContext.cc
+  RealTime/RTContext.h
+  RealTime/RTAudioCollector.cc
+  RealTime/RTAudioCollector.h
+  RealTime/RTHead.cc
+  RealTime/RTHead.h
 
   Gui/AssembleScanDialog.cc
   Gui/AssembleScanDialog.hh
@@ -183,7 +192,6 @@ add_executable(CompositeScanner #WIN32
   Gui/StandardColorMap.hh
   Gui/FrequencyRose.cc
   Gui/FrequencyRose.hh
-
   main.cc)
 
 SOURCE_GROUP("Generated Files" FILES
@@ -196,6 +204,7 @@ SOURCE_GROUP(Core REGULAR_EXPRESSION Core/.*)
 SOURCE_GROUP(Core/Qwt REGULAR_EXPRESSION Core/Qwt/.*)
 SOURCE_GROUP(Core/QtScript REGULAR_EXPRESSION Core/QtScript/.*)
 SOURCE_GROUP(Gui REGULAR_EXPRESSION Gui/.*)
+SOURCE_GROUP(RealTime REGULAR_EXPRESSION RealTime/.*)
 SOURCE_GROUP("" FILES main.cc)
 
 target_link_libraries(CompositeScanner

@@ -33,14 +33,15 @@ namespace {
 }
 
 uts::devtalk::AudioDataCollectorPrx devices::audioDataCollector;
+uts::devtalk::device::utscp::APLHeadPrx devices::head;
 uts::devtalk::device::utscp::APLCoilPrx  devices::coile;
 uts::devtalk::utscp::APLSystemPrx devices::aplSystemPrx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevicePrx;
 uts::devtalk::AudioDataCollectorFactoryPrx audioDataCollectorFactory;
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 {
+    //RTReceiverI *rese = new RTReceiverI(comm, "AudioDataCollector");
     audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
-    //audioDataCollector = audioDataCollectorFactory->getInstance(conf.audioDataCollector);
     auto adcs = audioDataCollectorFactory->getNames();
     if(adcs.empty())
         throw std::exception("Устройств записи звука не найдено");
@@ -53,11 +54,11 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
             QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
         name = adcs.begin();
     }
-    audioDataCollector = audioDataCollectorFactory->getInstance(*name);
+    audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
 
     uts::devtalk::utscp::UnitestAPLSystemFactoryPrx aplMultiDeviceFactory = getObject<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
     uts::devtalk::utscp::UnitestAPLCoilFactoryPrx coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
-    
+    uts::devtalk::utscp::UnitestAPLHeadFactoryPrx headFactory = getObject<uts::devtalk::utscp::UnitestAPLHeadFactoryPrx>(comm, "Factory/APL-Head");
     if (aplMultiDeviceFactory) {
         aplSystemPrx = aplMultiDeviceFactory->make(conf.aplSystem.name, conf.aplSystem.address, conf.aplSystem.port);
         aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
@@ -67,9 +68,15 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         try{
-            if (coilFactory && aplMultiDevicePrx) {
-                coile = coilFactory->make("1", aplMultiDevicePrx);
-                objectKeeper.registerObject(coile);
+            if (aplMultiDevicePrx) {
+                if (coilFactory) {
+                    coile = coilFactory->make("1", aplMultiDevicePrx);
+                    objectKeeper.registerObject(coile);
+                }
+                if (headFactory) {
+                    head = headFactory->make(aplMultiDevicePrx);
+                    objectKeeper.registerObject(head);
+                }
             }
         }
         catch (uts::devtalk::CommunicationException& exc) {

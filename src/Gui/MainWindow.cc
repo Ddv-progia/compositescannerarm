@@ -36,10 +36,13 @@
 #include "Gui/ScanControlDialog.hh"
 #include "Gui/ScanDisplayWindow.hh"
 #include "Gui/AutoScanWindow.hh"
+#include "RealTime/RTAudioCollector.h"
+#include "RealTime/RTHead.h"
 
-MainWindow::MainWindow(BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
+MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor),
-  scanFactory(scanFactory), 
+  scanFactory(scanFactory),
+    m_rtCtxt(rtCtxt),
   processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
   scripts(Configuration::getConfigurationPathname("etc/Scripts.xml").toStdString(), "Scripts")
 {
@@ -351,7 +354,19 @@ void MainWindow::editPaste()
 
 void MainWindow::runScript()
 {
-  auto currentWidget = getCurrentMdiWidget();
+    try {
+        /*realtime::RTAudioCollector* col = dynamic_cast<realtime::RTAudioCollector*>(m_rtCtxt.getRTDevice("AudioDataCollector").get());
+        if (col)
+            col->start(1000);*/
+        realtime::RTHead* head = dynamic_cast<realtime::RTHead*>(m_rtCtxt.getRTDevice("APLHead").get());
+        if (head)
+            head->start(1000);
+    }
+    catch (...) {
+
+    }
+ 
+  /*auto currentWidget = getCurrentMdiWidget();
   if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
     QFile common(QString::fromStdString(scripts->common));
     if (common.open(QIODevice::ReadOnly)) {
@@ -371,7 +386,7 @@ void MainWindow::runScript()
       stop();
       unhighlightScriptLine();
     }
-  }
+  }*/
 }
 
 void MainWindow::runAutoScan()
@@ -434,8 +449,14 @@ void MainWindow::enqueueAssembleScanTask()
 
 void MainWindow::stop()
 {
-  scriptExecutor->stop();
-  devices::audioDataCollector->stop();
+    realtime::RTAudioCollector* col = dynamic_cast<realtime::RTAudioCollector*>(m_rtCtxt.getRTDevice("AudioDataCollector").get());
+    if (col)
+        col->stop();
+    realtime::RTHead* head = dynamic_cast<realtime::RTHead*>(m_rtCtxt.getRTDevice("APLHead").get());
+    if (head)
+        head->stop();
+  //scriptExecutor->stop();
+  //devices::audioDataCollector->stop();
   //devices::coile->stop();
 }
 

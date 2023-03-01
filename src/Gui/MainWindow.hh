@@ -16,20 +16,12 @@
 #include "Core/ScriptSettings.hh"
 #include "Core/QtScript/ProgressReporter.hh"
 #include "Core/PersistentVariable.hh"
+#include "RealTime/RTContext.h"
 
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
-public:
-  explicit MainWindow(BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory);
-  ~MainWindow();
-
-protected:
-	virtual void closeEvent(QCloseEvent* evt) override;
-  Q_SIGNAL void scriptStarted(const QString& code, const QString& filename, bool intermediate);
-
-private:
-  Ui::MainWindow ui;
+	Ui::MainWindow ui;
   BackgroundTaskExecutor& taskExecutor;
   ScanFactory& scanFactory;
   QTimer* updateTimer;
@@ -44,6 +36,17 @@ private:
   bool taskProgressed;
 
   QString lastOpenDir;
+  realtime::RTContext m_rtCtxt;
+public:
+  explicit MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory);
+  ~MainWindow();
+
+protected:
+	virtual void closeEvent(QCloseEvent* evt) override;
+  Q_SIGNAL void scriptStarted(const QString& code, const QString& filename, bool intermediate);
+
+private:
+  
 
   void prepareScriptEnvironment();
   void connectSignals();
