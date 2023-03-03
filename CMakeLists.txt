@@ -22,7 +22,7 @@ string(REPLACE "/debug" "/debug:fastlink" CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBIN
 find_package(BerkeleyDB REQUIRED)
 find_package(Boost 1.68 COMPONENTS filesystem log log_setup program_options system thread unit_test_framework REQUIRED)
 find_package(FFTW3 REQUIRED)
-find_package(Qt5 REQUIRED Core Gui Widgets Network Xml Sql PrintSupport Script ScriptTools)
+find_package(Qt5 REQUIRED Charts Core Gui Widgets Network Xml Sql PrintSupport Script ScriptTools )
 find_package(Qwt REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PugiXml REQUIRED)

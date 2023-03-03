@@ -10,7 +10,7 @@ namespace realtime {
 		Ice::ObjectAdapterPtr m_adapter;
 		IceStorm::TopicManagerPrx m_topicManager;
 
-		Ice::ObjectPrx m_proxy;
+		//Ice::ObjectPrx m_proxy;
 		std::map<std::string, std::shared_ptr<RTReceiverI>> m_rtDevices;
 	public:
 		RTContext(const Ice::CommunicatorPtr& comm);

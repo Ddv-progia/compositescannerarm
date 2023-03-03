@@ -23,9 +23,6 @@
 #include "Core/Devices.hh"
 #include "Core/LoadScanTask.hh"
 #include "Core/ScanIO.hh"
-#include "Core/QtScript/AudioDataCollector.hh"
-#include "Core/QtScript/Coil.hh"
-#include "Core/QtScript/Functions.hh"
 #include "Gui/AssembleScanDialog.hh"
 #include "Gui/AssignColorForColorBarDialog.hh"
 #include "Gui/CoilManualControl.hh"
@@ -35,72 +32,38 @@
 #include "Gui/ProcessingParametersDialog.hh"
 #include "Gui/ScanControlDialog.hh"
 #include "Gui/ScanDisplayWindow.hh"
-#include "Gui/AutoScanWindow.hh"
-#include "RealTime/RTAudioCollector.h"
-#include "RealTime/RTHead.h"
+//#include "RealTime/RTAudioCollector.h"
+//#include "RealTime/RTHead.h"
+#include "RealTime/RTScanCollector.h"
+#include "Core/ScanCollector.hh"
 
 MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
-  : taskExecutor(taskExecutor),
-  scanFactory(scanFactory),
-    m_rtCtxt(rtCtxt),
-  processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
-  scripts(Configuration::getConfigurationPathname("etc/Scripts.xml").toStdString(), "Scripts")
+  : taskExecutor(taskExecutor), scanFactory(scanFactory), m_rtCtxt(rtCtxt),
+  processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters")
 {
   ui.setupUi(this);
   ui.backgroundTasksBox->hide();
-
+  ui.mdiArea->addSubWindow(new realtime::RTScanCollector{rtCtxt});
   updateTimer = new QTimer(this);
   updateTimer->start(1000);
   
-  prepareScriptEnvironment();
   connectSignals();
   loadConfiguration();
 }
 
 MainWindow::~MainWindow()
-{
-  delete scriptExecutor;
-}
-
-void MainWindow::prepareScriptEnvironment()
-{
-  scriptEngine = new QScriptEngine(this);
-  scriptProgressReporter = new script::ProgressReporter(this);
-  auto audioDataCollector = new script::AudioDataCollector(devices::audioDataCollector, scriptEngine);
-
-  scriptEngine->globalObject().setProperty("testLabel",
-    scriptEngine->newQObject(new script::TestLabel(ui.label_2,scriptEngine),QScriptEngine::ScriptOwnership));
-
-  scriptEngine->globalObject().setProperty("audioDataCollector", 
-                                            scriptEngine->newQObject(audioDataCollector, QScriptEngine::ScriptOwnership));
-  //scriptEngine->globalObject().setProperty("builtin_coil", 
-                                           //scriptEngine->newQObject(new script::Coil(devices::coile, scriptEngine),
-                                                                    //QScriptEngine::ScriptOwnership));
-  scriptEngine->globalObject().setProperty("progressReporter", scriptEngine->newQObject(scriptProgressReporter));
-  scriptEngine->globalObject().setProperty("sleep",
-                                           scriptEngine->newFunction(script::sleep));
-
-  scriptExecutorThread = new QThread;
-  scriptExecutorThread->start();
-
-  scriptExecutor = new ScriptExecutor(scriptEngine);
-  scriptExecutor->moveToThread(scriptExecutorThread);
-
-  connect(audioDataCollector, SIGNAL(lineFechted(const SourceScanLine&)), &scanFactory, SLOT(addRangeScanLine(const SourceScanLine&)), Qt::QueuedConnection);
-}
+{}
 
 void MainWindow::connectSignals()
 {
-  connect(ui.runScriptAction, SIGNAL(triggered()), this, SLOT(runScript()));
+  connect(ui.runScriptAction, SIGNAL(triggered()), this, SLOT(start()));
   connect(ui.stopAction, SIGNAL(triggered()), this, SLOT(stop()));
   connect(ui.initializeAction, SIGNAL(triggered()), this, SLOT(initialize()));
-  connect(ui.autoScanAction, SIGNAL(triggered()), this, SLOT(runAutoScan()));
   connect(ui.showManualControlDialogAction, SIGNAL(triggered()), this, SLOT(showManualControlDialog()));
   connect(ui.quitAction, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
   connect(ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
   connect(ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
-  connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
 
   connect(ui.newAction, SIGNAL(triggered()), this, SLOT(newScript()));
   connect(ui.openAction, SIGNAL(triggered()), this, SLOT(open()));
@@ -127,13 +90,7 @@ void MainWindow::connectSignals()
   connect(&taskExecutor, SIGNAL(finished()), this, SLOT(taskFinished()), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(terminated(const QString&)), this, SLOT(taskTerminated(const QString&)), Qt::QueuedConnection);
 
-  //connect(scriptExecutor, SIGNAL(scriptStarted()), &scanFactory, SLOT(startNewScan()), Qt::QueuedConnection);
-
-  connect(scriptExecutor, SIGNAL(errorMessage(const QString&)), this, SLOT(showScriptErrorMessage(const QString&)), Qt::QueuedConnection);
-  connect(scriptExecutor, SIGNAL(lineChanged(int)), this, SLOT(highlightScriptLine(int)), Qt::QueuedConnection);
-  connect(scriptExecutor, SIGNAL(scriptFinished()), this, SLOT(unhighlightScriptLine()), Qt::QueuedConnection);
-  connect(scriptExecutor, SIGNAL(scriptFinished()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
-  connect(this, SIGNAL(scriptStarted(const QString&, const QString&, bool)), scriptExecutor, SLOT(runScript(const QString&, const QString&, bool)), Qt::QueuedConnection);
+  //connect(scriptExecutor, SIGNAL(scriptFinished()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
 
   connect(&scanFactory, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), this, SLOT(showScan(const std::shared_ptr<Scan>&)));
 }
@@ -147,54 +104,12 @@ void MainWindow::loadConfiguration()
   } catch (...) {
     QMessageBox::critical(this, "Сбой загрузки настроек", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
   }
-  try{
-    scripts.load();
-  } catch (...) {
-    QMessageBox::critical(this, "Сбой загрузки настроек скриптов", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
-  }
 }
 
 QWidget* MainWindow::getCurrentMdiWidget()
 {
   auto win = ui.mdiArea->currentSubWindow();
   return win ? win->widget() : 0;
-}
-
-void MainWindow::showScriptErrorMessage(const QString& msg)
-{
-  QMessageBox::critical(this, "Ошибка в программе", msg);
-}
-
-void MainWindow::highlightScriptLine(int lineNumber)
-{
-  auto currentWidget = getCurrentMdiWidget();
-  if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
-    ew->highlightLine(lineNumber);
-  }
-}
-
-void MainWindow::unhighlightScriptLine()
-{
-  auto currentWidget = getCurrentMdiWidget();
-  if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
-    ew->unhighlightLine();
-  }
-}
-
-void MainWindow::updateCoordinates()
-{
-  try {
-    /*if (devices::xAxisMotor) {
-      ui.xLabel->setText(QString::number(devices::xAxisMotor->getMachineCoordinate()));
-      ui.x0Label->setText(QString::number(devices::xAxisMotor->getTechnologicalCoordinate()));
-    }
-
-    if (devices::yAxisMotor) {
-      ui.yLabel->setText(QString::number(devices::yAxisMotor->getMachineCoordinate()));
-      ui.y0Label->setText(QString::number(devices::yAxisMotor->getTechnologicalCoordinate()));
-    }*/
-  } catch (...) {
-  }
 }
 
 void MainWindow::setTechnologicalZero()
@@ -352,58 +267,29 @@ void MainWindow::editPaste()
   }
 }
 
-void MainWindow::runScript()
+void MainWindow::start()
 {
     try {
-        /*realtime::RTAudioCollector* col = dynamic_cast<realtime::RTAudioCollector*>(m_rtCtxt.getRTDevice("AudioDataCollector").get());
-        if (col)
-            col->start(1000);*/
-        realtime::RTHead* head = dynamic_cast<realtime::RTHead*>(m_rtCtxt.getRTDevice("APLHead").get());
-        if (head)
-            head->start(1000);
+        auto collector = dynamic_cast<ScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        if (collector)
+            collector->start();
     }
     catch (...) {
 
     }
- 
-  /*auto currentWidget = getCurrentMdiWidget();
-  if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
-    QFile common(QString::fromStdString(scripts->common));
-    if (common.open(QIODevice::ReadOnly)) {
-      emit scriptStarted(QString::fromUtf8(common.readAll().data()), QString::fromStdString(scripts->common), true);
-    }
-
-    scanFactory.startNewScan(*processingParameters);
-    ScanControlDialog scd;
-    connect(scriptExecutor, SIGNAL(scriptFinished()), &scd, SLOT(accept()));
-    connect(scriptProgressReporter, SIGNAL(taskStarted(int)), &scd, SLOT(newScanTask(int)), Qt::QueuedConnection);
-    connect(scriptProgressReporter, SIGNAL(taskProgressed()), &scd, SLOT(scanTaskProgressed()), Qt::QueuedConnection);
-    connect(scriptProgressReporter, SIGNAL(taskFinished()), &scd, SLOT(scanTaskFinished()), Qt::QueuedConnection);
-
-    emit scriptStarted(ew->scriptCode(), "", false);
-
-    if (scd.exec() == QMessageBox::Abort) {
-      stop();
-      unhighlightScriptLine();
-    }
-  }*/
 }
 
-void MainWindow::runAutoScan()
+void MainWindow::stop()
 {
-  QFile common(QString::fromStdString(scripts->common));
-    if (common.open(QIODevice::ReadOnly)) {
-      emit scriptStarted(QString::fromUtf8(common.readAll().data()), QString::fromStdString(scripts->common), true);
+    try {
+        auto collector = dynamic_cast<ScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        if (collector)
+            collector->stop();
     }
-    AutoScanWindow asw(QString::fromStdString(scripts->autoScan), 0, 0);//devices::xAxisMotor->getMachineCoordinate(),devices::yAxisMotor->getMachineCoordinate());
+    catch (...) {
 
-  bool b = this->connect(&asw,SIGNAL(setProperty(const QString&,const QScriptValue&)),scriptExecutor,SLOT(setProperty(const QString&,const QScriptValue&)));
-  connect(&asw,SIGNAL(startScanScript(const QString&,const QString&,bool)),this,SIGNAL(scriptStarted(const QString&,const QString&,bool)));
-  connect(&asw,SIGNAL(stop()),this,SLOT(stop()));
-  asw.exec();
+    }
 }
-
-
 void MainWindow::showManualControlDialog()
 {
   auto mcd = new ManualControlDialog;
@@ -447,42 +333,10 @@ void MainWindow::enqueueAssembleScanTask()
   }
 }
 
-void MainWindow::stop()
-{
-    realtime::RTAudioCollector* col = dynamic_cast<realtime::RTAudioCollector*>(m_rtCtxt.getRTDevice("AudioDataCollector").get());
-    if (col)
-        col->stop();
-    realtime::RTHead* head = dynamic_cast<realtime::RTHead*>(m_rtCtxt.getRTDevice("APLHead").get());
-    if (head)
-        head->stop();
-  //scriptExecutor->stop();
-  //devices::audioDataCollector->stop();
-  //devices::coile->stop();
-}
+
 
 void MainWindow::initialize()
 {
-  if (!scripts->initialization.empty()) {
-    QFile common(QString::fromStdString(scripts->common));
-    if (common.open(QIODevice::ReadOnly)) {
-      emit scriptStarted(QString::fromUtf8(common.readAll().data()), QString::fromStdString(scripts->common), true);
-    }
-
-    QFile init(QString::fromStdString(scripts->initialization));
-    if (! init.open(QIODevice::ReadOnly)) {
-      QMessageBox::critical(this, "Ошибка", "Не удалось считать программу инициализации");
-      return;
-    }
-
-    emit scriptStarted(QString::fromUtf8(init.readAll().data()), QString::fromStdString(scripts->initialization), false);
-
-    QMessageBox stopScriptBox(QMessageBox::NoIcon, "Выполняется инициализация", "Остановить инициализацию", QMessageBox::Abort);
-    stopScriptBox.setDefaultButton(QMessageBox::Abort);
-    connect(scriptExecutor, SIGNAL(scriptFinished()), &stopScriptBox, SLOT(accept()));
-    if (stopScriptBox.exec() == QMessageBox::Abort) {
-      stop();
-    }
-  }
 }
 
 void MainWindow::showScan(const std::shared_ptr<Scan>& scan)
@@ -502,9 +356,6 @@ void MainWindow::closeEvent(QCloseEvent* evt)
       return;
     }
   }
-
-  scriptExecutorThread->quit();
-  scriptExecutorThread->wait();
   evt->accept();
 }
 

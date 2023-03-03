@@ -1,8 +1,0 @@
-y.to(0, { v: 30 })
-x.to(0, { v: 30 })
-coil.start()
-sleep(3)
-audioDataCollector.start(96000)
-sleep(5)
-audioDataCollector.stop(0, 0, 0)
-coil.stop()

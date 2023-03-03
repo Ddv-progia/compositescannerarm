@@ -169,9 +169,6 @@ struct SourceScanLine is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-
-
-
 end
 
 struct RawScanLineInfo is
@@ -277,28 +274,52 @@ struct DefectsView is
   lineCoordinates : Std::Vector(Double_Precision_Real)
 end
 
+struct Position is
+	x         : Single_Precision_Real
+	y           : Single_Precision_Real
+	z           : Single_Precision_Real
+	zenithAngle : Single_Precision_Real
+	rotation    : Single_Precision_Real
+end
+
+struct Trajectory is
+	pos         :  Position
+	sampleRate  :  Unsigned_Integer
+end
+
+struct Sound is
+	samples     : Std::Vector(Single_Precision_Real)
+	sampleRate  :  Unsigned_Integer
+end
+
+struct OriginalScanData is
+	sound          : Sound
+	trajectory     : Trajectory
+end
+
 struct Scan is 
-  lines : Std::Vector(SourceScanLine)
-  parameters :  ProcessingParameters
+	originalScan						:	OriginalScanData
+	lines 								:	Std::Vector(SourceScanLine)
+	parameters 							:	ProcessingParameters
 
-  trimmedLines : Std::Vector(SourceScanLineSlice)
-  peaks : Std::Vector(PeaksLine)
-  ranges : Std::Vector(Std::Vector(RangeScanLine))
-  commonRanges : Std::Vector(Std::Vector(RangeScanLine))
+	trimmedLines 						:	Std::Vector(SourceScanLineSlice)
+	peaks 								:	Std::Vector(PeaksLine)
+	ranges 								:	Std::Vector(Std::Vector(RangeScanLine))
+	commonRanges 						:	Std::Vector(Std::Vector(RangeScanLine))
 
-  spec : Std::Vector(Std::Vector(RangeScanLine))
-  normalizedSpec : Std::Vector(Std::Vector(RangeScanLine))
-       
-  normalizedRanges : Std::Vector(NormalizedRange)
-  commonNormalizedRanges : Std::Vector(NormalizedRange)
-  averageColumns : Std::Vector(Std::Vector(Double_Precision_Real))
-  averageColumnPolyniomials : Std::Vector(Polynomial)
-  rangesResiduals : Std::Vector(NormalizedRange)
-  rawDefectPoints : Std::Vector(DefectsView)
-  renderedDefectPoints : Std::Vector(DefectsView)
-  renderedDefectPointsFixedColor : Std::Vector(DefectsView)
-  processingStage : ScanProcessingStage
-  currentRange :  Unsigned_Integer
-  scanName :  Std::String
+	spec 								:	Std::Vector(Std::Vector(RangeScanLine))
+	normalizedSpec 						:	Std::Vector(Std::Vector(RangeScanLine))
+
+	normalizedRanges 					:	Std::Vector(NormalizedRange)
+	commonNormalizedRanges 				:	Std::Vector(NormalizedRange)
+	averageColumns 						:	Std::Vector(Std::Vector(Double_Precision_Real))
+	averageColumnPolyniomials 			:	Std::Vector(Polynomial)
+	rangesResiduals 					:	Std::Vector(NormalizedRange)
+	rawDefectPoints 					:	Std::Vector(DefectsView)
+	renderedDefectPoints 				:	Std::Vector(DefectsView)
+	renderedDefectPointsFixedColor 		:	Std::Vector(DefectsView)
+	processingStage 					:	ScanProcessingStage
+	currentRange 						:	Unsigned_Integer
+	scanName 							:	Std::String
 end
 

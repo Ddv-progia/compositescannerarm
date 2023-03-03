@@ -45,7 +45,6 @@ QT5_WRAP_UI(CompositeScanner_Generated_UI
   Gui/MainWindow.ui
   Gui/ManualControlDialog.ui
   Gui/ProcessingParametersDialog.ui
-  Gui/AutoScanWindow.ui
   Gui/SingleCommandPanel.ui
   Gui/KernelDialog.ui
   Gui/DefectClassificationWidget.ui)
@@ -53,7 +52,7 @@ QT5_WRAP_UI(CompositeScanner_Generated_UI
 SET(CompositeScanner_Data_FILES 
   Core/DevicesConfiguration.rtg
   Core/ScanData.rtg
-  Core/ScriptSettings.rtg)
+  )
   
  
 RTGEN_TO_CPP(CompositeScanner_Generated_Data
@@ -99,26 +98,16 @@ add_executable(CompositeScanner #WIN32
   Core/ScanDefectRenderingTask.hh
   Core/ScanFactory.cc
   Core/ScanFactory.hh
+  Core/ScanCollector.cc
+  Core/ScanCollector.hh
   Core/ScanIO.cc
   Core/ScanIO.hh
   Core/ScanProcessingTask.cc
   Core/ScanProcessingTask.hh
-  Core/ScriptExecutor.cc
-  Core/ScriptExecutor.hh
-  Core/ScriptSettings.rtg
   Core/WMACompression.cc
   Core/WMACompression.hh
   Core/ImageProcessing.cc
   Core/ImageProcessing.hh
-
-  Core/QtScript/AudioDataCollector.cc
-  Core/QtScript/AudioDataCollector.hh
-  Core/QtScript/Coil.cc
-  Core/QtScript/Coil.hh
-  Core/QtScript/Functions.cc
-  Core/QtScript/Functions.hh
-  Core/QtScript/ProgressReporter.cc
-  Core/QtScript/ProgressReporter.hh
 
   Core/Qwt/ColumnPolynomialRasterData.cc
   Core/Qwt/ColumnPolynomialRasterData.hh
@@ -151,8 +140,16 @@ add_executable(CompositeScanner #WIN32
   RealTime/RTContext.h
   RealTime/RTAudioCollector.cc
   RealTime/RTAudioCollector.h
+  RealTime/RTScanCollector.cc
+  RealTime/RTScanCollector.h
   RealTime/RTHead.cc
   RealTime/RTHead.h
+  RealTime/onewavewidget.h
+  RealTime/onewavewidget.cpp
+  RealTime/qxtspanslider.h
+  RealTime/qxtspanslider.cpp
+  RealTime/chartvievforonewavewidget.h
+  RealTime/chartvievforonewavewidget.cpp
 
   Gui/AssembleScanDialog.cc
   Gui/AssembleScanDialog.hh
@@ -187,8 +184,6 @@ add_executable(CompositeScanner #WIN32
   Gui/ScanControlDialog.hh
   Gui/ScanDisplayWindow.cc
   Gui/ScanDisplayWindow.hh
-  Gui/AutoScanWindow.cc
-  Gui/AutoScanWindow.hh
   Gui/StandardColorMap.hh
   Gui/FrequencyRose.cc
   Gui/FrequencyRose.hh
@@ -230,6 +225,7 @@ target_link_libraries(CompositeScanner
   Qt5::Xml
   Qt5::Script
   Qt5::ScriptTools
+  Qt5::Charts
 
   DevTalk-Interface
   UCL-PlotView

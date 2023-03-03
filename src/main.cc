@@ -31,13 +31,14 @@
 int main(int argc, char* argv[])
 {
   BackgroundTaskExecutor bte;
-  boost::thread backgroundTasksThread(std::ref(bte));
+  boost::thread backgroundTasksThread(boost::ref(bte));
 
   ScanFactory scanFactory(bte);
   MFStartup(MF_VERSION, MFSTARTUP_FULL);
   bte.enqueue(new InitializeMediaFoundationTask());
 
   qRegisterMetaType<std::shared_ptr<Scan>>("std::shared_ptr<Scan>");
+  qRegisterMetaType<std::shared_ptr<Scan>>("std::vector<float>");
   qRegisterMetaType<RangeScanLine>("RangeScanLine");
   qRegisterMetaType<SourceScanLine>("SourceScanLine");
   uts::plotting::initialize();
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
       //if (file.open(QFile::ReadOnly))
           //app.setStyleSheet(QLatin1String(file.readAll()));
   realtime::RTContext rtCtxt(communicator);
-  MainWindow mw(rtCtxt,bte, scanFactory);
+  MainWindow mw(rtCtxt, bte, scanFactory);
   mw.show();
   app.exec();
 
@@ -82,9 +83,10 @@ int main(int argc, char* argv[])
   communicator->shutdown();
   communicator->waitForShutdown();
   communicator->destroy();
-
+  
   backgroundTasksThread.interrupt();
-  backgroundTasksThread.join();
+  if(backgroundTasksThread.joinable())
+    backgroundTasksThread.join();
 
   MFShutdown();
 }

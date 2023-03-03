@@ -34,4 +34,5 @@ private:
 
   std::mutex rangeScanLinesMutex;
   std::vector<SourceScanLine> rangeScanLines;
+  OriginalScanData m_originalScan;
 };

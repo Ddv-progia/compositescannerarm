@@ -5,15 +5,12 @@
 #include <Ice/ObjectAdapter.h>
 #include <Ice/Communicator.h>
 #include <IceUtil/Handle.h>
+#include <QtCore/QObject>
 
 namespace realtime {
-	class RTReceiverI : public virtual uts::devtalk::RTReceiver {
+	class RTReceiverI : public virtual uts::devtalk::RTReceiver,
+		public QObject {
 		std::string m_name;
-		/*const Ice::CommunicatorPtr m_communicator;
-		Ice::ObjectAdapterPtr m_adapter;
-		IceStorm::TopicManagerPrx m_topicManager;
-		IceStorm::TopicPrx m_topic;
-		Ice::ObjectPrx m_proxy;*/
 	public:
 		RTReceiverI(std::string name);
 		virtual void setSubscriptionName(const std::string& name, const ::Ice::Current & = ::Ice::Current()) override;
