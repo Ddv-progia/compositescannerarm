@@ -150,6 +150,12 @@ add_executable(CompositeScanner #WIN32
   RealTime/qxtspanslider.cpp
   RealTime/chartvievforonewavewidget.h
   RealTime/chartvievforonewavewidget.cpp
+  RealTime/fieldwidget.h
+  RealTime/fieldwidget.cpp
+  RealTime/cursor.h
+  RealTime/cursor.cpp
+  RealTime/area.h
+  RealTime/area.cpp
 
   Gui/AssembleScanDialog.cc
   Gui/AssembleScanDialog.hh

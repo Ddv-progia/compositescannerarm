@@ -4,10 +4,6 @@
 #include <QtCharts/QtCharts>
 #include "Core/ScanData.hh"
 
-
-class ICurve;
-class AGraphicItem;
-class ModelOneWave;
 class ChartViewForOneWaveWidget;
 class QxtSpanSlider;
 

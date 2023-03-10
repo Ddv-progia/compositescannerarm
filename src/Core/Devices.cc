@@ -62,6 +62,8 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
     if (aplMultiDeviceFactory) {
         aplSystemPrx = aplMultiDeviceFactory->make(conf.aplSystem.name, conf.aplSystem.address, conf.aplSystem.port);
         aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
+        objectKeeper.registerObject(aplSystemPrx);
+        objectKeeper.registerObject(aplMultiDevicePrx);
         //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (!aplMultiDevicePrx)
             throw std::exception("Невозможно получить driver APLMultiDevicePrx");

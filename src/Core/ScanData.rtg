@@ -35,14 +35,6 @@ struct FrequencyRange is
   to : Double_Precision_Real
 end
 
-struct Peak is
-  beginIndex : Unsigned_Integer
-  endIndex : Unsigned_Integer
-  x : Double_Precision_Real= { 0.0 }
-  y : Double_Precision_Real= { 0.0 }
-  z : Double_Precision_Real= { 0.0 }
-end
-
 
 struct DefectChannel is
   range : Unsigned_Integer
@@ -201,16 +193,7 @@ struct SourceScanLineSlice is
 
 end
 
-struct PeaksLine is
-  peaks : Std::Vector(Peak)
-  startCoordinate :  Double_Precision_Real
-  finalCoordinate :  Double_Precision_Real
-  lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
-  timestampStart : Unsigned_Long_Long_Integer = { 0 }
-  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
-end
 
 
 struct RangeScanLine is
@@ -283,7 +266,7 @@ struct Position is
 end
 
 struct Trajectory is
-	pos         :  Position
+	pos         :  Std::Vector(Position)
 	sampleRate  :  Unsigned_Integer
 end
 
@@ -297,9 +280,28 @@ struct OriginalScanData is
 	trajectory     : Trajectory
 end
 
+struct Peak is
+  beginIndex : Unsigned_Integer
+  endIndex : Unsigned_Integer
+  x : Double_Precision_Real= { 0.0 }
+  y : Double_Precision_Real= { 0.0 }
+  z : Double_Precision_Real= { 0.0 }
+end
+
+struct PeaksLine is
+  peaks : Std::Vector(Peak)
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+
+end
+
 struct Scan is 
 	originalScan						:	OriginalScanData
-	lines 								:	Std::Vector(SourceScanLine)
+	--lines 								:	Std::Vector(SourceScanLine)
 	parameters 							:	ProcessingParameters
 
 	trimmedLines 						:	Std::Vector(SourceScanLineSlice)

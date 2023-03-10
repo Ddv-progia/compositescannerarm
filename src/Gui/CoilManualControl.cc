@@ -52,7 +52,7 @@ void CoilCommandPanel::updateCommands()
   commands.push_back(std::make_pair("Однократный старт", [this] () { 
     IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
     timing->firstTestDelay = timing->testPause = timing->timeout = 0;
-    coil->switchWorkingMode(timing); 
+    coil->switchSingleWorkingMode(timing);
   }));
   commands.push_back(std::make_pair("Считать статус", [this] () { showState(coil->getState()); }));
   commands.push_back(std::make_pair("Считать уровень звука", [this] () { showResult(coil->getLevel()); }));

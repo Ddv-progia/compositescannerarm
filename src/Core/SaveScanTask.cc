@@ -43,7 +43,7 @@ SaveScanTask::SaveScanTask(const QString& pathname, const Scan& scan, LineEncodi
 
 void SaveScanTask::operator() ()
 {
-  Db db(0, 0);
+  /*Db db(0, 0);
 
   try {
     db.open(0, pathname.toUtf8().data(), 0, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0);
@@ -120,6 +120,6 @@ void SaveScanTask::operator() ()
   } catch (...) {
     db.close(0);
     throw;
-  }
+  }*/
 
 }

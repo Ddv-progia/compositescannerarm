@@ -11,22 +11,11 @@ OneWaveWidget::OneWaveWidget()
     m_hSplitter = new QSplitter;
     m_sliderAmplitude = new QxtSpanSlider(Qt::Vertical);
 
-
-    /*m_modelOneWave = new ModelOneWave();
-    m_tableViewOneWavenfo = new QTableView;
-    m_tableViewOneWavenfo->setItemDelegateForColumn(0,new CheckBoxDelegate());
-    m_tableViewOneWavenfo->setItemDelegateForColumn(2,new ColorDelegate());
-    m_tableViewOneWavenfo->setModel(m_modelOneWave);*/
-
-
-    /*QString valueRange = item->curve()->desc()->param("val_range");
-    int f_minimum = valueRange.left(valueRange.indexOf("..")).toDouble() - 20;
-    int f_maximum = valueRange.mid(valueRange.indexOf("..") + 2).toDouble();*/
     m_sliderAmplitude->setRange(-1000,1000);
     m_sliderAmplitude->setSpan(m_sliderAmplitude->minimum(),m_sliderAmplitude->maximum());
 
     m_sliderFrequency = new QxtSpanSlider(Qt::Horizontal);
-    m_sliderFrequency->setRange(-10,5010);
+    m_sliderFrequency->setRange(-10,500);
     m_sliderFrequency->setSpan(m_sliderFrequency->minimum(),m_sliderFrequency->maximum());
 
     m_vLayout = new QVBoxLayout;
@@ -72,13 +61,14 @@ OneWaveWidget::OneWaveWidget()
     connect(m_sliderFrequency,&QxtSpanSlider::spanChanged,this,&OneWaveWidget::changeHorizontalCoord);
 
     m_updateTimer = std::make_unique<QTimer>();
-    m_updateTimer->start(10);
+    m_updateTimer->start(100);
     connect(m_updateTimer.get(), &QTimer::timeout, this, &OneWaveWidget::redraw);
 }
 
 void OneWaveWidget::
 setScan(std::shared_ptr<Scan> scan) {
     m_scan = scan;
+    m_chartView->setPeakMagnitude(m_scan->parameters.peakMagnitudeLimit);
 }
 
 OneWaveWidget::
@@ -98,7 +88,7 @@ void OneWaveWidget::changeVerticalCoord(int downValue ,int upValue){
 }
 
 void OneWaveWidget::changeHorizontalCoord(int downValue ,int upValue){
-    xAxis->setRange(downValue / 1000.0, upValue / 1000.0);
+    xAxis->setRange(downValue , upValue );
 }
 
 void OneWaveWidget::redraw(){
@@ -107,12 +97,11 @@ void OneWaveWidget::redraw(){
     QList<QPointF> points;
     auto sampl = m_scan->originalScan.sound.samples;
     //QVector<QPoint> points{ 5000 < sampl.size() ? 5000 : sampl.size() };
-
+    //int samplPerSecond = m_scan->originalScan.sound.sampleRate;
     int x = 0;
-    int indBegin = 5000 < sampl.size() ? 5000 : sampl.size();
-    for (int ind = indBegin; ind > 0; --ind) {
-        points.push_back({ QPointF(float(indBegin - ind) * 0.001, sampl[sampl.size() - ind]) });
+    int indBegin = 50000 < sampl.size() ? 50000 : sampl.size();
+    for (int ind = indBegin, x = 0; ind > 0; --ind /*-= 100*/) {
+        points.push_back({ QPointF(float(x++) * 0.01, sampl[sampl.size() - ind]) });
     }
-
     update(std::move(points));
 }

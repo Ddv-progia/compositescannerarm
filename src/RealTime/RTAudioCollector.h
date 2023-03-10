@@ -11,7 +11,7 @@ namespace realtime {
 			Sound *m_sound = nullptr;
 	public:
 		RTAudioCollector();
-		void start(int sampleRate, Sound *sound);
+		void start( Sound *sound);
 		void stop();
 		void dataReady(const uts::devtalk::ByteSeq& data, const ::Ice::Current & = ::Ice::Current()) override;
 		~RTAudioCollector();

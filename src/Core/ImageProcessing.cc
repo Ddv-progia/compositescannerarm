@@ -179,10 +179,9 @@ namespace improc
 }
 
 
-//////////////////////
 void PlotDefectsModel::addDefect(const std::vector<cv::Point>& cvContour)
 {
-  using namespace boost;
+  /*using namespace boost;
 
   double area;
   geometry::model::d2::point_xy<float> center;
@@ -220,6 +219,7 @@ void PlotDefectsModel::addDefect(const std::vector<cv::Point>& cvContour)
   }
 
   defects.push_back(Defect(contour, area, std::abs(top - bottom), std::abs(right - left),QPointF(center.x(),center.y())));
+  */
 }
 
 PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, DefectsView& defectView, QObject* parent): scan(scan), QObject(parent)

@@ -32,8 +32,6 @@
 #include "Gui/ProcessingParametersDialog.hh"
 #include "Gui/ScanControlDialog.hh"
 #include "Gui/ScanDisplayWindow.hh"
-//#include "RealTime/RTAudioCollector.h"
-//#include "RealTime/RTHead.h"
 #include "RealTime/RTScanCollector.h"
 #include "Core/ScanCollector.hh"
 
@@ -42,13 +40,16 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
   processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters")
 {
   ui.setupUi(this);
-  ui.backgroundTasksBox->hide();
-  ui.mdiArea->addSubWindow(new realtime::RTScanCollector{rtCtxt});
-  updateTimer = new QTimer(this);
-  updateTimer->start(1000);
   
   connectSignals();
   loadConfiguration();
+
+  ui.mdiArea->addSubWindow(new realtime::RTScanCollector{ rtCtxt, *processingParameters });
+  ui.centralwidget->layout()->setMargin(0);
+
+  updateTimer = new QTimer(this);
+  updateTimer->start(1000);
+
 }
 
 MainWindow::~MainWindow()
@@ -82,7 +83,7 @@ void MainWindow::connectSignals()
   connect(ui.copyAction, SIGNAL(triggered()), this, SLOT(editCopy()));
   connect(ui.pasteAction, SIGNAL(triggered()), this, SLOT(editPaste()));
 
-  connect(ui.setZeroCoodinateButton, SIGNAL(clicked()), this, SLOT(setTechnologicalZero()));
+  //connect(ui.setZeroCoodinateButton, SIGNAL(clicked()), this, SLOT(setTechnologicalZero()));
 
   connect(&taskExecutor, SIGNAL(started(const QString&, int)), this, SLOT(taskStarted(const QString&, int)), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(stageStarted(const QString&, int)), this, SLOT(taskStageStarted(const QString&, int)), Qt::QueuedConnection);
@@ -120,36 +121,36 @@ void MainWindow::setTechnologicalZero()
 
 void MainWindow::taskStarted(const QString& name, int stageCount)
 {
-  ui.backgroundTasksBox->show();
-  ui.taskLabel->setText(name);
-  ui.taskProgressBar->setMaximum(stageCount);
-  ui.taskProgressBar->setValue(0);
+  //ui.backgroundTasksBox->show();
+  //ui.taskLabel->setText(name);
+  //ui.taskProgressBar->setMaximum(stageCount);
+  //ui.taskProgressBar->setValue(0);
   taskProgressed = false;
 }
 
 void MainWindow::taskStageStarted(const QString& name, int maximumValue)
 {
-  ui.stageLabel->setText(name);
-  ui.stageProgressBar->setMaximum(maximumValue);
-  ui.stageProgressBar->setValue(0);
-  if (taskProgressed)
-    ui.taskProgressBar->setValue(ui.taskProgressBar->value() + 1);
-  taskProgressed = true;
+  //ui.stageLabel->setText(name);
+  //ui.stageProgressBar->setMaximum(maximumValue);
+  //ui.stageProgressBar->setValue(0);
+  //if (taskProgressed)
+    //ui.taskProgressBar->setValue(ui.taskProgressBar->value() + 1);
+  //taskProgressed = true;
 }
 
 void MainWindow::taskStageProgressed()
 {
-  ui.stageProgressBar->setValue(ui.stageProgressBar->value() + 1);
+  //ui.stageProgressBar->setValue(ui.stageProgressBar->value() + 1);
 }
 
 void MainWindow::taskFinished()
 {
-  ui.backgroundTasksBox->hide();
+  //ui.backgroundTasksBox->hide();
 }
 
 void MainWindow::taskTerminated(const QString& errorMessage)
 {
-  ui.backgroundTasksBox->hide();
+  //ui.backgroundTasksBox->hide();
   QMessageBox::critical(this, "Ошибка", errorMessage);
 }
 

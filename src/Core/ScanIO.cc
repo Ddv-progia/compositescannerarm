@@ -80,20 +80,20 @@ namespace {
 
 void saveToTempDirectory(const std::vector<SourceScanLine>& lines)
 {
-  auto dir = QDir::current();
+  /*auto dir = QDir::current();
   if(dir.exists("temp"))
     dir.rmdir("temp");
   dir.mkdir("temp");
   dir.cd("temp");
   Scan scan;
   scan.lines = lines;
-  saveToWaveDirectory(dir.absolutePath(), scan);
+  saveToWaveDirectory(dir.absolutePath(), scan);*/
 }
 
 
 void saveToWaveDirectory(const QString& dirName, const Scan& scan)
 {
-  namespace urb = uts::reflection::binding;
+  /*namespace urb = uts::reflection::binding;
 
   //информация о сырых данных хранится в отдельном xml файле. 
   //впоследствии сборка осуществляется согласно этому файлу
@@ -106,5 +106,5 @@ void saveToWaveDirectory(const QString& dirName, const Scan& scan)
   }
 
   PersistentVariable<RawScanInfo> rawScan(QDir(dirName).filePath("line.xml").toStdString(), "Raw-Scan");
-  rawScan.save();
+  rawScan.save();*/
 }

@@ -12,11 +12,11 @@ RTAudioCollector()
 }
 
 void realtime::RTAudioCollector::
-start(int sampleRate,Sound *sound) {
+start(Sound *sound) {
     m_sound = sound;
     try {
         if (devices::audioDataCollector)
-            devices::audioDataCollector->start(sampleRate, 1);
+            devices::audioDataCollector->start(sound->sampleRate, 1);
     }
     catch (...) {
         std::cout << "AudioDataCollector ready or not found \n";
@@ -37,7 +37,7 @@ stop() {
 
 void realtime::RTAudioCollector::
 dataReady(const ::uts::devtalk::ByteSeq& data, const ::Ice::Current&) {
-    std::vector<float> floatData;
+    /*std::vector<float> floatData;
     floatData.resize((data.size() - sizeof(LONGLONG) ) / sizeof(float) );
     auto pos = data.data();
     for (auto &floatVal : floatData) {
@@ -46,8 +46,19 @@ dataReady(const ::uts::devtalk::ByteSeq& data, const ::Ice::Current&) {
     }
     LONGLONG timestamp;
     memcpy(&timestamp, pos, sizeof(LONGLONG));
+    std::cout << m_sound->samples.capacity() << " " << m_sound->samples.size() << "\n";
     if (m_sound)
-        m_sound->samples.insert(m_sound->samples.end(), floatData.begin(), floatData.end());
+        m_sound->samples.insert(m_sound->samples.end(), floatData.begin(), floatData.end());*/
+    auto size = m_sound->samples.size();
+    auto sizeRes = (data.size() - sizeof(LONGLONG)) / sizeof(float);
+    m_sound->samples.resize(size + sizeRes);
+    memcpy(m_sound->samples.data() + size, data.data(), sizeRes * sizeof(float));
+
+    //std::cout << m_sound->samples.capacity() << " " << m_sound->samples.size() << "\n";
+    /*auto sizeRes = (data.size() - sizeof(LONGLONG)) / sizeof(float);
+    std::vector<float> floatData{ sizeRes };
+    floatData.resize(sizeRes);
+    memcpy(floatData.data(), data.data(), sizeRes * sizeof(float));*/
     emit newData();
 }
 

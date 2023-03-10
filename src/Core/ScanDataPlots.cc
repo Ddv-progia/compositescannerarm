@@ -314,18 +314,18 @@ unsigned int
 SourceScanLineCategory::
 getGroupCount() const
 {
-  return scan->lines.size();
+    return 0;// scan->lines.size();
 }
 
 std::shared_ptr<uts::plotting::AbstractItemGroup> 
 SourceScanLineCategory::
 getGroup(unsigned int idx) const
 {
-  if (idx < scan->lines.size()) {
+  /*if (idx < scan->lines.size()) {
     return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx]);
   } else {
     BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Index(idx));
-  }
+  }*/
 }
 
 unsigned int 
@@ -456,16 +456,16 @@ ScanDataRangesModel::
 getGroupCount() const 
 {
   return 0;
-    scan->lines.size()
+    /*scan->lines.size()
     + boost::accumulate(scan->ranges | adp::transformed(p::size(pa::_1)), 0)
-    ;
+    ;*/
 }
 
 std::shared_ptr<uts::plotting::AbstractItemGroup>
 ScanDataRangesModel::
 getGroup(unsigned idx) const
 {
-  if (idx < scan->lines.size()) {
+  /*if (idx < scan->lines.size()) {
     return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx]);
   } else {
     idx -= scan->lines.size();
@@ -480,7 +480,7 @@ getGroup(unsigned idx) const
         QString("line %1 range %2 [ %3 %4 ]").arg(ir + 1).arg(idx + 1).arg(scan->ranges[ir][idx].range.from).arg(scan->ranges[ir][idx].range.to), 
         scan->ranges[ir][idx]);
     }
-  }
+  }*/
 
   BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Index(idx));
 }
