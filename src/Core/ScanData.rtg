@@ -6,6 +6,7 @@ module Core.ScanData is
 
 import Builtin
 import Std.Vector
+import Std.List
 import Std.String
 
 native MultiArray(X)  is "boost::multi_array<${X}, 2>" header "boost/multi_array.hpp"
@@ -283,8 +284,6 @@ end
 struct Peak is
   beginIndex : Unsigned_Integer
   endIndex : Unsigned_Integer
-  x : Double_Precision_Real= { 0.0 }
-  y : Double_Precision_Real= { 0.0 }
   z : Double_Precision_Real= { 0.0 }
 end
 
@@ -301,11 +300,10 @@ end
 
 struct Scan is 
 	originalScan						:	OriginalScanData
-	--lines 								:	Std::Vector(SourceScanLine)
 	parameters 							:	ProcessingParameters
 
 	trimmedLines 						:	Std::Vector(SourceScanLineSlice)
-	peaks 								:	Std::Vector(PeaksLine)
+	peaks 								:	Std::Vector(Std::Vector(Std::List(Peak)))
 	ranges 								:	Std::Vector(Std::Vector(RangeScanLine))
 	commonRanges 						:	Std::Vector(Std::Vector(RangeScanLine))
 

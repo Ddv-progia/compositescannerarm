@@ -44,9 +44,8 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
   connectSignals();
   loadConfiguration();
 
-  ui.mdiArea->addSubWindow(new realtime::RTScanCollector{ rtCtxt, *processingParameters });
   ui.centralwidget->layout()->setMargin(0);
-
+  newScript();
   updateTimer = new QTimer(this);
   updateTimer->start(1000);
 
@@ -156,10 +155,14 @@ void MainWindow::taskTerminated(const QString& errorMessage)
 
 void MainWindow::newScript()
 {
-  auto ew = new EditorWindow;
+    auto ew = new realtime::RTScanCollector{ m_rtCtxt, *processingParameters };
+    ew->setAttribute(Qt::WA_DeleteOnClose, true);
+    ui.mdiArea->addSubWindow(ew);
+    ew->showMaximized(); 
+  /*auto ew = new EditorWindow;
   ew->setAttribute(Qt::WA_DeleteOnClose, true);
   ui.mdiArea->addSubWindow(ew);
-  ew->showMaximized();
+  ew->showMaximized();*/
 }
 
 void MainWindow::open()

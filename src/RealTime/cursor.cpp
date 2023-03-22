@@ -7,7 +7,7 @@
 Cursor::
 Cursor(int width, int height)
 : m_width(width) , m_height(height){
-	m_pixelpermm = (QGuiApplication::primaryScreen()->physicalDotsPerInch() / 25.4 ) * 2;
+	m_pixelpermm = (QGuiApplication::primaryScreen()->physicalDotsPerInch() / 25.4 );
 	m_width *= m_pixelpermm;
 	m_height *= m_pixelpermm;
 }
@@ -32,7 +32,6 @@ boundingRect() const {
 void Cursor::
 paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
 	painter->setPen({ Qt::red, 1 * m_pixelpermm });
-	//painter->drawEllipse(m_x - 5, m_y - 5, 10 , 10);
 	painter->drawPoint(m_x, m_y);
 	painter->drawRect(boundingRect());
 }

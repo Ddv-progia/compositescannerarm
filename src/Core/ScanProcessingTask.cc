@@ -643,7 +643,7 @@ void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanL
 
 void ScanProcessingTask::operator() ()
 {
-  if (rawLines.empty()) {
+  /*if (rawLines.empty()) {
     emit finished();
     return;
   }
@@ -658,37 +658,10 @@ void ScanProcessingTask::operator() ()
   switch(scan->processingStage){
   default:
   case ScanProcessingStage::RawDataObtained:
-    scan->currentRange = 0;
-    scan->lines = rawLines;
-
-    emit stageStarted("Выравнивание строк - 1", scan->lines.size());
-    scan->trimmedLines.clear();
-
-    //дополнение первой строки до размера следующей
-    if (scan->lines.size() > 1) {
-//*******
-      size_t j = 1;
-      if (scan->lines.size() > 2) {
-          j = 2;
-      }
-      auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
-      if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
-          scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
-        }
-      else {
-          scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
-      }
-//*******
-    }
-
-    boost::transform(scan->lines,
-                     std::back_inserter(scan->trimmedLines),
-                     p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));
     scan->processingStage = ScanProcessingStage::LinesTrimmed;
-
   case ScanProcessingStage::LinesTrimmed:
-    emit stageStarted("Детектирование пиков", scan->lines.size());
-    scan->peaks.clear();
+    emit stageStarted("Детектирование пиков", scan->originalScan.sound.samples.size());
+    /*scan->peaks.clear();
     boost::transform(scan->trimmedLines, 
                      std::back_inserter(scan->peaks),
                      p::bind(&ScanProcessingTask::findPeaks, this, pa::_1, 
@@ -698,13 +671,13 @@ void ScanProcessingTask::operator() ()
                              static_cast<unsigned int>(params.peakPauseCount)));
      scan->processingStage = ScanProcessingStage::PeaksDetected;
   case ScanProcessingStage::PeaksDetected:
-    emit stageStarted("Нормализация направления сканирования", scan->lines.size());
+    emit stageStarted("Нормализация направления сканирования", scan->originalScan.sound.samples.size());
     boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::normalizeDirection, this, pa::_1));
     scan->processingStage = ScanProcessingStage::DirectionNormalized;
   case ScanProcessingStage::DirectionNormalized:
-    emit stageStarted("Разделение на частотные диапазоны",scan->lines.size());
+    emit stageStarted("Разделение на частотные диапазоны", scan->originalScan.sound.samples.size());
     scan->spec.clear();
-    v::transform([this](const SourceScanLineSlice& line, const PeaksLine& peaksLine) { return this->splitFrequencyRanges(line, peaksLine.peaks); }, 
+    /*v::transform([this](const SourceScanLineSlice& line, const PeaksLine& peaksLine) { return this->splitFrequencyRanges(line, peaksLine.peaks); }, 
                   std::back_inserter(scan->spec),
                   begin(scan->trimmedLines), end(scan->trimmedLines),
                   begin(scan->peaks));
@@ -729,9 +702,9 @@ void ScanProcessingTask::operator() ()
     selectRangesFromSpec(*scan);
     scan->processingStage = ScanProcessingStage::RangesSelected;
   case ScanProcessingStage::RangesSelected:
-    emit stageStarted("Выравнивание строк - 2", 2*scan->lines.size());
-    alignLines(scan->peaks,scan->ranges);
-    alignLines(scan->peaks,scan->commonRanges);
+    emit stageStarted("Выравнивание строк - 2", scan->originalScan.sound.samples.size());
+    //alignLines(scan->peaks,scan->ranges);
+    //alignLines(scan->peaks,scan->commonRanges);
     scan->processingStage = ScanProcessingStage::LinesAligned;
   case ScanProcessingStage::LinesAligned:
     emit stageStarted("Нормализация координат пиков", scan->parameters.ranges.size()+scan->commonRanges.front().size());
@@ -777,5 +750,5 @@ void ScanProcessingTask::operator() ()
   }
 
   emit finished();
-  emit newScanReady(scan);
+  emit newScanReady(scan);*/
 }

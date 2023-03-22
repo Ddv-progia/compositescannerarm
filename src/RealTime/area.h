@@ -8,16 +8,25 @@
 
 class Area : public QThread, public QGraphicsItem
 {
+    struct PixelInfo{
+        int x;
+        int y;
+    };
     float m_x = 0;
     float m_y = 0;
     QImage* m_curentPixmap, * m_doublePixmap;
-    boost::sync_queue < QPoint > m_srcCoords;
+    std::shared_ptr<Scan> m_scan = nullptr;
+    boost::sync_queue < PixelInfo > m_srcCoords;
+    int m_width, m_height;
     double m_pixelpermm = 1;
     void virtual run();
     void swapPixMap();
+    float max = 0;
+    float min = 0;
 public:
     Area(int width , int height);
     ~Area();
+    void setScan(std::shared_ptr<Scan> scan);
     void drawPoint(int x, int y);
     void clear();
     QRectF boundingRect() const override;

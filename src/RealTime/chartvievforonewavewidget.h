@@ -16,7 +16,6 @@ class ChartViewForOneWaveWidget : public QChartView
     QLineSeries* m_upSeries = nullptr;
     QLineSeries* m_downSeries = nullptr;
 
-    bool m_isCreatedSeries = false;
     bool m_flagMousePress;
 public:
     ChartViewForOneWaveWidget();

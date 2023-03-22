@@ -4,6 +4,7 @@
 
 #include "chartvievforonewavewidget.h"
 #include "qxtspanslider.h"
+#include <iostream>
 
 
 OneWaveWidget::OneWaveWidget()
@@ -69,6 +70,7 @@ void OneWaveWidget::
 setScan(std::shared_ptr<Scan> scan) {
     m_scan = scan;
     m_chartView->setPeakMagnitude(m_scan->parameters.peakMagnitudeLimit);
+   
 }
 
 OneWaveWidget::

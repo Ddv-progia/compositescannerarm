@@ -369,30 +369,6 @@ void PeakSpectrogramPlot::showColumnOnYPlot(float time)
 					ffts[i][j] = ((ffts[i][j] - meanData) / (3 * sigmaData));
 				}
 			}
-			//*******	
-			
-			////*******	
-			//Нормализуем B-скан по другому направлению
-			// 
-			//float meanData = 0;
-			//float sigmaData;
-			//float kvadro;
-			//for (auto i = 0; i < peaks.size() - 2; i++) {
-			//	meanData = 0;
-			//	sigmaData = 0;
-			//	for (auto j = 0; j < fftOutputLength; j++) {
-			//		meanData += (ffts[i][j] / fftOutputLength);
-			//	}
-			//	for (auto j = 0; j < fftOutputLength; j++) {
-			//		kvadro = ffts[i][j] - meanData;
-			//		sigmaData += (kvadro * kvadro) / (fftOutputLength- 1);
-			//	}
-			//	sigmaData = std::sqrtf(sigmaData);
-			//	for (auto j = 0; j < fftOutputLength; j++) {
-			//		ffts[i][j] = ((ffts[i][j] - meanData) / (3 * sigmaData));
-			//	}
-			//}
-			////*******	
 		   
 
 		    auto plot = new PeakSpectrogramPlot(new SpectorogramData(std::move(ffts), sampleRate, fftInputLength, fftInputLength),
@@ -401,18 +377,6 @@ void PeakSpectrogramPlot::showColumnOnYPlot(float time)
 											    .arg(dlg.getCurveName()),peaks.size()-2,processingParameters.colorStopsList);
 			plot->setWindowFlags(Qt::Window);
 		    plot->show();
-
-
-	  /*
-		    QVector<qreal> frequency;
-		    double step = 48000.0/fftOutputLength;
-		    for(int i = 0; i<fftOutputLength; i++){
-			  frequency.push_back(i*step);
-		    }
-		    auto phase = new PhaseSpectorgram(fftsc,frequency);
-      
-		    connect(phase,SIGNAL(positionChanged(int)),plot,SLOT(changeMarkerPosition(int)));
-		    phase->show();*/
 		  }
 	  }
 	}

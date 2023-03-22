@@ -10,8 +10,8 @@ class Area;
 class FieldWidget : public QGraphicsView
 {
     Q_OBJECT
-    const int WIDTH = 100;
-    const int HEIGHT = 10;
+    int m_width;
+    int m_height;
     QGraphicsScene* m_scene;
     Cursor* m_cursor;
     Area* m_area;
@@ -19,16 +19,19 @@ class FieldWidget : public QGraphicsView
     std::unique_ptr<QTimer> m_updateTimer;
     std::unique_ptr<QTimer> m_findPeakTimer;
 
-    int m_curIndex = 0;
+    uint m_curIndex = 0;
+    size_t m_numArea = 0;
 
 public:
-    FieldWidget();
+    FieldWidget(int width = 500,int height = 500);
     ~FieldWidget();
     void setScan(std::shared_ptr<Scan> scan);
+    void setNumArea(size_t numArea);
 
 public slots:
     void timeout();
     void findPeak();
+    void changeMode(int btn, bool value);
 };
 
 #endif // FIELDWIDGET_H

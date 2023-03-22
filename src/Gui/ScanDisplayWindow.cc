@@ -409,7 +409,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
 std::vector<std::vector<float>> ScanDisplayWindow::getPeaksFromRect(const QRectF& rect)
 {
   std::vector<std::vector<float>> samples;
-  auto beginPoint = pointIndexes(rect.topLeft());
+  /*auto beginPoint = pointIndexes(rect.topLeft());
   auto endPoint = pointIndexes(rect.bottomRight());
 
   std::size_t startIndex = scan->normalizedRanges.begin()->beginIndex;
@@ -430,7 +430,7 @@ std::vector<std::vector<float>> ScanDisplayWindow::getPeaksFromRect(const QRectF
       }
       samples.push_back(peakSamples);
     }
-  }
+  }*/
   return samples;
 }
 
@@ -1271,7 +1271,7 @@ void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, Scan
   else
     scan->processingStage = ScanProcessingStage::RawDataObtained;
   factory.startNewScan(params);
-  for (auto const & l : scan->lines) factory.addRangeScanLine(l);
+  //for (auto const & l : scan->lines) factory.addRangeScanLine(l);
   refreshWindow();
 }
 

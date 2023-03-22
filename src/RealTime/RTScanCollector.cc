@@ -5,6 +5,8 @@
 #include <array>
 #include <QtWidgets/qboxlayout.h>
 
+bool realtime::RTScanCollector::m_isStarted = false;
+
 realtime::RTScanCollector::
 RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters)
     : m_rtCtxt(trCtxt), m_parameters(parameters)
@@ -14,85 +16,74 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters)
     
     setLayout(mainLayout);
     m_oneWave = new OneWaveWidget();
-    m_field = new FieldWidget();
+    m_field = new FieldWidget(WIDTH, HEIGHT);
     splitter->addWidget(m_oneWave);
     splitter->addWidget(m_field);
     mainLayout->addWidget(splitter);
 
-    if(auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead")))
-        connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
-    if(auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector")))
-        connect(col.get(), &realtime::RTAudioCollector::newData, this, &realtime::RTScanCollector::audioData);
+    m_scan = std::make_shared<Scan>();
+    m_scan->parameters = m_parameters;
+    m_scan->originalScan.sound.sampleRate = SOUDS_SAMPLE_RATE;
+    m_scan->originalScan.sound.samples.reserve(m_scan->originalScan.sound.sampleRate * SEC_PER_MINUTE * MAXIMUM_TIME);
+    m_scan->originalScan.trajectory.sampleRate = HEAD_SAMPLE_RATE;
+    m_scan->originalScan.trajectory.pos.reserve(m_scan->originalScan.trajectory.sampleRate * SEC_PER_MINUTE * MAXIMUM_TIME);
+
+    m_oneWave->setScan(m_scan);
+    m_field->setScan(m_scan);
+
+
+
 }
 
 void realtime::RTScanCollector::
 start() {
-    m_scan = std::make_shared<Scan>();
-    m_scan->parameters = m_parameters;
-    m_scan->originalScan.sound.samples.reserve(1500000000);
-    m_scan->originalScan.sound.sampleRate = 100000;
-    m_oneWave->setScan(m_scan);
-    m_field->setScan(m_scan);
-    
+    if (m_isStarted)
+        return;
     if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
-        //disconnect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
-        //connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
-        m_shift.is_correct = false;
-        head->start(10);
+        connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
+        head->start(m_scan->originalScan.trajectory.sampleRate);
     }
-    if (auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector")))
+    if (auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector"))) {
+        connect(col.get(), &realtime::RTAudioCollector::newData, this, &realtime::RTScanCollector::audioData);
         col->start(&m_scan->originalScan.sound);
-}
-
-void realtime::RTScanCollector::
-pause() {
-    
+    }
+    m_isThisStarted = m_isStarted = true;
 }
 
 void realtime::RTScanCollector::
 stop() {
-    if (auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector")))
+    if (!m_isThisStarted)
+        return;
+    if (auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector"))) {
+        disconnect(col.get(), &realtime::RTAudioCollector::newData, this, &realtime::RTScanCollector::audioData);
         col->stop();
-    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead")))
+    }
+    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
+        disconnect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
         head->stop();
+    }
+    m_isStarted = false;
 }
 
-void realtime::RTScanCollector::
-calcShift(float x, float y, float z) {
-    static bool read = false;
-    if (read)
-        return;
-    ~read;
-    m_shift.x = -x;
-    m_shift.y = -y;
-    m_shift.z = -z;
-    headData(x, y, z);
-    //m_scan->originalScan.sound.samples.clear();
-    
-    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
-        disconnect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::calcShift);
-        connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
-    }
-}
 void realtime::RTScanCollector::
 headData(float x, float y, float z) {
     if (!m_shift.is_correct) {
         m_shift.is_correct = true;
-        m_shift.x = -x;
-        m_shift.y = -y;
+        m_shift.x = (WIDTH / 2) - x;
+        m_shift.y = (HEIGHT / 2) - y;
         m_shift.z = -z;
         m_scan->originalScan.sound.samples.clear();
     }
     m_scan->originalScan.trajectory.pos.push_back({x + m_shift.x,y + m_shift.y,z + m_shift.z, 0, 0});
-    //std::cout << x << ":" << y << ":" << z << '\n';
 }
 
 void realtime::RTScanCollector::
 audioData() {
-    //std::cout << "dataSize : " << m_scan->originalScan.sound.samples.size() << '\n';
+    //std::cout << "dataSize : " << m_scan->originalScan.sound.samples.size() << " "
+       // << "dataSize : " << m_scan->originalScan.trajectory.pos.size() << '\n';
 }
 
 realtime::RTScanCollector::
 ~RTScanCollector() {
-
+    stop();
 }

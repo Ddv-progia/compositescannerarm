@@ -326,6 +326,7 @@ getGroup(unsigned int idx) const
   } else {
     BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Index(idx));
   }*/
+    return nullptr;
 }
 
 unsigned int 

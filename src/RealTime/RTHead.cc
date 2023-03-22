@@ -9,7 +9,7 @@ realtime::RTHead::
 RTHead() : RTReceiverI("APLHead"){}
 
 void realtime::RTHead::
-start(int periodMs) {
+start(int sampleRate) {
     if (m_isStarted.load(std::memory_order_seq_cst))
         return;
 
@@ -23,7 +23,7 @@ start(int periodMs) {
         catch (...) {
             std::cout << "APLHead not found" << '\n';
         }
-        }, devices::head, periodMs);
+        }, devices::head, 1000 / sampleRate);
     m_thread.detach();
 }
 

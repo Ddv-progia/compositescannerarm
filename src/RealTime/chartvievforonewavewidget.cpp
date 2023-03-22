@@ -29,10 +29,23 @@ ChartViewForOneWaveWidget::ChartViewForOneWaveWidget()
 
 void ChartViewForOneWaveWidget::
 setPeakMagnitude(double magnitude) {
-    if(m_upSeries)
-        m_upSeries->replace(QVector<QPointF>{ { 0, magnitude }, { 5000,magnitude }});
-    if(m_downSeries)
-        m_downSeries->replace(QVector<QPointF>{ { 0, -magnitude }, { 5000,-magnitude }});
+    if (!m_upSeries) {
+        m_upSeries = new QLineSeries();
+        m_upSeries->setPen(QPen(Qt::green, 2));
+        chart()->addSeries(m_upSeries);
+        chart()->setAxisX(chart()->axisX(), m_upSeries);   // Назначить ось xAxis, осью X для diagramA
+        chart()->setAxisY(chart()->axisY(), m_upSeries);
+    }
+    
+    if (!m_downSeries) {
+        m_downSeries = new QLineSeries();
+        m_downSeries->setPen(QPen(Qt::green, 2));
+        chart()->addSeries(m_downSeries);
+        chart()->setAxisX(chart()->axisX(), m_downSeries);   // Назначить ось xAxis, осью X для diagramA
+        chart()->setAxisY(chart()->axisY(), m_downSeries);
+    }
+    m_downSeries->replace(QVector<QPointF>{ { 0, -magnitude }, { 5000,-magnitude }});
+    m_upSeries->replace(QVector<QPointF>{ { 0, magnitude }, { 5000, magnitude }});
 }
 void ChartViewForOneWaveWidget::
 updateLineInfo(QPointF point){
@@ -66,12 +79,12 @@ tr("Amp min: ") + QString::number(m_modelOneWave->minimum()) + " </div>"
 void ChartViewForOneWaveWidget::
 resizeEvent(QResizeEvent* event){
     
-    if (!m_isCreatedSeries) {
+    /*if (!m_isCreatedSeries) {
         m_isCreatedSeries = true;
         m_upSeries = new QLineSeries();
         m_downSeries = new QLineSeries();
-        m_upSeries->replace(QVector<QPointF>{ { 0, 0.5 }, { 5000,0.5 }});
-        m_downSeries->replace(QVector<QPointF>{ { 0, -0.5 }, { 5000,-0.5 }});
+        //m_upSeries->replace(QVector<QPointF>{ { 0, 0.5 }, { 5000,0.5 }});
+        //m_downSeries->replace(QVector<QPointF>{ { 0, -0.5 }, { 5000,-0.5 }});
         m_upSeries->setPen(QPen(Qt::green, 2));
         m_downSeries->setPen(QPen(Qt::green, 2));
         chart()->addSeries(m_upSeries);
@@ -80,7 +93,7 @@ resizeEvent(QResizeEvent* event){
         chart()->setAxisY(chart()->axisY(), m_upSeries);
         chart()->setAxisX(chart()->axisX(), m_downSeries);   // Назначить ось xAxis, осью X для diagramA
         chart()->setAxisY(chart()->axisY(), m_downSeries);
-    }
+    }*/
     QChartView::resizeEvent(event);
 }
 
