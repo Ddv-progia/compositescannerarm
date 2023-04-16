@@ -7,6 +7,7 @@
 #include <boost/range/algorithm/lower_bound.hpp>
 
 #include "Core/Qwt/RangeRasterData.hh"
+#include <qwt_interval.h>
 
 RangeRasterData::RangeRasterData(std::vector<std::vector<RangeScanLine>> const & data, int rangeN) : 
   beginX(std::numeric_limits<double>::min())
@@ -35,20 +36,14 @@ RangeRasterData::RangeRasterData(std::vector<std::vector<RangeScanLine>> const &
     if (minZIter != line.samples.end())
       minZ = std::min(minZ, *minZIter);
   }
-
-  setInterval(Qt::XAxis, QwtInterval(beginX, endX));
+  m_intervals.at(Qt::XAxis) = QwtInterval(beginX, endX);
 
   if (linesCoordinates.back() > linesCoordinates.front()) {
-    setInterval(Qt::YAxis, 
-      QwtInterval(linesCoordinates.front(), 
-                  linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2])));
+      m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.front(),linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]));
   } else {
-    setInterval(Qt::YAxis, 
-      QwtInterval(linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]),
-                  linesCoordinates.front()));
+      m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]),linesCoordinates.front());
   }
-
-  setInterval(Qt::ZAxis, QwtInterval(minZ, maxZ));
+  m_intervals.at(Qt::ZAxis) = QwtInterval(minZ, maxZ);
 }
 
 double RangeRasterData::value(double x, double y) const
@@ -64,4 +59,13 @@ double RangeRasterData::value(double x, double y) const
   auto ix = std::max(std::size_t(0), static_cast<std::size_t> ((x - beginX) / xStep));
   ix = std::min(ix, range[iy].samples.size() - 1);
   return range[iy].samples[ix];
+}
+
+QwtInterval RangeRasterData::interval(Qt::Axis axis) const {
+    try {
+        return m_intervals.at(axis);
+    }
+    catch (std::out_of_range exeption) {
+        return QwtInterval();
+    }
 }

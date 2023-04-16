@@ -22,7 +22,7 @@ string(REPLACE "/debug" "/debug:fastlink" CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBIN
 find_package(BerkeleyDB REQUIRED)
 find_package(Boost 1.68 COMPONENTS filesystem log log_setup program_options system thread unit_test_framework REQUIRED)
 find_package(FFTW3 REQUIRED)
-find_package(Qt5 REQUIRED Charts Core Gui Widgets Network Xml Sql PrintSupport Script ScriptTools )
+find_package(Qt6 REQUIRED Charts Core Gui Widgets Network Xml Sql PrintSupport)
 find_package(Qwt REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PugiXml REQUIRED)
@@ -42,9 +42,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_DEBUG_POSTFIX d)
 
-set(DEVTALK_BUILD_ASYNC ON CACHE BOOL "Build Microsoft Concurrency Runtime wrappers")
+set(DEVTALK_BUILD_ASYNC OFF CHE BOOL "Build Microsoft Concurrency Runtime wrappers")
 
-#INCLUDE(ZeroCSlice)
+INCLUDE(ZeroCSlice)
 
 add_subdirectory(libs/UCL)
 add_subdirectory(iface/DevTalk)

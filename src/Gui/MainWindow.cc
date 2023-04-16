@@ -16,7 +16,6 @@
 #include "Core/CommonXmlLoad.hh"
 #include "Core/CommonXmlSave.hh"
 #include "Core/ScanDataReflection.hh"
-#include "Core/ScriptSettingsReflection.hh"
 
 #include "Core/AssembleScanTask.hh"
 #include "Core/ConfigurationLocator.hh"
@@ -44,7 +43,7 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
   connectSignals();
   loadConfiguration();
 
-  ui.centralwidget->layout()->setMargin(0);
+  ui.centralwidget->layout()->setContentsMargins(0, 0, 0, 0);
   newScript();
   updateTimer = new QTimer(this);
   updateTimer->start(1000);
@@ -100,7 +99,8 @@ void MainWindow::loadConfiguration()
   namespace urb = uts::reflection::binding;
 
   try {
-    processingParameters.load();
+  
+    //processingParameters.load();
   } catch (...) {
     QMessageBox::critical(this, "Сбой загрузки настроек", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
   }
@@ -217,18 +217,18 @@ void MainWindow::openTechnological()
 
 void MainWindow::save()
 {
-  auto currentWidget = getCurrentMdiWidget();
+  /*auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
     ew->save(taskExecutor);
-  }
+  }*/
 }
 
 void MainWindow::saveAs()
 {
-  auto currentWidget = getCurrentMdiWidget();
+  /*auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
     ew->saveAs(taskExecutor);
-  }
+  }*/
 }
 
 void MainWindow::editUndo()
@@ -376,7 +376,7 @@ void MainWindow::saveTechnologicalParameters()
   namespace urb = uts::reflection::binding;
 
   try {
-    processingParameters.save();
+    //processingParameters.save();
   }
   catch (...) {
     QMessageBox::critical(this, "Сбой сохранения технологичесих параметров", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));

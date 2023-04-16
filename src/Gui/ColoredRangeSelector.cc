@@ -3,7 +3,7 @@
 #include <QLayout>
 #include <QLabel>
 #include <QKeyEvent>
-
+#include <qwt_interval.h>
 
 
 bool RangeView::eventFilter(QObject* watched, QEvent* event)

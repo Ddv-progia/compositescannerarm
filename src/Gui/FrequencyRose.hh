@@ -26,7 +26,7 @@ typedef boost::multi_array<double,2> DDArray;
 typedef std::vector<std::pair<FrequencyRange,DDArray>> RangedMultiArray;
 
 
-class FrequencyRosePoint: public QFrame //описание точки,хранит данные о диапазоне,соответствующем точке, уровне сигнала, координатах на плоскости
+class FrequencyRosePoint: public QFrame //РѕРїРёСЃР°РЅРёРµ С‚РѕС‡РєРё,С…СЂР°РЅРёС‚ РґР°РЅРЅС‹Рµ Рѕ РґРёР°РїР°Р·РѕРЅРµ,СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРј С‚РѕС‡РєРµ, СѓСЂРѕРІРЅРµ СЃРёРіРЅР°Р»Р°, РєРѕРѕСЂРґРёРЅР°С‚Р°С… РЅР° РїР»РѕСЃРєРѕСЃС‚Рё
 {
   enum PointState{Default,Selected};
 
@@ -70,7 +70,7 @@ public:
 
 
 
-class FrequencyRose: public QWidget	   //базовый класс розы
+class FrequencyRose: public QWidget	   //Р±Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ СЂРѕР·С‹
 {
   Q_OBJECT
   
@@ -101,13 +101,13 @@ public:
 };
 
 
-class MinMaxFrequencyRose: public FrequencyRose //роза минимумов и максимумов
+class MinMaxFrequencyRose: public FrequencyRose //СЂРѕР·Р° РјРёРЅРёРјСѓРјРѕРІ Рё РјР°РєСЃРёРјСѓРјРѕРІ
 {
   Q_OBJECT
   std::map<double,FrequencyRosePoint*> maxPoints;
   std::map<double,FrequencyRosePoint*> minPoints;
 
-  void fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>& pointList);
+  void fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>* pointList);
 public:
   MinMaxFrequencyRose(RangedMultiArray data, double factor, std::vector<ColorStop>& colorList,QWidget* parent = 0);
   void paintEvent(QPaintEvent* event);
@@ -115,7 +115,7 @@ public:
 
 ///
 
-class AverageFrequencyRose: public FrequencyRose //роза средних значений по минимумам и максимумам
+class AverageFrequencyRose: public FrequencyRose //СЂРѕР·Р° СЃСЂРµРґРЅРёС… Р·РЅР°С‡РµРЅРёР№ РїРѕ РјРёРЅРёРјСѓРјР°Рј Рё РјР°РєСЃРёРјСѓРјР°Рј
 {
   Q_OBJECT
   std::map<double,FrequencyRosePoint*> points;
@@ -133,12 +133,12 @@ class SplitedAverageFrequencyRose: public FrequencyRose
   std::map<double,FrequencyRosePoint*> negativePoints;
 
 public:
-  SplitedAverageFrequencyRose(RangedMultiArray data,double positiveThreshold,double negativeThreshhold, double factor, std::vector<ColorStop>& colorList,QWidget* parent = 0);
+  SplitedAverageFrequencyRose(const RangedMultiArray &data,double positiveThreshold,double negativeThreshhold, double factor, std::vector<ColorStop>& colorList,QWidget* parent = 0);
   void paintEvent(QPaintEvent* event);
 };
 
 
-class FrequencyRoseWidget:public QDialog //отображение окна с розой на экране, дополнительная информация
+class FrequencyRoseWidget:public QDialog //РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РѕРєРЅР° СЃ СЂРѕР·РѕР№ РЅР° СЌРєСЂР°РЅРµ, РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
 {
   Q_OBJECT
 

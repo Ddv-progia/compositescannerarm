@@ -30,7 +30,7 @@
 
 class ScanPlotDefectsMarker: public QwtPlotItem
 {
-  //отображает контуры дефектов поверх С-скана
+  //РѕС‚РѕР±СЂР°Р¶Р°РµС‚ РєРѕРЅС‚СѓСЂС‹ РґРµС„РµРєС‚РѕРІ РїРѕРІРµСЂС… вЂ”-СЃРєР°РЅР°
   std::vector<Defect> defects;
   std::vector<Defect*> selectedDefects;
 public:
@@ -43,10 +43,10 @@ public:
   }
   virtual int rtti() const override;
 
-  //рисует маску, используя переданный набор контуров, впоследствии маска используется в draw()
+  //СЂРёСЃСѓРµС‚ РјР°СЃРєСѓ, РёСЃРїРѕР»СЊР·СѓВ¤ РїРµСЂРµРґР°РЅРЅС‹Р№ РЅР°Р±РѕСЂ РєРѕРЅС‚СѓСЂРѕРІ, РІРїРѕСЃР»РµРґСЃС‚РІРёРё РјР°СЃРєР° РёСЃРїРѕР»СЊР·СѓРµС‚СЃВ¤ РІ draw()
   QImage buildMaskImage() const;
 
-  //выбор одного отдельного контура, выделение его на экране цветом
+  //РІС‹Р±РѕСЂ РѕРґРЅРѕРіРѕ РѕС‚РґРµР»СЊРЅРѕРіРѕ РєРѕРЅС‚СѓСЂР°, РІС‹РґРµР»РµРЅРёРµ РµРіРѕ РЅР° СЌРєСЂР°РЅРµ С†РІРµС‚РѕРј
   void selectContour(const Defect& defect);
   void removeSelection() {
     selectedDefects.clear();
@@ -174,7 +174,7 @@ private:
   Q_SLOT void setDefectsVisible(bool isVisible);
   Q_SLOT void showUserRange();
 
-  //черновая версия, нужен рефакторинг
+  //С‡РµСЂРЅРѕРІР°В¤ РІРµСЂСЃРёВ¤, РЅСѓР¶РµРЅ СЂРµС„Р°РєС‚РѕСЂРёРЅРі
   Q_SLOT void refreshClassificationParameters(std::vector<DefectType>& defects)
   {
 	  scan->parameters.defectClassification = defects;

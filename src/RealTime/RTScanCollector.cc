@@ -31,18 +31,16 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters)
     m_oneWave->setScan(m_scan);
     m_field->setScan(m_scan);
 
-
-
 }
 
 void realtime::RTScanCollector::
 start() {
     if (m_isStarted)
         return;
-    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
+    /*if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
         connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
         head->start(m_scan->originalScan.trajectory.sampleRate);
-    }
+    }*/
     if (auto col = std::dynamic_pointer_cast<realtime::RTAudioCollector>(m_rtCtxt.getRTDevice("AudioDataCollector"))) {
         connect(col.get(), &realtime::RTAudioCollector::newData, this, &realtime::RTScanCollector::audioData);
         col->start(&m_scan->originalScan.sound);
@@ -58,10 +56,10 @@ stop() {
         disconnect(col.get(), &realtime::RTAudioCollector::newData, this, &realtime::RTScanCollector::audioData);
         col->stop();
     }
-    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
+    /*if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
         disconnect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
         head->stop();
-    }
+    }*/
     m_isStarted = false;
 }
 
@@ -80,7 +78,7 @@ headData(float x, float y, float z) {
 void realtime::RTScanCollector::
 audioData() {
     //std::cout << "dataSize : " << m_scan->originalScan.sound.samples.size() << " "
-       // << "dataSize : " << m_scan->originalScan.trajectory.pos.size() << '\n';
+      //  << "dataSize : " << m_scan->originalScan.trajectory.pos.size() << '\n';
 }
 
 realtime::RTScanCollector::

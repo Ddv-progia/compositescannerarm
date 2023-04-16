@@ -206,13 +206,13 @@ public:
 
 	}
 
-    int DefectClassificationTableModel::columnCount(const QModelIndex&) const 
+    int columnCount(const QModelIndex&) const 
     {
 		//3 столбца под выбор алгоритма и диапазонов, столбец дефекта состоит из значения и коэффициента
 		return (3 + defects.size()*2);	
     }
 
-    int DefectClassificationTableModel::rowCount(const QModelIndex&) const 
+    int rowCount(const QModelIndex&) const 
     {
 	  size_t nParams = 0;
 	  //число уникальных параметров для дефектов. В простом случае предполагаем, 
@@ -225,7 +225,7 @@ public:
       return (2 + nParams);
     }
 
-    Qt::ItemFlags DefectClassificationTableModel::flags(const QModelIndex& index) const
+    Qt::ItemFlags flags(const QModelIndex& index) const
     {
 		if(index.row() == 1 || (index.row() == 0 && index.column() == 0))
 			return Qt::ItemIsEnabled;
@@ -233,7 +233,7 @@ public:
 			return Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable;
     }
 
-	QVariant DefectClassificationTableModel::data(const QModelIndex& index, int role) const
+	QVariant data(const QModelIndex& index, int role) const
   {
       switch (role) {
       case Qt::DisplayRole:

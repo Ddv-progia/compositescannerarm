@@ -5,7 +5,7 @@
 #include <QGraphicsTextItem>
 #include <QtCharts/QLineSeries>
 
-using namespace QtCharts;
+//using namespace QtCharts;
 
 class ChartViewForOneWaveWidget : public QChartView
 {

@@ -130,8 +130,8 @@ void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<st
     ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> forwardAcc;
     ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> backwardAcc;
 
-    for (auto& fp : forwardPeaks) forwardAcc(fp.front().beginIndex);
-    for (auto& bp : backwardPeaks) backwardAcc(bp.front().beginIndex);
+    for (const auto& fp : forwardPeaks) forwardAcc(fp.front().beginIndex);
+    for (const auto& bp : backwardPeaks) backwardAcc(bp.front().beginIndex);
 
     auto distance = ba::mean(backwardAcc) + ba::mean(forwardAcc);
 
@@ -513,7 +513,7 @@ RangeScanLine ScanProcessingTask::findAverageLine(std::vector<RangeScanLine>& ra
   result.subBegin = rangedLines.begin();
   result.subEnd = rangedLines.end();
 
-  for(auto& iter = rangedLines.begin();iter<rangedLines.end();iter++){
+  for(auto iter = rangedLines.begin();iter < rangedLines.end();iter++){
 	if(iter->range.from == rangedLines.front().range.from && iter->range.to == rangedLines.back().range.to) continue;
     if(floor(iter->range.from/500)==floor(range.from/500))
       result.subBegin = iter;

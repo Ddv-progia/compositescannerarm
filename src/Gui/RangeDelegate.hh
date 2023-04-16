@@ -8,12 +8,12 @@
 class DefectRangeDelegate : public QStyledItemDelegate
   {
     std::vector<FrequencyRange>& ranges;
-    std::vector<::Extremum>& extremums;
+    const std::vector<::Extremum>& extremums;
 
   public:
     //explicit DefectRangeDelegate(std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)
     explicit DefectRangeDelegate(std::vector<FrequencyRange>& ranges, QObject* parent = 0)
-      : QStyledItemDelegate(parent), ranges(ranges), extremums(std::vector<::Extremum>())
+        : QStyledItemDelegate(parent), ranges(ranges), extremums(std::vector<::Extremum>{})
     { }
 
     DefectRangeDelegate(std::vector<FrequencyRange>& ranges, std::vector < ::Extremum>& extremums, QObject* parent = 0)

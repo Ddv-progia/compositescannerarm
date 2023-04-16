@@ -25,20 +25,28 @@ namespace {
 ColumnPolynomialRasterData::ColumnPolynomialRasterData(const std::vector<Polynomial>& polynomials, unsigned int sampleRate, unsigned int lineCount)
   : polynomials(polynomials), sampleRate(sampleRate), lineCount(lineCount)
 { 
-  setInterval(Qt::XAxis, QwtInterval(0, double(polynomials.size() - 1) / double(lineCount)));
-  setInterval(Qt::YAxis, QwtInterval(0, lineCount - 1));
+    m_intervals.at(Qt::XAxis) = QwtInterval(0, double(polynomials.size() - 1) / double(lineCount));
+    m_intervals.at(Qt::YAxis) = QwtInterval(0, lineCount - 1);
 
-  ba::accumulator_set<double, ba::features<ba::tag::max, ba::tag::min>> zValueAcc;
-  for (auto const& poly : polynomials) {
-    for (double x = 0; x < lineCount; x++) {
-      zValueAcc(evalPoly(poly, x));
+    ba::accumulator_set<double, ba::features<ba::tag::max, ba::tag::min>> zValueAcc;
+    for (auto const& poly : polynomials) {
+        for (double x = 0; x < lineCount; x++) {
+            zValueAcc(evalPoly(poly, x));
+        }
     }
-  }
-
-  setInterval(Qt::ZAxis, QwtInterval(ba::min(zValueAcc), ba::max(zValueAcc)));
+    m_intervals.at(Qt::ZAxis) = QwtInterval(ba::min(zValueAcc), ba::max(zValueAcc));
 }
 
 double ColumnPolynomialRasterData::value(double x, double y) const
 {
   return evalPoly(polynomials[x], y);
+}
+
+QwtInterval ColumnPolynomialRasterData::interval(Qt::Axis axis) const {
+    try {
+        return m_intervals.at(axis);
+    }
+    catch (std::out_of_range exeption) {
+        return QwtInterval();
+    }
 }

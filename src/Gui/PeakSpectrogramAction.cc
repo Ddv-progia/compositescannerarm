@@ -18,6 +18,7 @@
 #include "Core/ScanAlgorithms.hh"
 #include "Gui/PeakSpectrogramAction.hh"
 #include "Gui/StandardColorMap.hh"
+#include <QtGui/qpen.h>
 
 #include <QPushButton>
 #include <QSplitter>
@@ -36,7 +37,7 @@
 //#include <opencv\cv.h>
 //#include <opencv\highgui.h>
 
-void FftToMagnitude::operator()(boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
+void FftToMagnitude::operator()(const boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
                                 double frequencyStep, double peakBackstep)
 {
   for (std::size_t i = 0; i < outputLength; i++)
@@ -49,7 +50,7 @@ FftAnalysingAlgorithm* FftToMagnitude::clone() const
 }
 
 
-void FftToPhaseAngle::operator()(boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
+void FftToPhaseAngle::operator()(const boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
                                  double frequencyStep, double peakBackstep)
 {
   std::vector<qreal> frequency;
@@ -85,7 +86,7 @@ FftAnalysingAlgorithm* FftToPhaseAngle::clone() const
 
 
 
-void FftToPhaseAngleWithTrend::operator()(boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
+void FftToPhaseAngleWithTrend::operator()(const boost::multi_array<float, 2>::iterator& iter, fftwf_complex* outputFrame, unsigned long long outputLength,
     double frequencyStep, double peakBackstep)
 {
   std::vector<qreal> frequency;

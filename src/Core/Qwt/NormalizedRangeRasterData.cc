@@ -9,19 +9,16 @@
 
 #include "Core/Qwt/NormalizedRangeRasterData.hh"
 
+
 NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& range)
   : range(range)
 {
-  setInterval(Qt::XAxis, QwtInterval(range.startCoordinate, range.finalCoordinate));
 
+  m_intervals.at(Qt::XAxis) = QwtInterval(range.startCoordinate, range.finalCoordinate);
   if (range.lineCoordinates.back() > range.lineCoordinates.front()) {
-    setInterval(Qt::YAxis, 
-      QwtInterval(range.lineCoordinates.front(), 
-                  range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2])));
+      m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.front(),range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]));
   } else {
-    setInterval(Qt::YAxis, 
-      QwtInterval(range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]),
-                  range.lineCoordinates.front()));
+      m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]),range.lineCoordinates.front());
   }
 
   float minVal = std::numeric_limits<float>::max();
@@ -33,8 +30,7 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
       maxVal = std::max(maxVal, range.view[i][j]);
     }
   }
-
-  setInterval(Qt::ZAxis, QwtInterval(minVal, maxVal));
+  m_intervals.at(Qt::ZAxis)  = QwtInterval(minVal, maxVal);
 }
 
 double NormalizedRangeRasterData::value(double x, double y) const
@@ -49,4 +45,13 @@ double NormalizedRangeRasterData::value(double x, double y) const
   auto iy = std::distance(range.lineCoordinates.begin(), yiter);
 
   return range.view[ix][iy];
+}
+
+QwtInterval NormalizedRangeRasterData::interval(Qt::Axis axis) const {
+    try {
+        return m_intervals.at(axis);
+    }
+    catch (std::out_of_range exeption) {
+        return QwtInterval();
+    }
 }

@@ -34,6 +34,7 @@ stop() {
 
 void realtime::RTAudioCollector::
 dataReady(const ::uts::devtalk::ByteSeq& data, const ::Ice::Current&) {
+
     auto size = m_sound->samples.size();
     auto sizeRes = (data.size() - sizeof(LONGLONG)) / sizeof(float);
     m_sound->samples.resize(size + sizeRes);

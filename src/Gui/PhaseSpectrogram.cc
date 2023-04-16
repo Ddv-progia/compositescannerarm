@@ -18,10 +18,11 @@
 
 #include "UCL/SignalProcessing/RankFilter.hh"
 #include "UCL/RegressionAnalysis/LeastSquares.hh"
+#include <QtGui/qpen.h>
 
-#include <amp.h>
+//#include <amp.h>
 
-PhaseSpectorgram::PhaseSpectorgram(const boost::multi_array<std::complex<double>, 2>&  newData, const QVector<qreal>& newFrequencyData,QWidget* parent):data(newData),frequencyData(newFrequencyData),QDialog(parent)
+PhaseSpectorgram::PhaseSpectorgram(const boost::multi_array<std::complex<double>, 2>&  newData, const std::vector<qreal>& newFrequencyData,QWidget* parent):data(newData),frequencyData(newFrequencyData),QDialog(parent)
   {
     QPushButton* forward = new QPushButton(QString("->"));
     QPushButton* backward = new QPushButton(QString("<-"));
@@ -95,7 +96,7 @@ double nearest(double base,double first, double second)
 //функция апроксимирует кривую,описанную yVals с помощью регрессии. в функцию передаются параметры:
 //step - число точек для построения регрессии, overlap - перекрытие(общие точки у соседних регрессий)
 //функция вычисляет значения рекурсивно, двигаясь по вектору на участки step, строит на каждом этапе промежуточный мектор размера step-overlap
-QVector<double> findApproximateCurve(std::vector<double>& yVals, std::vector<double>& xVals, int step = 60, int overlap=25)
+QVector<double> findApproximateCurve(const std::vector<double>& yVals,const std::vector<double>& xVals, int step = 60, int overlap=25)
 {
   QVector<double> result;
   if(step<=overlap)
@@ -128,7 +129,7 @@ struct CurveParams
 
 //функция в каждой точке исходной кривой строит регрессию используя 2*border значений и по регрессии находит ожидаемое положение точки
 //в переменную params запишутся параметры кривой: среднее и максимальное отклонения от исходного сигнала, коэффициент наклона
-QVector<double> findFilteredByRegressionCurve(std::vector<double>& yVals, std::vector<double>& xVals, int border, CurveParams& params = CurveParams())
+QVector<double> findFilteredByRegressionCurve(std::vector<double>& yVals, std::vector<double>& xVals, int border, CurveParams params = CurveParams{})
 {
   QVector<double> result;
   namespace ba=boost::accumulators;
@@ -195,7 +196,7 @@ QVector<double> findCurveAngles(std::vector<double>& yVals, std::vector<double>&
     result.push_back(coeffs[1]*90);
   }
 
-  uts::dsp::RankFilter<double> filter(40,2,36);
+  uts::dsp::RankFilter<double> filter{ 40,2,36 };
 
   auto beginIterator = result.begin();
   if(result.size()<=41)
@@ -222,13 +223,17 @@ std::pair<QVector<double>,QVector<double>> findCurveParamsFast(std::vector<doubl
   if(2*border>yVals.size() || yVals.size()!=xVals.size())
     return result;
 
-  auto fill = [&](std::pair<double,double>& coeffs,std::vector<qreal>& x){result.first.push_back(coeffs.first*90);
-                                              double sum = 0.0;
-                                              for(int i = 0; i< x.size();i++){
-												  auto deviation = (coeffs.first*x[i]+coeffs.second - yVals[currentElement]);
-                                                sum+= deviation*deviation/x.size();
-                                              }
-                                              result.second.push_back(std::sqrt(sum));};
+  auto fill = 
+      [&](const std::pair<double,double>& coeffs,const std::vector<qreal>& x)
+      {
+        result.first.push_back(coeffs.first*90);
+        double sum = 0.0;
+        for(int i = 0; i< x.size();i++){
+		    auto deviation = (coeffs.first*x[i]+coeffs.second - yVals[currentElement]);
+            sum+= deviation*deviation/x.size();
+        }
+        result.second.push_back(std::sqrt(sum));
+      };
 {
   double Sxy = 0.0;
   double Sx = 0.0;
@@ -246,7 +251,7 @@ std::pair<QVector<double>,QVector<double>> findCurveParamsFast(std::vector<doubl
 	Sxx += xVals[i]*xVals[i];
   }
 
-  for(;currentElement<border;currentElement++){
+  for(;currentElement < border; currentElement++){
 	Sxy += xVals[currentElement+border]*yVals[currentElement+border];
 	Sx += xVals[currentElement+border];
 	Sy += yVals[currentElement+border];
@@ -381,12 +386,12 @@ QVector<double> findCurveParams(const std::vector<double>& yVals,const std::vect
 
   Q_SLOT void PhaseSpectorgram::recalculatePlot()
   {
-    QVector<qreal> values;
-    QVector<qreal> originalValues;
-    QVector<QPointF> curveData;
-    QVector<QPointF> originalData;
-    QVector<QPointF> deviationsData;
-    QVector<QPointF> koeffsData;
+    std::vector<qreal> values;
+    QList<qreal> originalValues;
+    QList<QPointF> curveData;
+    QList<QPointF> originalData;
+    QList<QPointF> deviationsData;
+    QList<QPointF> koeffsData;
     CurveParams params;
     
     for(auto iter = current->rbegin(); iter!=current->rend();iter++){
@@ -435,7 +440,7 @@ QVector<double> findCurveParams(const std::vector<double>& yVals,const std::vect
        originalData.push_back(QPointF(frequencyData[i],originalValues[i]));
     }
 
-    auto koeffsValues = findCurveParams(values.toStdVector(), frequencyData.toStdVector(), 6);
+    auto koeffsValues = findCurveParams(values/*.toStdVector()*/, frequencyData/*.toStdVector()*/, 6);
 
     for(auto i = 0;i<koeffsValues.size();i++){
       koeffsData.push_back(QPointF(frequencyData[i],koeffsValues[i]));

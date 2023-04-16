@@ -7,7 +7,7 @@
 #include <Ice/Communicator.h>
 #include <QtCore/QFile>
 #include <QtCore/QXmlStreamReader>
-#include <QtCore/QTextCodec>
+//#include <QtCore/QTextCodec>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 #include <UCL/PlotView/Init.hh>
@@ -25,6 +25,8 @@
 #include "Core/ScanFactory.hh"
 #include "Gui/MainWindow.hh"
 #include "Core/PersistentVariable.hh"
+#include <UCL/Customization/FromVariable/String.hh>
+
 
 
 

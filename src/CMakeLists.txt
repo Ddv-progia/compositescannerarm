@@ -1,11 +1,11 @@
-#ADD_DEFINITIONS(
- # -D_SCL_SECURE_NO_WARNINGS 
- # -DBOOST_RESULT_OF_USE_DECLTYPE
- # -DBOOST_ALL_DYN_LINK
- # -DFUSION_MAX_MAP_SIZE=40
- # -DFUSION_MAX_VECTOR_SIZE=40)
+ADD_DEFINITIONS(
+ -D_SCL_SECURE_NO_WARNINGS 
+  -DBOOST_RESULT_OF_USE_DECLTYPE
+  -DBOOST_ALL_DYN_LINK
+  -DFUSION_MAX_MAP_SIZE=40
+  -DFUSION_MAX_VECTOR_SIZE=40)
 
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
 INCLUDE_DIRECTORIES(DevTalk-Drivers-APL-Techno-Motion
   PUBLIC  ${DevTalk-Interface_SOURCE_DIR}
@@ -36,10 +36,10 @@ LINK_DIRECTORIES(
   ${Boost_LIBRARY_DIRS}
   ${FFTW_LIBRARY_DIRS})
 
-QT5_ADD_RESOURCES(CompositeScanner_Generated_Resources
+QT6_ADD_RESOURCES(CompositeScanner_Generated_Resources
   Gui/tango-icons.qrc)
 
-QT5_WRAP_UI(CompositeScanner_Generated_UI
+QT6_WRAP_UI(CompositeScanner_Generated_UI
   Gui/AssembleScanDialog.ui
   Gui/AssignColorForColorBarDialog.ui
   Gui/MainWindow.ui
@@ -227,13 +227,14 @@ target_link_libraries(CompositeScanner
   Propsys
   wmcodecdspuuid
 
-  Qt5::Widgets
-  Qt5::Xml
-  Qt5::Script
-  Qt5::ScriptTools
-  Qt5::Charts
+  Qt6::Widgets
+  Qt6::Xml
+  #Qt6::Script
+  #Qt6::ScriptTools
+  Qt6::Charts
 
   DevTalk-Interface
+  UCL-Customization
   UCL-PlotView
   UCL-Reflection-Binding
   UCL-Regression-Analysis

@@ -31,14 +31,14 @@ class FftAnalysingAlgorithm
 {
 public:
   FftAnalysingAlgorithm(){}
-  virtual void operator()(boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0) = 0;
+  virtual void operator()(const boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0) = 0;
   virtual FftAnalysingAlgorithm* clone() const = 0;
 };
 
 class FftToMagnitude : public FftAnalysingAlgorithm
 {
 public:
-  void operator()(boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0);
+  void operator()(const boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0)override;
   FftAnalysingAlgorithm* clone() const override;
 };
 
@@ -46,7 +46,7 @@ public:
 class FftToPhaseAngle : public FftAnalysingAlgorithm
 {
 public:
-  void operator()(boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0);
+  void operator()(const boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0)override ;
   FftAnalysingAlgorithm* clone() const override;
 };
 
@@ -54,7 +54,7 @@ public:
 class FftToPhaseAngleWithTrend : public FftAnalysingAlgorithm
 {
 public:
-  void operator()(boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0);
+  void operator()(const boost::multi_array<float, 2>::iterator& iter,fftwf_complex* outputFrame,unsigned long long outputLength,double frequencyStep,double peakBackstep = 0.0)override;
   FftAnalysingAlgorithm* clone() const override;
 };
 
@@ -64,12 +64,13 @@ class SpectorogramData : public QwtRasterData
   double sampleRate;
   std::size_t step;
   std::size_t nfft;
+  std::array<QwtInterval,3> m_intervals;
 public:
   explicit SpectorogramData(boost::multi_array<float, 2>&& data, double sampleRate, std::size_t step, std::size_t nfft)
     : data(std::move(data)), sampleRate(sampleRate), step(step), nfft(nfft)
   { 
-    setInterval(Qt::XAxis, QwtInterval(0, (this->data.shape()[0] - 1) * step / sampleRate));
-    setInterval(Qt::YAxis, QwtInterval(0, (this->data.shape()[1] - 1) * sampleRate / double(nfft)));
+      m_intervals.at(Qt::XAxis) = QwtInterval(0, (this->data.shape()[0] - 1) * step / sampleRate);
+      m_intervals.at(Qt::YAxis) = QwtInterval(0, (this->data.shape()[1] - 1) * sampleRate / double(nfft));
       
     float maxValue = -std::numeric_limits<float>::max();
     float minValue = std::numeric_limits<float>::max();
@@ -81,8 +82,7 @@ public:
         }
       }
     }
-
-    setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
+    m_intervals.at(Qt::ZAxis) = QwtInterval(minValue, maxValue);
   }
 
   virtual double value(double x, double y) const override
@@ -91,6 +91,14 @@ public:
     std::size_t iy = y * nfft / sampleRate;
 
     return data[ix][iy];
+  }
+  virtual QwtInterval interval(Qt::Axis axis) const override {
+      try {
+          return m_intervals.at(axis);
+      }
+      catch (...) {
+          return QwtInterval();
+      }
   }
 
   const boost::multi_array<float, 2>* getData() {	  return (&data);}

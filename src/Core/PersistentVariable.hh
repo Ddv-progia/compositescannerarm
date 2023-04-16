@@ -13,6 +13,11 @@
 #include <UCL/Reflection/Binding/ElementName.hh>
 #include <UCL/Reflection/Binding/ElementNameTransformer.hh>
 
+#include <UCL/Reflection/Binding/StringConversion.hh>
+#include <UCL/Reflection/Binding/StringConversion/StdString/Bool.hh>
+#include <UCL/Reflection/Binding/StringConversion/StdString/Enum.hh>
+#include <UCL/Reflection/Binding/StringConversion/StdString/Numeric.hh>
+
 struct SettingsLoadErrorException : uts::RuntimeException { };
 UTS_DEFINE_ERROR_INFO(Filename, std::string);
 

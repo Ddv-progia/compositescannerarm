@@ -13,12 +13,13 @@
 #include <regex>
 #include <QFile>
 #include <QDir>
-#include <UCL/Reflection/Binding/ElementNameTransformer.hh>
-#include <UCL/Reflection/Binding/QtXml/FromStream/FromStream.hh>
-#include <UCL/Reflection/Binding/QtXml/FromStream/ReflectedStructure.hh>
-#include <UCL/Reflection/Binding/QtXml/FromStream/StandardSequence.hh>
+//#include <UCL/Reflection/Binding/ElementNameTransformer.hh>
+//#include <UCL/Reflection/Binding/QtXml/FromStream/FromStream.hh>
+//#include <UCL/Reflection/Binding/QtXml/FromStream/ReflectedStructure.hh>
+//#include <UCL/Reflection/Binding/StringConversion.hh>
+//#include <UCL/Reflection/Binding/QtXml/FromStream/StandardSequence.hh>
 #include "CommonXmlLoad.hh"
-#include "Core/ScanDataReflection.hh"
+//#include "Core/ScanDataReflection.hh"
 #include "PersistentVariable.hh"
 
 
@@ -106,7 +107,7 @@ AssembleScanTask::AssembleScanTask(const std::vector<QString>& sourceFilenames,
 
 void AssembleScanTask::operator()()
 {
-  namespace urb = uts::reflection::binding;
+  /*namespace urb = uts::reflection::binding;
   
   try {
     //вариант для xml
@@ -157,5 +158,5 @@ void AssembleScanTask::operator()()
   } catch (QString& err) {
     emit terminated(err);
     return;
-  }
+  }*/
 }

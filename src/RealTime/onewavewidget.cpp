@@ -20,9 +20,9 @@ OneWaveWidget::OneWaveWidget()
     m_sliderFrequency->setSpan(m_sliderFrequency->minimum(),m_sliderFrequency->maximum());
 
     m_vLayout = new QVBoxLayout;
-    m_vLayout->setMargin(0);
+    m_vLayout->setContentsMargins(0,0,0,0);
     m_graphicGridLayout = new QGridLayout();
-    m_graphicGridLayout->setMargin(0);
+    m_graphicGridLayout->setContentsMargins(0, 0, 0, 0);
     m_graphicsWidget = new QWidget();
 
     xAxis = new QValueAxis;
@@ -62,7 +62,7 @@ OneWaveWidget::OneWaveWidget()
     connect(m_sliderFrequency,&QxtSpanSlider::spanChanged,this,&OneWaveWidget::changeHorizontalCoord);
 
     m_updateTimer = std::make_unique<QTimer>();
-    m_updateTimer->start(100);
+    m_updateTimer->start(10);
     connect(m_updateTimer.get(), &QTimer::timeout, this, &OneWaveWidget::redraw);
 }
 
@@ -97,13 +97,14 @@ void OneWaveWidget::redraw(){
     if (!m_scan)
         return;
     QList<QPointF> points;
+    points.resize(0);
     auto sampl = m_scan->originalScan.sound.samples;
-    //QVector<QPoint> points{ 5000 < sampl.size() ? 5000 : sampl.size() };
-    //int samplPerSecond = m_scan->originalScan.sound.sampleRate;
-    int x = 0;
+
+    //int x = 0;
     int indBegin = 50000 < sampl.size() ? 50000 : sampl.size();
     for (int ind = indBegin, x = 0; ind > 0; --ind /*-= 100*/) {
         points.push_back({ QPointF(float(x++) * 0.01, sampl[sampl.size() - ind]) });
     }
-    update(std::move(points));
+
+    update(points);
 }

@@ -4,9 +4,9 @@
 class FrequencyRoseDataAnalyzer
 {
 protected:
-  const RangedMultiArray& points;
+  const RangedMultiArray &points;
 public:
-  FrequencyRoseDataAnalyzer(const RangedMultiArray& rangedArray):points(rangedArray)
+  FrequencyRoseDataAnalyzer(const RangedMultiArray &rangedArray):points(rangedArray)
   {
   }
   virtual std::vector<std::pair<FrequencyRange,double>> operator ()() = 0;
@@ -19,7 +19,7 @@ public:
 class MinFrequencyRoseDataAnalyzer: public FrequencyRoseDataAnalyzer
 {
 public:
-  MinFrequencyRoseDataAnalyzer(const RangedMultiArray& data):FrequencyRoseDataAnalyzer(data)
+  MinFrequencyRoseDataAnalyzer(const RangedMultiArray &data):FrequencyRoseDataAnalyzer(data)
   {}
 
   std::vector<std::pair<FrequencyRange,double>> operator ()() override
@@ -29,9 +29,9 @@ public:
     int i = 0;
     for(auto& range : points){
       double min = range.second[0][0];
-      for(auto& row : range.second)
-        for(auto& point : row)
-          if(point<min) min = point;
+      for(const auto &row : range.second)
+        for(const auto &point : row)
+          if(point < min) min = point;
       result.push_back(std::make_pair(range.first,min));
       i++;
     }
@@ -50,8 +50,8 @@ public:
     
     for(auto& range : points){
       double max = range.second[0][0];
-      for(auto& row : range.second)
-        for(auto& point : row)
+      for(const auto& row : range.second)
+        for(const auto& point : row)
           if(point>max) max = point;
       result.push_back(std::make_pair(range.first,max));
     }
@@ -75,8 +75,8 @@ public:
     for(auto& range : FrequencyRoseDataAnalyzer::points){
       bool isEmpty = true;
       ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-      for(auto& row : range.second){
-        for(auto& point : row){
+      for(const auto& row : range.second){
+        for(const auto& point : row){
           double value = point;
           if(value<=threshold){
             acc(value);
@@ -106,8 +106,8 @@ public:
     for(auto& range : FrequencyRoseDataAnalyzer::points){
       bool isEmpty = true;
       ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-      for(auto& row : range.second){
-        for(auto& point : row){
+      for(const auto& row : range.second){
+        for(const auto& point : row){
           double value = point;
           if(value>=threshold){
             acc(value);
@@ -137,8 +137,8 @@ public:
     for(auto& range : FrequencyRoseDataAnalyzer::points){
       bool isEmpty = true;
       ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-      for(auto& row : range.second){
-        for(auto& point : row){
+      for(const auto& row : range.second){
+        for(const auto& point : row){
           double value = point;
           if(value>=positiveThreshold || value<=negativeThreshold){
             acc(value);
@@ -163,12 +163,12 @@ public:
     for(auto& range : points){
 	  bool isEmpty = true;
       double max = range.second[0][0];
-      for(auto& row : range.second)
+      for(const auto& row : range.second)
         for(auto& point : row)
-          if(point>max) max = point;
-	  auto border = 2*max/3.0;
+          if(point > max) max = point;
+	  auto border = 2 * max / 3.0;
 	  ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-	  for(auto& row : range.second){
+	  for(const auto& row : range.second){
         for(auto& point : row){
 			if(point>=border){
 				acc(point);
@@ -194,12 +194,12 @@ public:
     for(auto& range : points){
 	  bool isEmpty = true;
       double min = range.second[0][0];
-      for(auto& row : range.second)
+      for(const auto& row : range.second)
         for(auto& point : row)
           if(point<min) min = point;
 	  auto border = 2*min/3.0;
 	  ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-	  for(auto& row : range.second){
+	  for(const auto& row : range.second){
         for(auto& point : row){
 			if(point<=border){
 				acc(point);
@@ -316,11 +316,11 @@ void FrequencyRoseGrid::paintGrid(QPainter* painter, bool isNeedToRoundTextMarks
 		//QString text = QString::number(marks[i]);
         //*******
 
-        QPointF textPoint(point.x()-this->fontMetrics().width(text)/2,point.y()+this->fontMetrics().height()/2);// текст отрисовывается строго по центру линии
+        QPointF textPoint(point.x() - this->fontMetrics().boundingRect(text).width() / 2,point.y()+this->fontMetrics().height()/2);// текст отрисовывается строго по центру линии
 
  		painter->setBrush(QBrush(Qt::white));
 		painter->setPen(QPen(Qt::white));
-		painter->drawRect(QRectF(textPoint,QPointF(textPoint.x()+this->fontMetrics().width(text),textPoint.y()-this->fontMetrics().height())));
+		painter->drawRect(QRectF(textPoint,QPointF(textPoint.x()+this->fontMetrics().boundingRect(text).width(),textPoint.y()-this->fontMetrics().height())));
 		painter->setBrush(QBrush(Qt::black));
 		painter->setPen(QPen(Qt::black,1,Qt::PenStyle::DotLine));
 		painter->drawText(textPoint,text);
@@ -410,7 +410,7 @@ void FrequencyRose::createGrid(std::map<double,FrequencyRosePoint*>& pointList)
 
 
 
-void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>& pointList)
+void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>* pointList)
 {
   if(analyser->sizeOfData()==0) return;
 
@@ -421,7 +421,7 @@ void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std:
     auto point = new FrequencyRosePoint(findCoordinates(i*angleStep,convert(value.second,nullCircleRadius)),value.first,value.second,this);
     connect(point,SIGNAL(pointSelected(FrequencyRange,double)),SIGNAL(rangeSelected(FrequencyRange,double)));
     connect(point,SIGNAL(pointUnselected()),SIGNAL(rangeUnselected()));
-    pointList[i*angleStep]=point;
+    pointList->at(i*angleStep)=point;
 	connect(this,SIGNAL(pointsReady()),point,SLOT(show()));
     i++;
   }
@@ -429,8 +429,8 @@ void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std:
 
 MinMaxFrequencyRose::MinMaxFrequencyRose(RangedMultiArray data, double factor, std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
 {
-  fillPointList(&MinFrequencyRoseDataAnalyzer(data),minPoints);
-  fillPointList(&MaxFrequencyRoseDataAnalyzer(data),maxPoints);
+  fillPointList(new MinFrequencyRoseDataAnalyzer(data),&minPoints);
+  fillPointList(new MaxFrequencyRoseDataAnalyzer(data),&maxPoints);
 
   sizeLimit = std::max<qreal>(std::abs(maxPoints.begin()->second->point().x()),std::abs(maxPoints.begin()->second->point().y()));
   std::for_each(maxPoints.begin(),maxPoints.end(),
@@ -483,7 +483,7 @@ void MinMaxFrequencyRose::paintEvent(QPaintEvent* event)
 
 AverageFrequencyRose::AverageFrequencyRose(RangedMultiArray data,double positiveThreshold,double negativeThreshold, double factor, std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
 {
-  fillPointList(&AverageFrequencyRoseDataAnalyzer(data,positiveThreshold,negativeThreshold),points);
+  fillPointList(new AverageFrequencyRoseDataAnalyzer(data, positiveThreshold, negativeThreshold), points);
 
   sizeLimit = std::max<qreal>(std::abs(points.begin()->second->point().x()),std::abs(points.begin()->second->point().y()));
   std::for_each(points.begin(),points.end(),
@@ -558,10 +558,10 @@ void AverageFrequencyRose::paintEvent(QPaintEvent* event)
   grid->paintGrid(&painter, true);
 }
 
-SplitedAverageFrequencyRose::SplitedAverageFrequencyRose(RangedMultiArray data,double positiveThreshold,double negativeThreshold, double factor,std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
+SplitedAverageFrequencyRose::SplitedAverageFrequencyRose(const RangedMultiArray &data,double positiveThreshold,double negativeThreshold, double factor,std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
 {
-  fillPointList(&PositiveAverageFrequencyRoseDataAnalyzer(data,positiveThreshold),positivePoints);
-  fillPointList(&NegativeAverageFrequencyRoseDataAnalyzer(data,negativeThreshold),negativePoints);
+  fillPointList(new PositiveAverageFrequencyRoseDataAnalyzer(data,positiveThreshold),positivePoints);
+  fillPointList(new NegativeAverageFrequencyRoseDataAnalyzer(data,negativeThreshold),negativePoints);
 
   sizeLimit = std::max<qreal>(std::abs(positivePoints.begin()->second->point().x()),std::abs(positivePoints.begin()->second->point().y()));
   std::for_each(positivePoints.begin(),positivePoints.end(),

@@ -18,7 +18,7 @@ namespace {
 		boost::multi_array<T, 2> base(const boost::multi_array<T, 2>& original, Func func)
 		{
 
-			/*будем считать,что ядро имеет вид    | 0 1 0 |
+			/*Р±СѓРґРµРј СЃС‡РёС‚Р°С‚СЊ,С‡С‚Рѕ СЏРґСЂРѕ РёРјРµРµС‚ РІРёРґ    | 0 1 0 |
 			*									  | 1 1 1 |
 			*									  | 0 1 0 |
 			*/
@@ -31,11 +31,11 @@ namespace {
 				for(auto j = 0; j < columnsCount; j++){
 					std::vector<T> kernel;
 					kernel.push_back(original[i][j]);
-					for(auto iK = 0; iK < 3; iK++)							//размеры ядра 3х3
+					for(auto iK = 0; iK < 3; iK++)							//СЂР°Р·РјРµСЂС‹ СЏРґСЂР° 3С…3
 						for(auto jK = 0; jK < 3; jK++)
-							if((iK+jK)%2 != 0){								//нечетные элементы матрицы, составляющей ядро
+							if((iK+jK)%2 != 0){								//РЅРµС‡РµС‚РЅС‹Рµ СЌР»РµРјРµРЅС‚С‹ РјР°С‚СЂРёС†С‹, СЃРѕСЃС‚Р°РІР»СЏСЋС‰РµР№ СЏРґСЂРѕ
 								if((i-1+iK >=0) && (i-1+iK < rowsCount) && (j-1+jK >=0) && (j-1+jK < columnsCount))
-									kernel.push_back(original[i-1+iK][j-1+jK]); //смещение центра ядра в исследуемую точку
+									kernel.push_back(original[i-1+iK][j-1+jK]); //СЃРјРµС‰РµРЅРёРµ С†РµРЅС‚СЂР° СЏРґСЂР° РІ РёСЃСЃР»РµРґСѓРµРјСѓСЋ С‚РѕС‡РєСѓ
 							}
 					result[i][j] = func(kernel.begin(),kernel.end());
 				}
@@ -150,7 +150,7 @@ DefectsView renderDefectPoints(const DefectKindView& kind,
                                                       static_cast<uint8_t>(std::min(sumB, 220)) };
     }
 
-	//замыкание
+	//Р·Р°РјС‹РєР°РЅРёРµ
 	result.view = morphologic::dilate(result.view);
 	result.view = morphologic::erode(result.view);
   return result;
@@ -181,7 +181,7 @@ DefectsView renderDefectPointsWithFixedColor(const DefectKindView& kind,
       result.view[rowIndex][columnIndex] = RgbColor{ r, g, b };
     }
 
-	//замыкание
+	//Р·Р°РјС‹РєР°РЅРёРµ
     result.view = morphologic::dilate(result.view);
 	result.view = morphologic::erode(result.view);
 

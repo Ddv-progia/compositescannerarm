@@ -10,6 +10,7 @@
 #include <qwt_scale_map.h>
 
 #include "Core/Qwt/DefectPointsItem.hh"
+#include <Qt6/QtGui/qimage.h>
 
 namespace adp = boost::adaptors;
 

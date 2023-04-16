@@ -14,13 +14,13 @@ class ScriptSyntaxHighlighter : public QSyntaxHighlighter
 {
   struct HighlightingRule
   {
-    QRegExp pattern;
+    //QRegExp pattern;
     QTextCharFormat format;
 
     HighlightingRule() { }
 
-    HighlightingRule(const QRegExp& pattern, const QTextCharFormat& format)
-      : pattern(pattern), format(format)
+    HighlightingRule(/*const QRegExp& pattern,*/ const QTextCharFormat& format)
+       : /*pattern(pattern),*/ format(format)
     { }
   };
 

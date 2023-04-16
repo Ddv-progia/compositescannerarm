@@ -24,12 +24,12 @@ class PhaseSpectorgram: public QDialog
   QwtPlotCurve* koeffsCurve;
   QwtPlotZoomer* zoom;
   boost::multi_array<std::complex<double>, 2> data;
-  QVector<qreal> frequencyData;
+  std::vector<qreal> frequencyData;
   boost::multi_array<std::complex<double>, 2>::iterator current;
   boost::multi_array<std::complex<double>, 2>::index currentIndex;
 
 public: 
-  PhaseSpectorgram(const boost::multi_array<std::complex<double>,2>&  data,const QVector<qreal>&  frequencyData,QWidget* parent = 0);
+  PhaseSpectorgram(const boost::multi_array<std::complex<double>,2>&  data,const std::vector<qreal>&  frequencyData,QWidget* parent = 0);
 
   Q_SLOT void recalculatePlot();
   Q_SLOT void stepForward();

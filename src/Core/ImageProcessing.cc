@@ -15,7 +15,7 @@ namespace improc
     int const max_lowThreshold = 100;
     int const ratio = 3;
     int const kernel_size = 3;
-    char* const window_name = "Edge Map";
+    const char* window_name = "Edge Map";
 
 
     void CannyThreshold(int, void*)

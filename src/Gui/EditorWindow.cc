@@ -26,7 +26,7 @@ ScriptSyntaxHighlighter::ScriptSyntaxHighlighter(QTextDocument* parent)
   QTextCharFormat numberFormat;
   numberFormat.setForeground(Qt::darkMagenta);
 
-  highlightingRules << HighlightingRule(QRegExp("[-+]?[0-9_]+(\\.[0-9_]+)?"), numberFormat)
+  /*highlightingRules << HighlightingRule(QRegExp("[-+]?[0-9_]+(\\.[0-9_]+)?"), numberFormat)
                     << HighlightingRule(QRegExp("\\b([a-zA-Z][_a-zA-Z0-9]*)\\b"), identifierFormat)
                     << HighlightingRule(QRegExp("\\bbreak\\b"), keywordFormat)
                     << HighlightingRule(QRegExp("\\belse\\b"), keywordFormat)
@@ -54,16 +54,16 @@ ScriptSyntaxHighlighter::ScriptSyntaxHighlighter(QTextDocument* parent)
                     << HighlightingRule(QRegExp("\\binstanceof\\b"), keywordFormat)
                     << HighlightingRule(QRegExp("\\btypeof\\b"), keywordFormat)
                     << HighlightingRule(QRegExp("//[^\n]*"), singleLineCommentFormat)
-                    ;
+                    ;*/
 }
 
 void ScriptSyntaxHighlighter::highlightBlock(const QString& text)
 {
   foreach (const HighlightingRule& rule, highlightingRules) {
-    QRegExp expression(rule.pattern);
+    /*QRegExp expression(rule.pattern);
     for (int index = expression.indexIn(text); index >= 0;
       index = expression.indexIn(text, index + expression.matchedLength()))
-      setFormat(index, expression.matchedLength(), rule.format);
+      setFormat(index, expression.matchedLength(), rule.format);*/
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Core/WMACompression.hh - сжатие данных кодеком Windows Media Audio Lossless
+ * Core/WMACompression.hh - СЃР¶Р°С‚РёРµ РґР°РЅРЅС‹С… РєРѕРґРµРєРѕРј Windows Media Audio Lossless
  */
 
 #pragma once

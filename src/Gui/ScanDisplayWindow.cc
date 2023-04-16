@@ -443,7 +443,7 @@ void ScanDisplayWindow::selectContour(size_t n )
 }
 void ScanDisplayWindow::setDefectMask()
 {
-  defectsMarker->setDefects(plotDefectsModel->currentDefects());
+  defectsMarker->setDefects((std::vector<Defect, std::allocator<Defect>> &)plotDefectsModel->currentDefects());
 }
 
 
@@ -672,7 +672,7 @@ void ScanDisplayWindow::getRegionFrequencyRose(const QRectF& rect)
 			  if(closeness[nDef] < closeness[nMin])	nMin = nDef;
 			  closenessTable->setItem(closenessTable->rowCount()-1,2*nDef+3,item);
 		  }
-		  closenessTable->item(closenessTable->rowCount()-1,2*nMin+3)->setBackgroundColor(QColor(Qt::yellow));
+          closenessTable->item(closenessTable->rowCount() - 1, 2 * nMin + 3)->setBackground(Qt::yellow);
 		  closenessTable->resizeColumnsToContents();
 		  closenessTable->show();
 	  }catch(...){}

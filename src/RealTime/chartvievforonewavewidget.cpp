@@ -33,7 +33,7 @@ setPeakMagnitude(double magnitude) {
         m_upSeries = new QLineSeries();
         m_upSeries->setPen(QPen(Qt::green, 2));
         chart()->addSeries(m_upSeries);
-        chart()->setAxisX(chart()->axisX(), m_upSeries);   // Íàçíà÷èòü îñü xAxis, îñüþ X äëÿ diagramA
+        chart()->setAxisX(chart()->axisX(), m_upSeries);   // ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð¾ÑÑŒ xAxis, Ð¾ÑÑŒÑŽ X Ð´Ð»Ñ diagramA
         chart()->setAxisY(chart()->axisY(), m_upSeries);
     }
     
@@ -41,7 +41,7 @@ setPeakMagnitude(double magnitude) {
         m_downSeries = new QLineSeries();
         m_downSeries->setPen(QPen(Qt::green, 2));
         chart()->addSeries(m_downSeries);
-        chart()->setAxisX(chart()->axisX(), m_downSeries);   // Íàçíà÷èòü îñü xAxis, îñüþ X äëÿ diagramA
+        chart()->setAxisX(chart()->axisX(), m_downSeries);   // ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð¾ÑÑŒ xAxis, Ð¾ÑÑŒÑŽ X Ð´Ð»Ñ diagramA
         chart()->setAxisY(chart()->axisY(), m_downSeries);
     }
     m_downSeries->replace(QVector<QPointF>{ { 0, -magnitude }, { 5000,-magnitude }});
@@ -89,9 +89,9 @@ resizeEvent(QResizeEvent* event){
         m_downSeries->setPen(QPen(Qt::green, 2));
         chart()->addSeries(m_upSeries);
         chart()->addSeries(m_downSeries);
-        chart()->setAxisX(chart()->axisX(), m_upSeries);   // Íàçíà÷èòü îñü xAxis, îñüþ X äëÿ diagramA
+        chart()->setAxisX(chart()->axisX(), m_upSeries);   // ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð¾ÑÑŒ xAxis, Ð¾ÑÑŒÑŽ X Ð´Ð»Ñ diagramA
         chart()->setAxisY(chart()->axisY(), m_upSeries);
-        chart()->setAxisX(chart()->axisX(), m_downSeries);   // Íàçíà÷èòü îñü xAxis, îñüþ X äëÿ diagramA
+        chart()->setAxisX(chart()->axisX(), m_downSeries);   // ÐÐ°Ð·Ð½Ð°Ñ‡Ð¸Ñ‚ÑŒ Ð¾ÑÑŒ xAxis, Ð¾ÑÑŒÑŽ X Ð´Ð»Ñ diagramA
         chart()->setAxisY(chart()->axisY(), m_downSeries);
     }*/
     QChartView::resizeEvent(event);
@@ -121,5 +121,5 @@ void ChartViewForOneWaveWidget::mouseReleaseEvent(QMouseEvent *event){
 }
 
 void ChartViewForOneWaveWidget::dataUpdate(){
-    //updateLineInfo(m_verticalLine->line().p1());
+    updateLineInfo(m_verticalLine->line().p1());
 }

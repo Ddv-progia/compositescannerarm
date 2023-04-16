@@ -9,6 +9,7 @@
 #include <qwt_plot_rasteritem.h>
 
 #include "Core/ScanData.hh"
+#include <Qt6/QtCore/qrect.h>
 
 class DefectPointsItem : public QwtPlotRasterItem
 {
