@@ -23,10 +23,7 @@ Area::
 
 void Area::setScan(std::shared_ptr<Scan> scan) {
 	m_scan = scan;
-	m_scan->peaks.resize(m_height);
-	int coord = 0;
-	for (auto& linePeak : m_scan->peaks)
-		linePeak.resize(m_width);
+	
 	start();
 }
 
@@ -57,20 +54,20 @@ run() {
 		m_srcCoords.pull(pixel);
 		int f_y = pixel.y * m_pixelpermm;
 		int f_x = pixel.x * m_pixelpermm;
-		if (m_scan->peaks.at(pixel.y).at(pixel.x).empty())
+		if (m_scan->rtPeaks.at(pixel.y).at(pixel.x).empty())
 			continue;
-		float value = maxPeak(m_scan->peaks.at(pixel.y).at(pixel.x), m_scan->originalScan.sound.samples);
+		float value = maxPeak(m_scan->rtPeaks.at(pixel.y).at(pixel.x), m_scan->sound.samples);
 
-		if (max < value || min < value) {
+		if (max < value || min > value) {
 			max = max > value ? max : value;
 			min = min < value ? min : value;
-			for (int y = 0; y < m_scan->peaks.size(); ++y) {
+			for (int y = 0; y < m_scan->rtPeaks.size(); ++y) {
 				int f_y = y * m_pixelpermm;
-				for (int x = 0; x < m_scan->peaks.at(y).size(); ++x) {
+				for (int x = 0; x < m_scan->rtPeaks.at(y).size(); ++x) {
 					int f_x = x * m_pixelpermm;
-					if (m_scan->peaks.at(y).at(x).empty())
+					if (m_scan->rtPeaks.at(y).at(x).empty())
 						continue;
-					float value = maxPeak(m_scan->peaks.at(y).at(x), m_scan->originalScan.sound.samples);
+					float value = maxPeak(m_scan->rtPeaks.at(y).at(x), m_scan->sound.samples);
 					if (max < value || min < value) {
 						max = max > value ? max : value;
 						min = min < value ? min : value;
@@ -82,15 +79,13 @@ run() {
 				}
 			}
 		}
-		float converted = (value - min) / (max - min);
-		color.setHsvF(converted, 1, 1, 1);
-		painter.setPen({ color, 1 * m_pixelpermm + 1 });
-		painter.drawPoint(f_x, f_y);
+		else {
+			float converted = (value - min) / (max - min);
+			color.setHsvF(converted, 1, 1, 1);
+			painter.setPen({ color, 1 * m_pixelpermm + 1 });
+			painter.drawPoint(f_x, f_y);
+		}
 	}
-
-	
-	
-	
 	//swapPixMap();
 }
 

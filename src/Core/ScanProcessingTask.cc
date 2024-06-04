@@ -34,8 +34,8 @@ namespace p   = boost::phoenix;
 namespace pa  = boost::phoenix::arg_names;
 namespace v   = uts::iteration::variadic;
 
-ScanProcessingTask::ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan)
-  : rawLines(rawLines), params(params), scan(newScan)
+ScanProcessingTask::ScanProcessingTask(/*const ProcessingParameters& params,*/ std::shared_ptr<Scan>& newScan)
+  : /*params(params),*/ scan(newScan)
 { }
 
 SourceScanLineSlice ScanProcessingTask::trimLine(const SourceScanLine& line, double initialSkip)
@@ -111,7 +111,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
   return std::move(r);
 }
 
-void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<std::vector<RangeScanLine>>& ranges)
+void ScanProcessingTask::alignLines(const std::vector<PeaksLine>& peaks,std::vector<std::vector<RangeScanLine>>& ranges)
 {
   auto realPeaks = peaks 
     | adp::filtered([](const PeaksLine& l) { return ! l.peaks.empty(); })
@@ -170,13 +170,13 @@ std::tuple<std::size_t, std::size_t, std::size_t> ScanProcessingTask::getNormali
 
 void ScanProcessingTask::normalizeRanges(Scan& scan)
 {
-  std::size_t step;
+  /*std::size_t step;
   std::size_t startIndex;
   std::size_t stopIndex;
   std::tie(step, startIndex, stopIndex) = getNormalizedIndexes(scan);
   if (step == 0 && startIndex == 0 && stopIndex == 0) return;
   if (step == 0) step=1000; //******* TODO разобраться с вылетом при step=0
-  auto rangesCount = scan.parameters.ranges.size();
+  auto rangesCount = scan.original.parameters.ranges.size();
   auto commonRangesCount = scan.commonRanges.front().size();
   scan.normalizedRanges.resize(rangesCount);
   scan.commonNormalizedRanges.resize(commonRangesCount);
@@ -194,19 +194,36 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
   for(std::size_t rangeIndex = 0; rangeIndex < commonRangesCount; rangeIndex++){
     normalizeRange(scan.commonNormalizedRanges[rangeIndex],scan.commonRanges, rangeIndex, step, startIndex, stopIndex, extremum);
     emit stageProgressed();
-  }
+  }*/
+    std::size_t step;
+    std::size_t startIndex;
+    std::size_t stopIndex;
+    std::tie(step, startIndex, stopIndex) = getNormalizedIndexes(scan);
+    if (step == 0 && startIndex == 0 && stopIndex == 0) return;
+    auto rangesCount = scan.parameters.ranges.size();
+    auto commonRangesCount = scan.commonRanges.front().size();
+    scan.normalizedRanges.resize(rangesCount);
+    scan.commonNormalizedRanges.resize(commonRangesCount);
+    for (std::size_t rangeIndex = 0; rangeIndex < rangesCount; rangeIndex++) {
+        normalizeRange(scan.normalizedRanges[rangeIndex], scan.ranges, rangeIndex, step, startIndex, stopIndex);
+        emit stageProgressed();
+    }
+
+    for (std::size_t rangeIndex = 0; rangeIndex < commonRangesCount; rangeIndex++) {
+        normalizeRange(scan.commonNormalizedRanges[rangeIndex], scan.commonRanges, rangeIndex, step, startIndex, stopIndex);
+        emit stageProgressed();
+    }
 }
 
 
 void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
-                                        std::vector<std::vector<RangeScanLine>>& ranges,
-                                        std::size_t rangeIndex, 
-                                        std::size_t step, 
-                                        std::size_t startIndex, 
-                                        std::size_t stopIndex,
-                                        ::Extremum extremumOfRangesIn)
+    const std::vector<std::vector<RangeScanLine>>& ranges,
+    std::size_t rangeIndex,
+    std::size_t step,
+    std::size_t startIndex,
+    std::size_t stopIndex)
 {
-  auto lineLength = (stopIndex - startIndex) / step;
+  /*auto lineLength = (stopIndex - startIndex) / step;
   auto linesCount = ranges.size();
   auto be = boost::extents[lineLength][linesCount];
   normalizedRange.maxView.resize(be);
@@ -229,7 +246,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
       float minPeak = 0.0;
       float justPeak = 0.0; //*******
       float diffPeak = 0.0; //*******
-      if(scan->parameters.useSubRanges){
+      if(scan->original.parameters.useSubRanges){
         //*******
         //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
         std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
@@ -304,7 +321,65 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   }  else if (normalizedRange.extremum == ::Extremum::Diff) {
       normalizedRange.view = normalizedRange.diffView;
   }
-  else normalizedRange.view = normalizedRange.averView;
+  else normalizedRange.view = normalizedRange.averView;*/
+  auto lineLength = (stopIndex - startIndex) / step;
+  auto linesCount = ranges.size();
+
+  normalizedRange.maxView.resize(boost::extents[lineLength][linesCount]);
+  normalizedRange.minView.resize(boost::extents[lineLength][linesCount]);
+  normalizedRange.view.resize(boost::extents[lineLength][linesCount]);
+
+  normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
+  normalizedRange.min = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
+
+  for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
+      for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
+          float maxPeak = 0.0;
+          float minPeak = 0.0;
+          if (scan->parameters.useSubRanges) {
+              auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+              minPeak = peaks.first;
+              maxPeak = peaks.second;
+          }
+          else {
+              maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+              minPeak = maxPeak;
+          }
+
+          normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
+          normalizedRange.minView[peakIndex][lineIndex] = minPeak;
+          if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
+          if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
+      }
+  }
+
+  normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
+  normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
+  normalizedRange.finalCoordinate = ranges.front().front().finalCoordinate;
+  normalizedRange.beginIndex = startIndex;
+  normalizedRange.endIndex = stopIndex;
+  normalizedRange.step = step;
+  normalizedRange.extremum = Extremum::Max;
+
+
+  normalizedRange.lineCoordinates.resize(linesCount);
+  if (linesCount > 0) {
+      //if (ranges[0][rangeIndex].lineCoordinate < 0) {
+      //  normalizedRange.lineCoordinates[0] = 0;
+      //} else {
+      //  normalizedRange.lineCoordinates[0] = ranges[0][rangeIndex].lineCoordinate;
+      //}
+
+      for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) //{
+       // if (ranges[lineIndex][rangeIndex].lineCoordinate < 0) {
+       //   normalizedRange.lineCoordinates[lineIndex] = normalizedRange.lineCoordinates[lineIndex - 1] + 1;
+       // } else {
+          normalizedRange.lineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].lineCoordinate;
+      // }
+     //}
+  }
+
+  normalizedRange.view = normalizedRange.maxView;
 }
 
 float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx)
@@ -356,10 +431,10 @@ float ScanProcessingTask::getMinSubrangePeak(const RangeScanLine& line,std::size
   return result;
 }
 
-std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx)
-//std::pair<float,float> ScanProcessingTask::getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx)
+//std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx)
+std::pair<float,float> ScanProcessingTask::getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx)
 {
-  auto iidx = boost::lower_bound(line.sampleIndexes, idx);
+  /*auto iidx = boost::lower_bound(line.sampleIndexes, idx);
   float min=0.0;
   float max=0.0;
   float aver=0.0;
@@ -376,8 +451,27 @@ std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubrang
     aver = getAverageSubrangePeak(line,idx2 > 0 ? idx2 : 0);
   }
  
-  return std::make_tuple(min, max, aver);
+  return std::make_tuple(min, max, aver);*/
   //return std::make_pair(min, max);
+
+  auto iidx = boost::lower_bound(line.sampleIndexes, idx);
+  float min = 0.0;
+  float max = 0.0;
+
+  if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
+      auto idx = std::distance(line.sampleIndexes.begin(), iidx);
+      max = getMaxSubrangePeak(line, idx);
+      min = getMinSubrangePeak(line, idx);
+      return std::make_pair(min, max);
+  }
+  else if (iidx != line.sampleIndexes.end()) {
+      auto idx = std::distance(line.sampleIndexes.begin(), iidx);
+      max = getMaxSubrangePeak(line, idx > 0 ? idx : 0);
+      min = getMinSubrangePeak(line, idx > 0 ? idx : 0);
+      return std::make_pair(min, max);
+  }
+
+  return std::make_pair(0.0, 0.0);
 }
 
 Polynomial ScanProcessingTask::signleRangeModel(const std::vector<double>& column, 
@@ -513,7 +607,7 @@ RangeScanLine ScanProcessingTask::findAverageLine(std::vector<RangeScanLine>& ra
   result.subBegin = rangedLines.begin();
   result.subEnd = rangedLines.end();
 
-  for(auto iter = rangedLines.begin();iter < rangedLines.end();iter++){
+  for(auto iter = rangedLines.begin();iter<rangedLines.end();iter++){
 	if(iter->range.from == rangedLines.front().range.from && iter->range.to == rangedLines.back().range.to) continue;
     if(floor(iter->range.from/500)==floor(range.from/500))
       result.subBegin = iter;
@@ -643,7 +737,7 @@ void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanL
 
 void ScanProcessingTask::operator() ()
 {
-  /*if (rawLines.empty()) {
+  if (scan->sound.samples.empty()) {
     emit finished();
     return;
   }
@@ -651,17 +745,61 @@ void ScanProcessingTask::operator() ()
   auto stagesNumber = 12 + (params.columnModelOrder > 0 ? 1 : 0)+(params.shouldNormalize ? 1 : 0);
 
   stagesNumber = stagesNumber - static_cast<uint>(scan->processingStage);
+  std::cout << "obr 1\n";
   emit started("Обработка скана",stagesNumber);
 
-  scan->parameters = params;
+  params = scan->parameters;
 
   switch(scan->processingStage){
   default:
-  case ScanProcessingStage::RawDataObtained:
-    scan->processingStage = ScanProcessingStage::LinesTrimmed;
-  case ScanProcessingStage::LinesTrimmed:
-    emit stageStarted("Детектирование пиков", scan->originalScan.sound.samples.size());
-    /*scan->peaks.clear();
+  case ScanProcessingStage::RawDataObtained :
+  {
+      scan->currentRange = 0;
+      //scan->lines = rawLines;
+      const auto& sound = scan->sound;
+      for (auto linePeaks : scan->rtPeaks) {
+          SourceScanLine source;
+          source.sampleRate = sound.sampleRate;
+          double startCoordinate = 0;
+          double finalCoordinate = linePeaks.size() - 1;
+          double lineCoordinate = scan->lines.size();
+          double finalLineCoordinate = scan->lines.size();
+          unsigned long long int timestampStart = 0;
+          unsigned long long int timestampEnd = 0;
+          for (auto peaks : linePeaks) {
+              if (peaks.empty())
+                  continue;
+              const auto& lastPeak = peaks.back();
+
+              source.samples.insert(source.samples.begin(),
+                  sound.samples.begin() + lastPeak.beginIndex,
+                  sound.samples.begin() + lastPeak.endIndex);
+          }
+          scan->lines.push_back(source);
+      }
+      std::cout << "obr 2\n";
+      emit stageStarted("Выравнивание строк - 1", scan->lines.size());
+      scan->trimmedLines.clear();
+
+      //дополнение первой строки до размера следующей
+      if (scan->lines.size() > 1) {
+          if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[1].samples.size() / 1000)) {
+              auto difference = scan->lines[1].samples.size() - scan->lines[0].samples.size();
+              scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
+          }
+      }
+      for (auto& line : scan->lines) {
+          scan->trimmedLines.push_back({line.samples.begin(),line.samples.end(),line.sampleRate,line.startCoordinate,line.finalCoordinate,line.lineCoordinate,line.finalLineCoordinate,0,0 });
+      }
+      /*boost::transform(scan->lines,
+          std::back_inserter(scan->trimmedLines),
+          p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));*/
+      scan->processingStage = ScanProcessingStage::LinesTrimmed;
+  }
+  case ScanProcessingStage::LinesTrimmed :
+      std::cout << "obr 3\n";
+    emit stageStarted("Детектирование пиков", scan->sound.samples.size());
+    scan->peaks.clear();
     boost::transform(scan->trimmedLines, 
                      std::back_inserter(scan->peaks),
                      p::bind(&ScanProcessingTask::findPeaks, this, pa::_1, 
@@ -671,29 +809,33 @@ void ScanProcessingTask::operator() ()
                              static_cast<unsigned int>(params.peakPauseCount)));
      scan->processingStage = ScanProcessingStage::PeaksDetected;
   case ScanProcessingStage::PeaksDetected:
-    emit stageStarted("Нормализация направления сканирования", scan->originalScan.sound.samples.size());
+      std::cout << "obr 3\n";
+    emit stageStarted("Нормализация направления сканирования", scan->sound.samples.size());
     boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::normalizeDirection, this, pa::_1));
     scan->processingStage = ScanProcessingStage::DirectionNormalized;
   case ScanProcessingStage::DirectionNormalized:
-    emit stageStarted("Разделение на частотные диапазоны", scan->originalScan.sound.samples.size());
+      std::cout << "Разделение на частотные диапазоны\n";
+    emit stageStarted("Разделение на частотные диапазоны", scan->sound.samples.size());
     scan->spec.clear();
-    /*v::transform([this](const SourceScanLineSlice& line, const PeaksLine& peaksLine) { return this->splitFrequencyRanges(line, peaksLine.peaks); }, 
+    v::transform([this](const SourceScanLineSlice& line, const PeaksLine& peaksLine) { return this->splitFrequencyRanges(line, peaksLine.peaks); }, 
                   std::back_inserter(scan->spec),
                   begin(scan->trimmedLines), end(scan->trimmedLines),
                   begin(scan->peaks));
     scan->processingStage = ScanProcessingStage::FrequencyRangesSplited;
 
     if(scan->parameters.shouldNormalize){
+        std::cout << "obr 4\n";
       emit stageStarted("Нормализация спектра",scan->spec.size());
       normalizeSpectrogram(scan->spec);
     }
-
+    std::cout << "obr 5\n";
     emit stageStarted("Поиск относительного уровня сигнала",scan->normalizedSpec.size());
     if(scan->parameters.specNormalization.size() < scan->spec.begin()->size())
       findRelativeSignals(*scan);
     else
       findRelativeSignals(*scan,scan->parameters.specNormalization);
   case ScanProcessingStage::FrequencyRangesSplited:
+      std::cout << "obr 6\n";
     emit stageStarted("Сглаживание строк",scan->normalizedSpec.size());
     smoothRanges(*scan);     //производится сглаживание по строкам с помощью весовой функции,далее работаем со сглаженными графиками
     scan->processingStage = ScanProcessingStage::RangesSmoothed;
@@ -702,7 +844,7 @@ void ScanProcessingTask::operator() ()
     selectRangesFromSpec(*scan);
     scan->processingStage = ScanProcessingStage::RangesSelected;
   case ScanProcessingStage::RangesSelected:
-    emit stageStarted("Выравнивание строк - 2", scan->originalScan.sound.samples.size());
+    emit stageStarted("Выравнивание строк - 2", scan->sound.samples.size());
     //alignLines(scan->peaks,scan->ranges);
     //alignLines(scan->peaks,scan->commonRanges);
     scan->processingStage = ScanProcessingStage::LinesAligned;
@@ -750,5 +892,5 @@ void ScanProcessingTask::operator() ()
   }
 
   emit finished();
-  emit newScanReady(scan);*/
+  emit newScanReady(scan);
 }

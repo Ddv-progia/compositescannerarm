@@ -70,6 +70,8 @@ add_executable(CompositeScanner #WIN32
   Core/AssembleScanTask.hh
   Core/BackgroundTaskExecutor.cc
   Core/BackgroundTaskExecutor.hh
+  Core/BinaryPersistentVariable.hh
+  Core/BinaryTransformation.hh
   Core/ConfigurationLocator.cc
   Core/ConfigurationLocator.hh
   Core/CommonXmlLoad.hh
@@ -156,6 +158,10 @@ add_executable(CompositeScanner #WIN32
   RealTime/cursor.cpp
   RealTime/area.h
   RealTime/area.cpp
+  RealTime/peakDisplay.cpp
+  RealTime/peakDisplay.h
+  RealTime/soundDisplay.h
+  RealTime/soundDisplay.cpp
 
   Gui/AssembleScanDialog.cc
   Gui/AssembleScanDialog.hh
@@ -186,6 +192,7 @@ add_executable(CompositeScanner #WIN32
   Gui/ProcessingParametersDialog.cc
   Gui/ProcessingParametersDialog.hh
   Gui/Saveable.hh
+  Gui/Loadable.hh
   Gui/ScanControlDialog.cc
   Gui/ScanControlDialog.hh
   Gui/ScanDisplayWindow.cc
@@ -237,6 +244,8 @@ target_link_libraries(CompositeScanner
   UCL-Customization
   UCL-PlotView
   UCL-Reflection-Binding
+  UCL-Reflection-Binding-BinaryKeyValue
+  UCL-Reflection-Binding-BinaryKeyValue-BerkeleyDB
   UCL-Regression-Analysis
   UCL-Signal-Processing
   DevTalk-Drivers-Unitest-APL-System)

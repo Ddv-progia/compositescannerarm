@@ -40,13 +40,13 @@ FieldWidget(int width, int height)
 	layout->addWidget(rb2);
 	layout->addWidget(rb3);
 	this->setLayout(layout);
-	connect(group, SIGNAL(buttonToggled(int, bool)),this,SLOT( changeMode(int , bool )));
+	connect(group, SIGNAL(idToggled(int, bool)),this,SLOT( changeMode(int , bool )));
 
 }
 
 void FieldWidget::changeMode(int btn, bool value) {
 	if(value)
-		m_numArea = btn * 2;
+		m_numArea = btn * 2ll;
 }
 
 FieldWidget::
@@ -57,6 +57,10 @@ FieldWidget::
 void FieldWidget::
 setScan(std::shared_ptr<Scan> scan) {
 	m_scan = scan;
+	m_scan->rtPeaks.resize(m_height);
+	int coord = 0;
+	for (auto& linePeak : m_scan->rtPeaks)
+		linePeak.resize(m_width);
 	m_area->clear();
 	m_area->setScan(m_scan);
 	m_curIndex = 0;
@@ -71,10 +75,10 @@ void FieldWidget::
 timeout() {
 	if ( !m_scan)
 		return;
-	if (!m_scan->originalScan.trajectory.pos.empty()) {
+	if (!m_scan->trajectory.pos.empty()) {
 		m_cursor->setPosition(
-			m_scan->originalScan.trajectory.pos.back().x,
-			m_scan->originalScan.trajectory.pos.back().y
+			m_scan->trajectory.pos.back().x,
+			m_scan->trajectory.pos.back().y
 		);
 	}
 	m_area->start();
@@ -83,29 +87,43 @@ timeout() {
 void FieldWidget::
 findPeak() {
 	try {
-		if (!m_scan || m_scan->originalScan.trajectory.pos.empty())
+		if (!m_scan || m_scan->trajectory.pos.empty())
 			return;
-		auto& data = m_scan->originalScan.sound.samples;
-		auto& dataCoord = m_scan->originalScan.trajectory.pos;
 
+		const auto& parameters = m_scan->parameters;
+		uint backStep = m_scan->sound.sampleRate * parameters.peakBackstep;
+		uint foreStep = m_scan->sound.sampleRate * parameters.peakForestep;
+		uint pause = m_scan->sound.sampleRate * parameters.peakPauseCount;
+		auto& data = m_scan->sound.samples;
+		auto& dataCoord = m_scan->trajectory.pos;
+		int size = data.size();
 		double comparator = m_scan->parameters.peakMagnitudeLimit;
-		for (; m_curIndex < data.size(); ++m_curIndex) {
+		for (; m_curIndex < size; ++m_curIndex) {
 			if (abs(data.at(m_curIndex)) > comparator) {
-				  
-				int x = (int)dataCoord.at(m_curIndex / 1000).x;
-				int y = (int)dataCoord.at(m_curIndex / 1000).y;
-				//int z = (int)dataCoord.at(m_curIndex / 1000).z;
+				std::cout << abs(data.at(m_curIndex)) << ":" << comparator << std::endl;
+				int indCoord = m_curIndex / 1000;
+				if (indCoord >= dataCoord.size())
+					return;
+				std::cout << abs(data.at(m_curIndex)) << ":!" << comparator << std::endl;
+				int x = (int)dataCoord.at(indCoord).x;
+				int y = (int)dataCoord.at(indCoord).y;
+				int z = (int)dataCoord.at(indCoord).z;
 				
-				uint indBegin = m_curIndex;
-				m_curIndex += 4000;
+				uint indBegin = m_curIndex - backStep;
+				uint indEnd = m_curIndex + foreStep;
+				if (indEnd >= size) {
+					m_curIndex = indBegin;
+					return;
+				}
+				m_curIndex += pause;
 
-				m_scan->peaks.at(y).at(x).push_back({ indBegin, indBegin + 1000, });
+				m_scan->rtPeaks.at(y).at(x).push_back({ indBegin, indEnd });
 				m_area->drawPoint(x, y);
-				for (int indy = std::max((y - m_numArea), size_t(0)); indy < std::min(size_t(y + m_numArea), m_scan->peaks.size() - 1); ++indy) {
-					for (int indx = std::max((x - m_numArea), size_t(0)); indx < std::min(size_t(x + m_numArea), m_scan->peaks.at(indy).size() - 1); ++indx) {
-							m_scan->peaks.at(indy).at(indx).push_back({ indBegin, indBegin + 1000, });
-							if (m_scan->peaks.at(indy).at(indx).size() > 4)
-								m_scan->peaks.at(indy).at(indx).pop_front();
+				for (int indy = std::max((y - m_numArea), size_t(0)); indy <= std::min(size_t(y + m_numArea), m_scan->rtPeaks.size() - 1); ++indy) {
+					for (int indx = std::max((x - m_numArea), size_t(0)); indx <= std::min(size_t(x + m_numArea), m_scan->rtPeaks.at(indy).size() - 1); ++indx) {
+							m_scan->rtPeaks.at(indy).at(indx).push_back({ indBegin, indEnd });
+							if (m_scan->rtPeaks.at(indy).at(indx).size() > 4)
+								m_scan->rtPeaks.at(indy).at(indx).pop_front();
 							m_area->drawPoint(indx, indy);
 					}
 				}

@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   
   try {
     Configuration::init(argc, argv);
-    QString path = Configuration::getConfigurationPathname("etc/Devices-Configuration.xml");
+    QString path = Configuration::getConfigurationPathname("etc\\Devices-Configuration.xml");
     PersistentVariable<DevicesConfiguration> conf(path.toStdString(), "Devices-Configuration");
     conf.load();
     devices::setup(*conf, communicator, *objectKeeper);

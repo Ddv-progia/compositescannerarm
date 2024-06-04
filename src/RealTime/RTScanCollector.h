@@ -2,29 +2,36 @@
 
 #include "Core/ScanCollector.hh"
 #include "RTContext.h"
-#include "onewavewidget.h"
+
 #include "fieldwidget.h"
+#include "Gui/Saveable.hh"
+#include "Gui/Loadable.hh"
 
 namespace realtime {
-	class RTScanCollector : public ScanCollector
+	class SoundDisplay;
+	class PeakDisplay;
+
+	class RTScanCollector : public ScanCollector, public Saveable, public Loadable
 	{
-		static bool m_isStarted;
-		bool m_isThisStarted = false;
-		const unsigned int SEC_PER_MINUTE = 60;
-		const unsigned int MAXIMUM_TIME = 60;
-		const unsigned int SOUDS_SAMPLE_RATE = 100000;
-		const unsigned int HEAD_SAMPLE_RATE = 100;
-		const int WIDTH = 100;
-		const int HEIGHT = 100;
 		struct Shift {
 			float x{ 0.0 };
 			float y{ 0.0 };
 			float z{ 0.0 };
 			bool is_correct = false;
 		}m_shift;
+		static bool m_isStarted;
+		bool m_isThisStarted = false;
+		const size_t SEC_PER_MINUTE = 60;
+		const size_t MAXIMUM_TIME = 60;
+		const size_t SOUDS_SAMPLE_RATE = 100000;
+		const size_t HEAD_SAMPLE_RATE = 100;
+		const int WIDTH = 100;
+		const int HEIGHT = 50;
+		
 		realtime::RTContext& m_rtCtxt;
 		ProcessingParameters m_parameters;
-		OneWaveWidget *m_oneWave;
+		SoundDisplay *m_soundDisplay;
+		PeakDisplay* m_peakDisplay;
 		FieldWidget *m_field;
 		RTScanCollector() = delete;
 	public:
@@ -34,6 +41,10 @@ namespace realtime {
 		Q_SLOT virtual void pause() override {};
 		Q_SLOT void headData(float x, float y, float z);
 		Q_SLOT void audioData();
+
+		virtual void save(BackgroundTaskExecutor& taskExecutor) override;
+		virtual void saveAs(BackgroundTaskExecutor& taskExecutor) override;
+		virtual void load(BackgroundTaskExecutor& taskExecutor) override;
 
 		virtual ~RTScanCollector();
 	};

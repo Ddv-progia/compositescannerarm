@@ -27,6 +27,7 @@ public:
     ~FieldWidget();
     void setScan(std::shared_ptr<Scan> scan);
     void setNumArea(size_t numArea);
+    std::shared_ptr<Scan> scan() { return m_scan; }
 
 public slots:
     void timeout();

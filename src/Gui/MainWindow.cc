@@ -36,7 +36,7 @@
 
 MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor), scanFactory(scanFactory), m_rtCtxt(rtCtxt),
-  processingParameters(Configuration::getConfigurationPathname("etc/Processing-Parameters.xml").toStdString(), "Processing-Parameters")
+  processingParameters(Configuration::getConfigurationPathname("etc\\Processing-Parameters.xml").toStdString(), "Processing-Parameters")
 {
   ui.setupUi(this);
   
@@ -100,7 +100,7 @@ void MainWindow::loadConfiguration()
 
   try {
   
-    //processingParameters.load();
+    processingParameters.load();
   } catch (...) {
     QMessageBox::critical(this, "Сбой загрузки настроек", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
   }
@@ -217,18 +217,18 @@ void MainWindow::openTechnological()
 
 void MainWindow::save()
 {
-  /*auto currentWidget = getCurrentMdiWidget();
+  auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
     ew->save(taskExecutor);
-  }*/
+  }
 }
 
 void MainWindow::saveAs()
 {
-  /*auto currentWidget = getCurrentMdiWidget();
+  auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
     ew->saveAs(taskExecutor);
-  }*/
+  }
 }
 
 void MainWindow::editUndo()
@@ -376,7 +376,7 @@ void MainWindow::saveTechnologicalParameters()
   namespace urb = uts::reflection::binding;
 
   try {
-    //processingParameters.save();
+    processingParameters.save();
   }
   catch (...) {
     QMessageBox::critical(this, "Сбой сохранения технологичесих параметров", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));

@@ -443,11 +443,11 @@ void ScanDisplayWindow::selectContour(size_t n )
 }
 void ScanDisplayWindow::setDefectMask()
 {
-  defectsMarker->setDefects((std::vector<Defect, std::allocator<Defect>> &)plotDefectsModel->currentDefects());
+  defectsMarker->setDefects(plotDefectsModel->currentDefects());
 }
 
 
-void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
+/*void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
 {
     switch (ex) {
         default:
@@ -480,7 +480,7 @@ void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
             break;
         }
     }
-}
+}*/
 
 void ScanDisplayWindow::changeExtremums()
 {
@@ -672,7 +672,7 @@ void ScanDisplayWindow::getRegionFrequencyRose(const QRectF& rect)
 			  if(closeness[nDef] < closeness[nMin])	nMin = nDef;
 			  closenessTable->setItem(closenessTable->rowCount()-1,2*nDef+3,item);
 		  }
-          closenessTable->item(closenessTable->rowCount() - 1, 2 * nMin + 3)->setBackground(Qt::yellow);
+		  closenessTable->item(closenessTable->rowCount()-1,2*nMin+3)->setBackground(QColor(Qt::yellow));
 		  closenessTable->resizeColumnsToContents();
 		  closenessTable->show();
 	  }catch(...){}
@@ -821,9 +821,9 @@ void ScanDisplayWindow::updateRangesPlot()
     normalizedRanges = &scan->commonNormalizedRanges;
     idx = commonRangeNum;
   }
-  else{
+  /*else {
       //switch (scan->normalizedRanges[idx].extremum){
-      switch (scan->parameters.extremumOfRanges[idx]) {
+      switch (scan->original.parameters.extremumOfRanges[idx]) {
       case Extremum::Max:
           scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].maxView;
           break;
@@ -837,7 +837,7 @@ void ScanDisplayWindow::updateRangesPlot()
           scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].diffView;
           break;
       }
-  }
+  }*/
   auto spec = new QwtPlotSpectrogram;
   spec->setData(new NormalizedRangeRasterData((*normalizedRanges)[idx]));
   //spec->setData(new RangeRasterData(scan->ranges, idx));
@@ -866,11 +866,10 @@ void ScanDisplayWindow::updateRangesPlot()
 void ScanDisplayWindow::selectRange(int idx, Extremum ex)
 {
   showCommonRange = true;
-//*******
-  this->changeExtremum(ex);
-  //if(ex != scan->commonNormalizedRanges.front().extremum)
-    //this->changeExtremums(); 
-//*******
+  //this->changeExtremum(ex);
+  if(ex != scan->commonNormalizedRanges.front().extremum)
+    this->changeExtremums(); 
+
 
   commonRangeNum = idx;
 
@@ -1047,24 +1046,37 @@ void ScanDisplayWindow::updatePlot()
 
 void ScanDisplayWindow::updatePlotList()
 {
-  plotBox->clear();
+    plotBox->clear();
+    switch (kindBox->currentIndex()) {
+    default:
+        for (auto& r : scan->parameters.ranges) plotBox->addItem(QString("%1 -- %2").arg(r.from).arg(r.to));
+        break;
+    case 2:
+    case 3:
+        for (auto& d : scan->parameters.defectPoints) plotBox->addItem(QString::fromStdString(d.title));
+        break;
+    }
+    updatePlot();
+
+
+  /*plotBox->clear();
   int i = 0;
   switch (kindBox->currentIndex()) {
   default:
-      for (auto& r : scan->parameters.ranges) {
+      for (auto& r : scan->original.parameters.ranges) {
           auto index = plotBox->count();
           QString strExtremum = " Aver";
           QString path = "icons/button_average.ico";
-          if (scan->parameters.extremumOfRanges.size()>i) {
-              if (scan->parameters.extremumOfRanges[i] == ::Extremum::Min) {
+          if (scan->original.parameters.extremumOfRanges.size()>i) {
+              if (scan->original.parameters.extremumOfRanges[i] == ::Extremum::Min) {
                   path = "icons/button_min.ico";
                   strExtremum = " Min";
               }
-              else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Max) {
+              else if (scan->original.parameters.extremumOfRanges[i] == ::Extremum::Max) {
                   path = "icons/button_max.ico";
                   strExtremum = " Max";
               }
-              else if (scan->parameters.extremumOfRanges[i] == ::Extremum::Diff) {
+              else if (scan->original.parameters.extremumOfRanges[i] == ::Extremum::Diff) {
                   path = "icons/button_diff.ico";
                   strExtremum = " Diff";
               }
@@ -1077,10 +1089,10 @@ void ScanDisplayWindow::updatePlotList()
     break;
   case 2:
   case 3:
-    for (auto & d : scan->parameters.defectPoints) plotBox->addItem(QString::fromStdString(d.title));
+    for (auto & d : scan->original.parameters.defectPoints) plotBox->addItem(QString::fromStdString(d.title));
     break;
   }
-  updatePlot();
+  updatePlot();*/
 }
 
 void ScanDisplayWindow::updateRangeViewPoint()
@@ -1237,7 +1249,7 @@ void ScanDisplayWindow::showPlots()
 
   plotView->addPlotItemAction(magnitudeAction);
 #ifndef USE_TREND_VERSION
-  plotView->addPlotItemAction(std::make_shared<PeakSpectrogramAction>(new FftToFaseAngle, scan->parameters,
+  plotView->addPlotItemAction(std::make_shared<PeakSpectrogramAction>(new FftToFaseAngle, scan->original.parameters,
                               "Спектрограмма по ударам (фаза)..."));
 #else
   plotView->addPlotItemAction(phaseAction);
@@ -1270,7 +1282,7 @@ void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, Scan
     scan->processingStage = ScanProcessingStage::LinesAligned;
   else
     scan->processingStage = ScanProcessingStage::RawDataObtained;
-  factory.startNewScan(params);
+  //factory.startNewScan(params);
   //for (auto const & l : scan->lines) factory.addRangeScanLine(l);
   refreshWindow();
 }

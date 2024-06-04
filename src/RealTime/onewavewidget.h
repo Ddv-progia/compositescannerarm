@@ -20,20 +20,18 @@ class OneWaveWidget : public QWidget
     QVBoxLayout *m_vLayout;
     QGridLayout *m_graphicGridLayout;
     QWidget *m_graphicsWidget;
-    std::unique_ptr<QTimer> m_updateTimer;
-    std::shared_ptr<Scan> m_scan = nullptr;
-
+    float m_dividerFrequency = 1;
+    float m_dividerAmplitude = 1;
 public:
     OneWaveWidget();
     ~OneWaveWidget();
-    void setScan(std::shared_ptr<Scan> scan);
     void update(const QList<QPointF> &newPoints);
-
+    void setRangeFrequency(int min = 0, int max = 1000, float divider = 1);
+    void setRangeAmplitude(int min = 0, int max = 1000, float divider = 1);
 public slots:
     void changeVerticalCoord(int downValue ,int upValue);
     void changeHorizontalCoord(int downValue ,int upValue);
-    void redraw();
-
+    //void redraw();
 };
 
 #endif // ONEWAVEWIDGET_H

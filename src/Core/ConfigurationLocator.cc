@@ -33,5 +33,5 @@ void Configuration::init(int argc, char* argv[]) {
 
 QString Configuration::getConfigurationPathname(const QString& basename)
 {
-  return m_configPath + "/" + basename;
+  return m_configPath  + basename;
 }

@@ -663,21 +663,21 @@ void ProcessingParametersDialog::fillWidgets()
   ui.redFixedBox->setValue(params.defectRendering.redFixed);
   ui.greenFixedBox->setValue(params.defectRendering.greenFixed);
   ui.blueFixedBox->setValue(params.defectRendering.blueFixed);
-  ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this->params.extremumOfRanges, this));
   ui.rangesTableView->setItemDelegateForColumn(2, new ExtremumDelegate(this));
 
-  ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this->params.extremumOfRanges, this));
-  ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
-  ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
-  ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
 
   ui.blurCheckBox->setChecked(this->params.defectSearching.useBlur);
   ui.blurHEdit->setText(QString::number(this->params.defectSearching.blurHeight));
   ui.blurWEdit->setText(QString::number(this->params.defectSearching.blurWidth));
   ui.unionCheckBox->setChecked(this->params.defectSearching.useUnion);
   ui.separationCheckBox->setChecked(this->params.defectSearching.useSeparation);
-  ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
-  ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  //ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
+  //ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
   ui.approximationComboBox->setCurrentIndex(this->params.defectSearching.edgesApproximationType-1);
   ui.defectInterpretationComboBox->setCurrentIndex((int)this->params.defectSearching.isDefectInside);
   ui.minAreaOfDefectDblSpinBox->setValue(this->params.defectSearching.minDefectArea);

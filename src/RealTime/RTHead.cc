@@ -13,7 +13,7 @@ start(int sampleRate) {
     if (m_isStarted.load(std::memory_order_seq_cst))
         return;
 
-    /*m_thread = std::thread([&](uts::devtalk::device::utscp::APLHeadPrx& head, int period) {
+    m_thread = std::thread([&](const uts::devtalk::device::utscp::APLHeadPrx &head,int period) {
         try {
             m_isStarted.store(true, std::memory_order_seq_cst);
             if (head)
@@ -24,7 +24,7 @@ start(int sampleRate) {
             std::cout << "APLHead not found" << '\n';
         }
         }, devices::head, 1000 / sampleRate);
-    m_thread.detach();*/
+    m_thread.detach();
 }
 
 void realtime::RTHead::

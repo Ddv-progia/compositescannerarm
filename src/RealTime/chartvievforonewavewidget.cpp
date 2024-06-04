@@ -121,5 +121,5 @@ void ChartViewForOneWaveWidget::mouseReleaseEvent(QMouseEvent *event){
 }
 
 void ChartViewForOneWaveWidget::dataUpdate(){
-    updateLineInfo(m_verticalLine->line().p1());
+    //updateLineInfo(m_verticalLine->line().p1());
 }

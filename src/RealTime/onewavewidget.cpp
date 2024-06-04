@@ -12,28 +12,22 @@ OneWaveWidget::OneWaveWidget()
     m_hSplitter = new QSplitter;
     m_sliderAmplitude = new QxtSpanSlider(Qt::Vertical);
 
-    m_sliderAmplitude->setRange(-1000,1000);
-    m_sliderAmplitude->setSpan(m_sliderAmplitude->minimum(),m_sliderAmplitude->maximum());
-
     m_sliderFrequency = new QxtSpanSlider(Qt::Horizontal);
-    m_sliderFrequency->setRange(-10,500);
-    m_sliderFrequency->setSpan(m_sliderFrequency->minimum(),m_sliderFrequency->maximum());
 
     m_vLayout = new QVBoxLayout;
-    m_vLayout->setContentsMargins(0,0,0,0);
+    m_vLayout->setContentsMargins(0, 0, 0, 0);
     m_graphicGridLayout = new QGridLayout();
     m_graphicGridLayout->setContentsMargins(0, 0, 0, 0);
     m_graphicsWidget = new QWidget();
 
     xAxis = new QValueAxis;
-    xAxis->setRange(m_sliderFrequency->minimum(), m_sliderFrequency->maximum());
     xAxis->setTitleText(tr("Lines Hz"));
     xAxis->setTitleBrush(Qt::magenta);
     xAxis->setLabelsColor(Qt::magenta);
     //xAxis->setTickCount(10);
 
     yAxis = new QValueAxis;
-    yAxis->setRange(m_sliderAmplitude->minimum() / 1000.0, m_sliderAmplitude->maximum() / 1000.0);
+
     yAxis->setTitleText(tr("Amplitude"));
     yAxis->setTitleBrush(Qt::yellow);
     yAxis->setLabelsColor(Qt::yellow);
@@ -60,17 +54,6 @@ OneWaveWidget::OneWaveWidget()
 
     connect(m_sliderAmplitude,&QxtSpanSlider::spanChanged,this,&OneWaveWidget::changeVerticalCoord);
     connect(m_sliderFrequency,&QxtSpanSlider::spanChanged,this,&OneWaveWidget::changeHorizontalCoord);
-
-    m_updateTimer = std::make_unique<QTimer>();
-    m_updateTimer->start(10);
-    connect(m_updateTimer.get(), &QTimer::timeout, this, &OneWaveWidget::redraw);
-}
-
-void OneWaveWidget::
-setScan(std::shared_ptr<Scan> scan) {
-    m_scan = scan;
-    m_chartView->setPeakMagnitude(m_scan->parameters.peakMagnitudeLimit);
-   
 }
 
 OneWaveWidget::
@@ -79,32 +62,42 @@ OneWaveWidget::
 }
 
 void OneWaveWidget::update(const QList<QPointF> &newPoints){ //Добавляет точки
-    //xAxis->setRange(newPoints.first().y(), newPoints.last().y());
     m_series->replace(newPoints);
     m_chartView->dataUpdate();
 }
 
+void OneWaveWidget::setRangeFrequency(int min, int max, float divider) {
+    if (!m_sliderFrequency) return;
+    m_sliderFrequency->setRange(min, max);
+    m_sliderFrequency->setSpan(m_sliderFrequency->minimum(), m_sliderFrequency->maximum());
+    xAxis->setRange(m_sliderFrequency->minimum() / m_dividerFrequency, m_sliderFrequency->maximum() / m_dividerFrequency);
+}
+
+void OneWaveWidget::setRangeAmplitude(int min, int max, float divider) {
+    if (!m_sliderAmplitude || !yAxis) return;
+    m_dividerAmplitude = divider; 
+    m_sliderAmplitude->setRange(min, max);
+    m_sliderAmplitude->setSpan(m_sliderAmplitude->minimum(), m_sliderAmplitude->maximum());
+    yAxis->setRange(m_sliderAmplitude->minimum() / m_dividerAmplitude, m_sliderAmplitude->maximum() / m_dividerAmplitude);
+}
 
 void OneWaveWidget::changeVerticalCoord(int downValue ,int upValue){
-    yAxis->setRange(downValue / 1000.0, upValue / 1000.0);
+    yAxis->setRange(downValue / m_dividerAmplitude, upValue / m_dividerAmplitude);
 }
 
 void OneWaveWidget::changeHorizontalCoord(int downValue ,int upValue){
-    xAxis->setRange(downValue , upValue );
+    xAxis->setRange(downValue / m_dividerFrequency, upValue / m_dividerFrequency);
 }
 
-void OneWaveWidget::redraw(){
-    if (!m_scan)
-        return;
+/*void OneWaveWidget::redraw() {
     QList<QPointF> points;
-    points.resize(0);
     auto sampl = m_scan->originalScan.sound.samples;
-
-    //int x = 0;
+    //QVector<QPoint> points{ 5000 < sampl.size() ? 5000 : sampl.size() };
+    //int samplPerSecond = m_scan->originalScan.sound.sampleRate;
+    int x = 0;
     int indBegin = 50000 < sampl.size() ? 50000 : sampl.size();
-    for (int ind = indBegin, x = 0; ind > 0; --ind /*-= 100*/) {
+    for (int ind = indBegin, x = 0; ind > 0; --ind ) {
         points.push_back({ QPointF(float(x++) * 0.01, sampl[sampl.size() - ind]) });
     }
-
-    update(points);
-}
+    update(std::move(points));
+}*/

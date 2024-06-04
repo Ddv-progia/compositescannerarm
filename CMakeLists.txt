@@ -42,8 +42,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 set(CMAKE_DEBUG_POSTFIX d)
 
-set(DEVTALK_BUILD_ASYNC OFF CHE BOOL "Build Microsoft Concurrency Runtime wrappers")
-
 INCLUDE(ZeroCSlice)
 
 add_subdirectory(libs/UCL)
