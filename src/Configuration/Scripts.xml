@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Scripts>
-  <Common>D:/CompositeScannerArm/Scripts/common.js</Common>
-  <Initialization>D:/CompositeScannerArm/Scripts/init.js</Initialization>
-  <Auto-Scan>D:/CompositeScannerArm/Scripts/autoScan.js</Auto-Scan>
+  <Common>D:/Composite-Scanner-Arm/Scripts/common.js</Common>
+  <Initialization>D:/Composite-Scanner-Arm/Scripts/init.js</Initialization>
+  <Auto-Scan>D:/Composite-Scanner-Arm/Scripts/autoScan.js</Auto-Scan>
 </Scripts>

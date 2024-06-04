@@ -3,7 +3,7 @@
   <application name="Composite-Scanner-Arm">
     <variable name="Services-Installation-Dir" value="D:\Composite-Scanner-Arm-build\bin\RelWithDebInfo"/>
     <variable name="Services-Configuration-Dir" value="D:\Composite-Scanner-Arm\etc"/>
-    <variable name="IceBox-Executable" value="C:\Projects\vcpkg\installed\x64-windows\bin\icebox.exe"/>
+    <variable name="IceBox-Executable" value="C:\vcpkg\installed\x64-windows\bin\icebox.exe"/>
     <node name="Composite-Scanner-Arm-Node">
       <icebox id="Composite-Node-DevTalk" activation="always" exe="${IceBox-Executable}">
         <env>PATH=%PATH%;${Services-Installation-Dir}</env>
@@ -28,7 +28,7 @@
         </service>
       </icebox>
       <icebox id="Composite-Node-Ice" activation="always" exe="${IceBox-Executable}">
-        <service name="Ice-Storm" entry="IceStormService,36:createIceStorm">
+        <service name="Ice-Storm" entry="IceStormService,37:createIceStorm">
           <properties>
             <property name="${service}.Transient" value="1"/>
             <property name="Ice.MessageSizeMax" value="100000000" />

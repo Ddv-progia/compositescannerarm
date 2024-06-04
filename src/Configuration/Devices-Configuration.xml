@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Devices-Configuration>
-  <Coil>48</Coil>
-  <Audio-Data-Collector>LineIn (SB X-Fi Surround 5.1 Pro)</Audio-Data-Collector>
+	<Apl-System>
+		<Name>APL-universal</Name>
+		<Address>10.0.254.223</Address>
+		<Port>1111</Port>
+	</Apl-System>
+	<Audio-Data-Collector>Линейный вход/микрофон (Sound Blaster X-Fi Surround 5.1 Pro)</Audio-Data-Collector>
+	<Coil>48</Coil>
 </Devices-Configuration>
