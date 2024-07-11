@@ -86,6 +86,7 @@ void LoadScanTask::operator()()
       parameters.peakBackstep = getVal<double>(db, "parameters.peakBackstep");
       parameters.peakForestep = getVal<double>(db, "parameters.peakForestep");
       parameters.peakPauseCount= getVal<unsigned int>(db, "parameters.peakPauseCount", 1000);
+      //parameters.peakPauseCount= getVal<double>(db, "parameters.peakPauseCount", 1000);
       // parameters.peakPauseCount - экспериментальное значение. Для определения ширины пика.
       // (см. ScanAlgorythm) Использование закомментировано.
 
@@ -113,14 +114,14 @@ void LoadScanTask::operator()()
 
       parameters.columnModelOrder = getVal<unsigned>(db, "parameters.columnModelOrder");
     }
-    //scanFactory.startNewScan(parameters);
+    scanFactory.startNewScan(parameters);
 
     auto linesSize = getVal<std::uint32_t>(db, "lines.@size");
     emit stageStarted("Чтение строк", linesSize);
     for (std::uint32_t i = 0; i < linesSize; i++) loadLine(db,i);
     
     emit finished();
-    //scanFactory.finishScan(boost::optional<QString&>(pathname));
+    scanFactory.finishScan(boost::optional<QString&>(pathname));
 
     db.close(0);
   } catch (...) {
@@ -176,6 +177,6 @@ void LoadScanTask::loadLine(Db& db, std::uint32_t i)
   //    scanFactory.addRangeScanLine(line);
   //}
   ////*******
-  //scanFactory.addRangeScanLine(line);
+  scanFactory.addRangeScanLine(line);
   emit stageProgressed();
 }

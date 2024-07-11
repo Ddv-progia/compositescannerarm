@@ -5,8 +5,8 @@
 #include <QtGui/QScreen>
 
 Cursor::
-Cursor(int width, int height)
-: m_width(width) , m_height(height){
+Cursor(int width, int height, Qt::GlobalColor color)
+: m_width(width) , m_height(height), m_color(color){
 	m_pixelpermm = (QGuiApplication::primaryScreen()->physicalDotsPerInch() / 25.4 );
 	m_width *= m_pixelpermm;
 	m_height *= m_pixelpermm;
@@ -31,7 +31,7 @@ boundingRect() const {
 
 void Cursor::
 paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
-	painter->setPen({ Qt::red, 1 * m_pixelpermm });
+	painter->setPen({ m_color, 1 * m_pixelpermm });
 	painter->drawPoint(m_x, m_y);
 	painter->drawRect(boundingRect());
 }

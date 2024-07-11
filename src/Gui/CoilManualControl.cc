@@ -8,8 +8,31 @@
 #include "Core/Devices.hh"
 #include "Gui/CoilManualControl.hh"
 
+CoilCommandPanel::CoilCommandPanel(const uts::devtalk::CoilPrx& coilOld, int currentIndex, QWidget* parent)
+    : QWidget(parent), coilOld(coilOld), useCoilOld(true)
+{
+    ui.setupUi(this);
+
+    updateCommands();
+    for (std::size_t i = 0; i < commands.size(); i++)
+        ui.commandBox->addItem(commands[i].first);
+    ui.commandBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    ui.commandBox->setCurrentIndex(currentIndex);
+    periodicCommandExecutionTimer = new QTimer(this);
+
+    connect(ui.runButton, SIGNAL(clicked()), this, SLOT(runCurrentCommand()));
+    connect(ui.runCycleButton, SIGNAL(clicked()), this, SLOT(runCurrentCommandPeriodically()));
+    connect(ui.stopCycleButton, SIGNAL(clicked()), periodicCommandExecutionTimer, SLOT(stop()));
+    connect(periodicCommandExecutionTimer, SIGNAL(timeout()), this, SLOT(runCurrentCommand()));
+
+    connect(ui.addButton, SIGNAL(clicked()), this, SIGNAL(addControlPanel()));
+    connect(ui.removeButton, SIGNAL(clicked()), this, SIGNAL(removeControlPanel()));
+    addControlPanel();
+}
+
+
 CoilCommandPanel::CoilCommandPanel(const uts::devtalk::device::utscp::APLCoilPrx& coil, int currentIndex, QWidget* parent)
-  : QWidget(parent), coil(coil)
+  : QWidget(parent), coil(coil), useCoilOld(false)
 {
   ui.setupUi(this);
 
@@ -30,60 +53,126 @@ CoilCommandPanel::CoilCommandPanel(const uts::devtalk::device::utscp::APLCoilPrx
   addControlPanel();
 }
 
+void CoilCommandPanel::updateCommandsNew()
+{
+    commands.push_back(std::make_pair("Считать версию", [this]() { showVersion(coil->getFirmwareVersion()); }));
+    commands.push_back(std::make_pair("Стоп", [this]() { coil->stop(); }));
+    commands.push_back(std::make_pair("Восстановить настройки из EEPROM", [this]() { coil->resetFromEEPROM(); }));
+    commands.push_back(std::make_pair("Сохранить настройки в EEPROM", [this]() { coil->saveToEEPROPM(); }));
+    commands.push_back(std::make_pair("Восстановить начальные настройки", [this]() { coil->resetDefaults(); }));
+    commands.push_back(std::make_pair("Включить генератор", [this]() { coil->switchOnGenerator(); }));
+    commands.push_back(std::make_pair("Искать рабочий диапазон", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coil->searchWorkingRange(timing);
+        }));
+    commands.push_back(std::make_pair("Включить рабочий режим", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coil->switchWorkingMode(timing);
+        }));
+    commands.push_back(std::make_pair("Однократный старт", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coil->switchSingleWorkingMode(timing);
+        }));
+    commands.push_back(std::make_pair("Считать статус", [this]() { showState(coil->getState()); }));
+    commands.push_back(std::make_pair("Считать уровень звука", [this]() { showResult(coil->getLevel()); }));
+    commands.push_back(std::make_pair("Считать АЦП", [this]() { showResult(coil->getADC()); }));
+    commands.push_back(std::make_pair("Увеличить полупериод на Х", [this]() { coil->increaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Уменьшить полупериод на Х", [this]() { coil->decreaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Увеличить ширину на Х", [this]() { coil->increaseWidth(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Уменьшить ширину на Х", [this]() { coil->decreaseWidth(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать полупериод", [this]() { showResult(coil->getHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать полупериод", [this]() { coil->setHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать ширину импульса", [this]() { showResult(coil->getWidth()); }));
+    commands.push_back(std::make_pair("Записать ширину импульса", [this]() { coil->setWidth(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать мощность", [this]() { showResult(coil->getPower()); }));
+    commands.push_back(std::make_pair("Записать мощность", [this]() { coil->setPower(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать максимальный полупериод", [this]() { showResult(coil->getMaximumHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать максимальный полупериод", [this]() { coil->setMaximumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать минимальный полупериод", [this]() { showResult(coil->getMinimumHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать минимальный полупериод", [this]() { coil->setMinimumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать шаг изменения полупериода", [this]() { showResult(coil->getHalfPeriodStep()); }));
+    commands.push_back(std::make_pair("Записать шаг изменения полупериода", [this]() { coil->setHalfPeriodStep(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать стартовый полупериод", [this]() { showResult(coil->getInitialHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать стартовый полупериод", [this]() { coil->setInitialHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать рабочий полупериод", [this]() { showResult(coil->getWorkingHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать рабочий полупериод", [this]() { coil->setWorkingHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать контрольное время", [this]() { showResult(coil->getTestTime()); }));
+    commands.push_back(std::make_pair("Записать контрольное время", [this]() { coil->setTestTime(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать минимальный уровень звука", [this]() { showResult(coil->getMinimumLevel()); }));
+    commands.push_back(std::make_pair("Записать минимальный уровень звука", [this]() { coil->setMinimumLevel(ui.argumentEdit->text().toDouble()); }));
+}
+
+void CoilCommandPanel::updateCommandsOld()
+{
+    commands.push_back(std::make_pair("Считать версию", [this]() { showVersion(coilOld->getFirmwareVersion()); }));
+    commands.push_back(std::make_pair("Стоп", [this]() { coilOld->stop(); }));
+    commands.push_back(std::make_pair("Восстановить настройки из EEPROM", [this]() { coilOld->resetFromEEPROM(); }));
+    commands.push_back(std::make_pair("Сохранить настройки в EEPROM", [this]() { coilOld->saveToEEPROPM(); }));
+    commands.push_back(std::make_pair("Восстановить начальные настройки", [this]() { coilOld->resetDefaults(); }));
+    commands.push_back(std::make_pair("Включить генератор", [this]() { coilOld->switchOnGenerator(); }));
+    commands.push_back(std::make_pair("Искать рабочий диапазон", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coilOld->searchWorkingRange(timing);
+        }));
+    commands.push_back(std::make_pair("Включить рабочий режим", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coilOld->switchWorkingMode(timing);
+        }));
+    commands.push_back(std::make_pair("Однократный старт", [this]() {
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        coilOld->switchSingleWorkingMode(timing);
+        }));
+    commands.push_back(std::make_pair("Считать статус", [this]() { showState(coilOld->getState()); }));
+    commands.push_back(std::make_pair("Считать уровень звука", [this]() { showResult(coilOld->getLevel()); }));
+    commands.push_back(std::make_pair("Считать АЦП", [this]() { showResult(coilOld->getADC()); }));
+    commands.push_back(std::make_pair("Увеличить полупериод на Х", [this]() { coilOld->increaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Уменьшить полупериод на Х", [this]() { coilOld->decreaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Увеличить ширину на Х", [this]() { coilOld->increaseWidth(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Уменьшить ширину на Х", [this]() { coilOld->decreaseWidth(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать полупериод", [this]() { showResult(coilOld->getHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать полупериод", [this]() { coilOld->setHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать ширину импульса", [this]() { showResult(coilOld->getWidth()); }));
+    commands.push_back(std::make_pair("Записать ширину импульса", [this]() { coilOld->setWidth(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать мощность", [this]() { showResult(coilOld->getPower()); }));
+    commands.push_back(std::make_pair("Записать мощность", [this]() { coilOld->setPower(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать максимальный полупериод", [this]() { showResult(coilOld->getMaximumHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать максимальный полупериод", [this]() { coilOld->setMaximumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать минимальный полупериод", [this]() { showResult(coilOld->getMinimumHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать минимальный полупериод", [this]() { coilOld->setMinimumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать шаг изменения полупериода", [this]() { showResult(coilOld->getHalfPeriodStep()); }));
+    commands.push_back(std::make_pair("Записать шаг изменения полупериода", [this]() { coilOld->setHalfPeriodStep(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать стартовый полупериод", [this]() { showResult(coilOld->getInitialHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать стартовый полупериод", [this]() { coilOld->setInitialHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать рабочий полупериод", [this]() { showResult(coilOld->getWorkingHalfPeriod()); }));
+    commands.push_back(std::make_pair("Записать рабочий полупериод", [this]() { coilOld->setWorkingHalfPeriod(ui.argumentEdit->text().toDouble()); }));
+
+    commands.push_back(std::make_pair("Считать контрольное время", [this]() { showResult(coilOld->getTestTime()); }));
+    commands.push_back(std::make_pair("Записать контрольное время", [this]() { coilOld->setTestTime(ui.argumentEdit->text().toDouble()); }));
+    commands.push_back(std::make_pair("Считать минимальный уровень звука", [this]() { showResult(coilOld->getMinimumLevel()); }));
+    commands.push_back(std::make_pair("Записать минимальный уровень звука", [this]() { coilOld->setMinimumLevel(ui.argumentEdit->text().toDouble()); }));
+
+}
+
 void CoilCommandPanel::updateCommands()
 {
   commands.clear();
-  commands.push_back(std::make_pair("Считать версию", [this] () { showVersion(coil->getFirmwareVersion()); }));
-  commands.push_back(std::make_pair("Стоп", [this] () { coil->stop(); }));
-  commands.push_back(std::make_pair("Восстановить настройки из EEPROM", [this] () { coil->resetFromEEPROM(); }));
-  commands.push_back(std::make_pair("Сохранить настройки в EEPROM", [this] () { coil->saveToEEPROPM(); }));
-  commands.push_back(std::make_pair("Восстановить начальные настройки", [this] () { coil->resetDefaults(); }));
-  commands.push_back(std::make_pair("Включить генератор", [this] () { coil->switchOnGenerator(); }));
-  commands.push_back(std::make_pair("Искать рабочий диапазон", [this] () { 
-    IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
-    timing->firstTestDelay = timing->testPause = timing->timeout = 0;
-    coil->searchWorkingRange(timing);
-  }));
-  commands.push_back(std::make_pair("Включить рабочий режим", [this] () { 
-    IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
-    timing->firstTestDelay = timing->testPause = timing->timeout = 0;
-    coil->switchWorkingMode(timing); 
-  }));
-  commands.push_back(std::make_pair("Однократный старт", [this] () { 
-    IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
-    timing->firstTestDelay = timing->testPause = timing->timeout = 0;
-    coil->switchSingleWorkingMode(timing);
-  }));
-  commands.push_back(std::make_pair("Считать статус", [this] () { showState(coil->getState()); }));
-  commands.push_back(std::make_pair("Считать уровень звука", [this] () { showResult(coil->getLevel()); }));
-  commands.push_back(std::make_pair("Считать АЦП", [this] () { showResult(coil->getADC()); }));
-  commands.push_back(std::make_pair("Увеличить полупериод на Х", [this] () { coil->increaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Уменьшить полупериод на Х", [this] () { coil->decreaseHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Увеличить ширину на Х", [this] () { coil->increaseWidth(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Уменьшить ширину на Х", [this] () { coil->decreaseWidth(ui.argumentEdit->text().toDouble()); }));
-
-  commands.push_back(std::make_pair("Считать полупериод", [this] () { showResult(coil->getHalfPeriod()); }));
-  commands.push_back(std::make_pair("Записать полупериод", [this] () { coil->setHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать ширину импульса", [this] () { showResult(coil->getWidth()); }));
-  commands.push_back(std::make_pair("Записать ширину импульса", [this] () { coil->setWidth(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать мощность", [this] () { showResult(coil->getPower()); }));
-  commands.push_back(std::make_pair("Записать мощность", [this] () { coil->setPower(ui.argumentEdit->text().toDouble()); }));
-
-  commands.push_back(std::make_pair("Считать максимальный полупериод", [this] () { showResult(coil->getMaximumHalfPeriod()); }));
-  commands.push_back(std::make_pair("Записать максимальный полупериод", [this] () { coil->setMaximumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать минимальный полупериод", [this] () { showResult(coil->getMinimumHalfPeriod()); }));
-  commands.push_back(std::make_pair("Записать минимальный полупериод", [this] () { coil->setMinimumHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать шаг изменения полупериода", [this] () { showResult(coil->getHalfPeriodStep()); }));
-  commands.push_back(std::make_pair("Записать шаг изменения полупериода", [this] () { coil->setHalfPeriodStep(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать стартовый полупериод", [this] () { showResult(coil->getInitialHalfPeriod()); }));
-  commands.push_back(std::make_pair("Записать стартовый полупериод", [this] () { coil->setInitialHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать рабочий полупериод", [this] () { showResult(coil->getWorkingHalfPeriod()); }));
-  commands.push_back(std::make_pair("Записать рабочий полупериод", [this] () { coil->setWorkingHalfPeriod(ui.argumentEdit->text().toDouble()); }));
-
-  commands.push_back(std::make_pair("Считать контрольное время", [this] () { showResult(coil->getTestTime()); }));
-  commands.push_back(std::make_pair("Записать контрольное время", [this] () { coil->setTestTime(ui.argumentEdit->text().toDouble()); }));
-  commands.push_back(std::make_pair("Считать минимальный уровень звука", [this] () { showResult(coil->getMinimumLevel()); }));
-  commands.push_back(std::make_pair("Записать минимальный уровень звука", [this] () { coil->setMinimumLevel(ui.argumentEdit->text().toDouble()); }));
+  if (useCoilOld) {
+      updateCommandsOld();
+  }
+  else {
+      updateCommandsNew();
+  }
 }
 
 void CoilCommandPanel::showResult(double x)
@@ -178,17 +267,38 @@ CoilManualControlDialog::CoilManualControlDialog(QWidget* parent)
 
 CoilCommandPanel* CoilManualControlDialog::addControlPanelWithIndex(int index)
 {
-  auto ccp = new CoilCommandPanel(devices::coile, index);
-  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
-  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
-  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
-  return ccp;
+    CoilCommandPanel* ccp;
+    if (!devices::coile)
+    {
+        ccp = new CoilCommandPanel(devices::coil, index); //TODO проверить,какая головка не пустая и создавать для неё 
+
+    }
+    else
+    {
+        ccp = new CoilCommandPanel(devices::coile, index);
+
+    }
+    //auto ccp = new CoilCommandPanel(devices::coile, index);
+    connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+    connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+    panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+    return ccp;
 }
 
 void CoilManualControlDialog::addControlPanel()
 {
+    CoilCommandPanel* ccp;
+    if (!devices::coile)
+    {
+        ccp = new CoilCommandPanel(devices::coil);
+    }
+    else
+    {
+        ccp = new CoilCommandPanel(devices::coile);
+    }
+  ////auto ccp = new CoilCommandPanel(devices::coil); //TODO проверить,какая головка не пустая и создавать для неё 
   //auto ccp = new CoilCommandPanel(devices::coile);
-  //connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
-  //connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
-  //panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
+  connect(ccp, SIGNAL(addControlPanel()), this, SLOT(addControlPanel()));
+  connect(ccp, SIGNAL(removeControlPanel()), ccp, SLOT(deleteLater()));
+  panelsLayout->insertWidget(panelsLayout->indexOf(qobject_cast<QWidget*>(sender())) + 1, ccp);
 }

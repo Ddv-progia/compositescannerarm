@@ -1,0 +1,6 @@
+begin_scan()
+sleep(3)
+audioDataCollector.start(96000)
+sleep(5)
+audioDataCollector.stop(0, 0)
+end_scan()

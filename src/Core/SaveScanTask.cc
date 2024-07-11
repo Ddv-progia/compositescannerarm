@@ -43,7 +43,7 @@ SaveScanTask::SaveScanTask(const QString& pathname, const Scan& scan, LineEncodi
 
 void SaveScanTask::operator() ()
 {
-  /*Db db(0, 0);
+  Db db(0, 0);
 
   try {
     db.open(0, pathname.toUtf8().data(), 0, DB_BTREE, DB_CREATE | DB_TRUNCATE, 0);
@@ -53,7 +53,8 @@ void SaveScanTask::operator() ()
     putVal<double>(db, "parameters.peakMagnitudeLimit", scan.parameters.peakMagnitudeLimit);
     putVal<double>(db, "parameters.peakBackstep", scan.parameters.peakBackstep);
     putVal<double>(db, "parameters.peakForestep", scan.parameters.peakForestep);
-    putVal<double>(db, "parameters.peakPauseCount", scan.parameters.peakPauseCount);
+    putVal<unsigned int>(db, "parameters.peakPauseCount", scan.parameters.peakPauseCount);
+    //putVal<double>(db, "parameters.peakPauseCount", scan.parameters.peakPauseCount);
     
     putVal<std::uint32_t>(db, "parameters.ranges.@size", scan.parameters.ranges.size());    
     for (std::size_t i = 0; i < scan.parameters.ranges.size(); i++) {
@@ -120,6 +121,6 @@ void SaveScanTask::operator() ()
   } catch (...) {
     db.close(0);
     throw;
-  }*/
+  }
 
 }

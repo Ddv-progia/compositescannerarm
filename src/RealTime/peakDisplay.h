@@ -16,12 +16,12 @@ namespace realtime {
         QVBoxLayout* m_mainLayout;
 
         std::unique_ptr<QTimer> m_updateTimer;
-        std::shared_ptr<Scan> m_scan = nullptr;
+        std::shared_ptr<ScanArm> m_scan = nullptr;
 
     public:
         PeakDisplay();
         ~PeakDisplay();
-        void setScan(std::shared_ptr<Scan> scan);
+        void setScan(std::shared_ptr<ScanArm> scan);
 
     public slots:
         void update();

@@ -28,6 +28,6 @@ namespace realtime {
 		void stop();
 		void dataReady(const uts::devtalk::ByteSeq& data, const ::Ice::Current & = ::Ice::Current()) override;
 		~RTHead();
-		Q_SIGNAL void newData(float x, float y, float z);
+		Q_SIGNAL void newData(float x, float y, float z, std::time_t timeStamp);
 	};
 }

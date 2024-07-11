@@ -7,8 +7,9 @@
 #include <iostream>
 
 
-OneWaveWidget::OneWaveWidget()
+OneWaveWidget::OneWaveWidget(QString title ,QString xAxeTitle, QString yAxeTitle, Qt::GlobalColor m_penColor, Qt::GlobalColor m_xAxeColor, Qt::GlobalColor m_yAxeColor)
 {
+    this->setWindowTitle(title);
     m_hSplitter = new QSplitter;
     m_sliderAmplitude = new QxtSpanSlider(Qt::Vertical);
 
@@ -21,21 +22,25 @@ OneWaveWidget::OneWaveWidget()
     m_graphicsWidget = new QWidget();
 
     xAxis = new QValueAxis;
-    xAxis->setTitleText(tr("Lines Hz"));
-    xAxis->setTitleBrush(Qt::magenta);
-    xAxis->setLabelsColor(Qt::magenta);
+    //xAxis->setTitleText(tr("Time"));
+    xAxis->setTitleText(xAxeTitle);
+
+    xAxis->setTitleBrush(m_xAxeColor);
+    xAxis->setLabelsColor(m_xAxeColor);
     //xAxis->setTickCount(10);
 
     yAxis = new QValueAxis;
 
-    yAxis->setTitleText(tr("Amplitude"));
-    yAxis->setTitleBrush(Qt::yellow);
-    yAxis->setLabelsColor(Qt::yellow);
+    //yAxis->setTitleText(tr("Amplitude"));
+    yAxis->setTitleText(yAxeTitle);
+    yAxis->setTitleBrush(m_yAxeColor);
+    yAxis->setLabelsColor(m_yAxeColor);
     m_chartView = new ChartViewForOneWaveWidget();
 
-    m_chartView->chart()->setTheme(QChart::ChartThemeDark);
+//    m_chartView->chart()->setTheme(QChart::ChartThemeDark);
+    m_chartView->chart()->setTheme(QChart::ChartThemeQt);
     m_series = new QLineSeries;
-    m_series->setPen(QPen(Qt::red, 2));
+    m_series->setPen(QPen(m_penColor, 2));
     m_chartView->chart()->addSeries(m_series);
     m_chartView->chart()->setAxisX(xAxis, m_series);   // Назначить ось xAxis, осью X для diagramA
     m_chartView->chart()->setAxisY(yAxis, m_series);
@@ -79,6 +84,17 @@ void OneWaveWidget::setRangeAmplitude(int min, int max, float divider) {
     m_sliderAmplitude->setRange(min, max);
     m_sliderAmplitude->setSpan(m_sliderAmplitude->minimum(), m_sliderAmplitude->maximum());
     yAxis->setRange(m_sliderAmplitude->minimum() / m_dividerAmplitude, m_sliderAmplitude->maximum() / m_dividerAmplitude);
+}
+
+void OneWaveWidget::setXAxeTitle(QString xAxeTitle)
+{
+    xAxis->setTitleText(xAxeTitle);
+
+}
+
+void OneWaveWidget::setYAxeTitle(QString yAxeTitle)
+{
+    yAxis->setTitleText(yAxeTitle);
 }
 
 void OneWaveWidget::changeVerticalCoord(int downValue ,int upValue){

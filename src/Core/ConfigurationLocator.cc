@@ -35,3 +35,9 @@ QString Configuration::getConfigurationPathname(const QString& basename)
 {
   return m_configPath  + basename;
 }
+
+QString getConfigurationPathname(const QString& basename)
+{
+    auto envdir = QString::fromLocal8Bit(qgetenv("COMPOSITE_SCANNER_CONFIG_DIR"));
+    return (envdir.isEmpty() ? QDir::currentPath() : envdir) + "/" + basename;
+}

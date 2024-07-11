@@ -29,6 +29,7 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
           double backstepSeconds, 
           double forestepSeconds,
           unsigned int peakPauseCountSeconds)
+          //double peakPauseCountSeconds)
 {
   const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
   const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
@@ -39,7 +40,35 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
   }
   std::vector<Peak> peaks;
   std::size_t srcSize = std::distance(srcBegin, srcEnd);
- 
+  //*******
+ // Попытка выделить пики по-другому
+ //std::size_t peakStart = 0;
+ //std::size_t peakEnd = 0;
+ //std::size_t peakPauseCount = 0;
+ //std::size_t peakWidthMaxLimit = std::size_t(2 * peakPauseCountSeconds);
+ //for (std::size_t i = 0; i < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+ //  if (std::abs(*(srcBegin + i)) > peakLimit) {
+ //      peakPauseCount = 0;
+ //      if (peakStart == 0) {
+ //          peakStart = i;
+ //          peakEnd = i;
+ //      }
+ //      else {
+ //          peakEnd = i;
+ //      }
+ //  }
+ //  else {
+ //      peakPauseCount++;
+ //  }
+ //  if ((peakPauseCount > peakPauseCountSeconds)||((peakEnd - peakStart)> peakWidthMaxLimit)) {
+ //      peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(peakStart - peakPauseCount)), (unsigned int)(peakEnd + peakPauseCount) });
+ //      peakStart = 0;
+ //      peakEnd = 0;
+ //      peakPauseCount = 0;
+ //  }
+ //  i++;
+ //}
+ //*******
   for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
     if (std::abs(*(srcBegin + i)) > peakLimit) {
       peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(i - backstep)), (unsigned int)(i + forestep) });
@@ -48,6 +77,7 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
       i++;
     }
   }
+  //*******
 
   if(peaks.size()==0)
     BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() << uts::ErrInfo_Description("Пики не найдены. Проверьте настройки пикового детектора"));

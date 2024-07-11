@@ -6,11 +6,17 @@
 
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
-
+#include <QJSEngine>
+//#include <QtScript/QScriptEngine>
+//#include <QAxScript>
+//c:\Projects\vcpkg\installed\x64 - windows\include\QtScript
 #include "ui_MainWindow.h"
 #include "Core/BackgroundTaskExecutor.hh"
 #include "Core/ScanDataMetatypes.hh"
 #include "Core/ScanFactory.hh"
+#include "Core/ScriptExecutor.hh"
+#include "Core/ScriptSettings.hh"
+#include "Core/QtScript/ProgressReporter.hh"
 #include "Core/PersistentVariable.hh"
 #include "RealTime/RTContext.h"
 
@@ -19,33 +25,44 @@
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
-	Ui::MainWindow ui;
-  BackgroundTaskExecutor& taskExecutor;
-  ScanFactory& scanFactory;
-  QTimer* updateTimer;
-
-  PersistentVariable<ProcessingParameters> processingParameters;
-
-  bool taskProgressed;
-
-  QString lastOpenDir;
-
-  realtime::RTContext &m_rtCtxt;
 public:
   explicit MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory);
   ~MainWindow();
 
 protected:
 	virtual void closeEvent(QCloseEvent* evt) override;
+	Q_SIGNAL void scriptStarted(const QString& code, const QString& filename, bool intermediate);
 
 private:
-  
+	Ui::MainWindow ui;
+	QTimer* updateTimer;
+	BackgroundTaskExecutor& taskExecutor;
+	ScanFactory& scanFactory;
+	QJSEngine* scriptEngine;
+	ScriptExecutor* scriptExecutor;
+	QThread* scriptExecutorThread;
+	script::ProgressReporter* scriptProgressReporter;
 
+	realtime::RTContext& m_rtCtxt;
+
+	PersistentVariable<ProcessingParameters> processingParameters;
+	PersistentVariable<ScriptSettings> scripts;
+
+	bool taskProgressed;
+
+	QString lastOpenDir;
+
+  void prepareScriptEnvironment();
   void connectSignals();
   void loadConfiguration();
 
   QWidget* getCurrentMdiWidget();
 
+  Q_SLOT void showScriptErrorMessage(const QString& msg);
+  Q_SLOT void highlightScriptLine(int lineNumber);
+  Q_SLOT void unhighlightScriptLine();
+
+  Q_SLOT void updateCoordinates();
   Q_SLOT void setTechnologicalZero();
 
   Q_SLOT void taskStarted(const QString& name, int stageCount);
@@ -55,10 +72,12 @@ private:
   Q_SLOT void taskTerminated(const QString& errorMessage);
 
   Q_SLOT void newScript();
+  Q_SLOT void newRtWindow();
   Q_SLOT void open();
   Q_SLOT void openTechnological();
   Q_SLOT void save();
   Q_SLOT void saveAs();
+  Q_SLOT void load();
 
   Q_SLOT void editUndo();
   Q_SLOT void editRedo();
@@ -66,13 +85,16 @@ private:
   Q_SLOT void editCopy();
   Q_SLOT void editPaste();
 
-  Q_SLOT void start();
+  Q_SLOT void startRt();
+  Q_SLOT void runAutoScan();
+  Q_SLOT void runScript();
   Q_SLOT void showManualControlDialog();
   Q_SLOT void showAssembleScanDialog();
   Q_SLOT void showAssignColorsForColorBarDialog();
   Q_SLOT void enqueueAssembleScanTask();
   Q_SLOT void assignColorsForColorBar();
   Q_SLOT void stop();
+  Q_SLOT void stopRt();
   Q_SLOT void initialize();
   Q_SLOT void showTechnologicalParametersDialog();
   Q_SLOT void saveTechnologicalParameters();

@@ -16,12 +16,20 @@
 #include "Core/CommonXmlLoad.hh"
 #include "Core/CommonXmlSave.hh"
 #include "Core/ScanDataReflection.hh"
+#include "Core/ScriptSettingsReflection.hh"
 
 #include "Core/AssembleScanTask.hh"
 #include "Core/ConfigurationLocator.hh"
 #include "Core/Devices.hh"
 #include "Core/LoadScanTask.hh"
 #include "Core/ScanIO.hh"
+#include "Core/QtScript/AudioDataCollector.hh"
+#include "Core/QtScript/Coil.hh"
+#include "Core/QtScript/Functions.hh"
+#include "Core/QtScript/StepMotor.hh"
+#include "Core/ScanCollector.hh"
+#include "RealTime/RTScanCollector.h"
+
 #include "Gui/AssembleScanDialog.hh"
 #include "Gui/AssignColorForColorBarDialog.hh"
 #include "Gui/CoilManualControl.hh"
@@ -31,41 +39,105 @@
 #include "Gui/ProcessingParametersDialog.hh"
 #include "Gui/ScanControlDialog.hh"
 #include "Gui/ScanDisplayWindow.hh"
-#include "RealTime/RTScanCollector.h"
-#include "Core/ScanCollector.hh"
+#include "Gui/AutoScanWindow.hh"
+
+
 
 MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor), scanFactory(scanFactory), m_rtCtxt(rtCtxt),
-  processingParameters(Configuration::getConfigurationPathname("etc\\Processing-Parameters.xml").toStdString(), "Processing-Parameters")
+  processingParameters(Configuration::getConfigurationPathname("etc\\Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
+  scripts(Configuration::getConfigurationPathname("etc\\Scripts.xml").toStdString(), "Scripts")
 {
   ui.setupUi(this);
-  
+  ui.backgroundTasksBox->hide();
+  updateTimer = new QTimer(this);
+
+  prepareScriptEnvironment();
   connectSignals();
   loadConfiguration();
 
-  ui.centralwidget->layout()->setContentsMargins(0, 0, 0, 0);
+  //ui.centralwidget->layout()->setContentsMargins(2, 2, 2, 2);
   newScript();
-  updateTimer = new QTimer(this);
-  updateTimer->start(1000);
+  newRtWindow();
+  updateTimer->start(1000); // Запускать, если катушка не 2022
 
 }
 
 MainWindow::~MainWindow()
-{}
+{
+    delete scriptExecutor;
+}
+
+template <typename T> void addType(QJSEngine* engine) {
+    //auto constructor = engine->newFunction([](QScriptContext*, QScriptEngine* engine) {
+    //    return engine->newQObject(new T());
+    //    });
+    //auto value = engine->newQMetaObject(&T::staticMetaObject, constructor);
+    auto value = engine->newQMetaObject(&T::staticMetaObject);
+    engine->globalObject().setProperty(T::staticMetaObject.className(), value);
+}
+
+void MainWindow::prepareScriptEnvironment()
+{
+    scriptEngine = new QJSEngine(this);
+    scriptProgressReporter = new script::ProgressReporter(this);
+    auto audioDataCollector = new script::AudioDataCollector(devices::audioDataCollector, scriptEngine);
+
+    scriptEngine->globalObject().setProperty("testLabel",
+        //scriptEngine->newQObject(new script::TestLabel(ui.label_2, scriptEngine), QJSEngine::ScriptOwnership));
+        scriptEngine->newQObject(new script::TestLabel(ui.label_2, scriptEngine)));
+
+
+    scriptEngine->globalObject().setProperty("audioDataCollector",
+        scriptEngine->newQObject(audioDataCollector));
+    scriptEngine->globalObject().setProperty("builtin_xAxisMotor",
+        scriptEngine->newQObject(new script::StepMotor(devices::xAxisMotor, scriptEngine)));
+    scriptEngine->globalObject().setProperty("builtin_yAxisMotor",
+        scriptEngine->newQObject(new script::StepMotor(devices::yAxisMotor, scriptEngine)));
+    scriptEngine->globalObject().setProperty("builtin_coil",
+        scriptEngine->newQObject(new script::Coil(devices::coil, scriptEngine)));
+    scriptEngine->globalObject().setProperty("progressReporter", scriptEngine->newQObject(scriptProgressReporter));
+    
+    //scriptEngine->globalObject().setProperty("sleep", scriptEngine->newFunction(script::sleep));
+    //scriptEngine->globalObject().setProperty("pause", scriptEngine->newFunction(script::pause));
+    QJSValue funcObj = scriptEngine->newQObject(new script::FunctionalObject());
+    scriptEngine->globalObject().setProperty("sleep", funcObj.property("sleep"));
+    scriptEngine->globalObject().setProperty("pause", funcObj.property("pause"));
+
+
+    scriptExecutorThread = new QThread;
+    scriptExecutorThread->start();
+
+    //addType<QTimer>(scriptEngine); //new2024
+    auto qTimer = new QTimer();
+    qTimer->moveToThread(scriptExecutorThread);
+
+    scriptEngine->globalObject().setProperty("qTimer", scriptEngine->newQObject(qTimer));
+
+    scriptExecutor = new ScriptExecutor(scriptEngine);
+    scriptExecutor->moveToThread(scriptExecutorThread);
+
+    connect(audioDataCollector, SIGNAL(lineFechted(const SourceScanLine&)), &scanFactory, SLOT(addRangeScanLine(const SourceScanLine&)), Qt::QueuedConnection);
+}
 
 void MainWindow::connectSignals()
 {
-  connect(ui.runScriptAction, SIGNAL(triggered()), this, SLOT(start()));
+  connect(ui.runScriptAction, SIGNAL(triggered()), this, SLOT(runScript()));
+  connect(ui.runHahdleScanAction, SIGNAL(triggered()), this, SLOT(startRt()));
   connect(ui.stopAction, SIGNAL(triggered()), this, SLOT(stop()));
+  connect(ui.stopHandleScanAction, SIGNAL(triggered()), this, SLOT(stopRt()));
   connect(ui.initializeAction, SIGNAL(triggered()), this, SLOT(initialize()));
+  connect(ui.autoScanAction, SIGNAL(triggered()), this, SLOT(runAutoScan()));
   connect(ui.showManualControlDialogAction, SIGNAL(triggered()), this, SLOT(showManualControlDialog()));
   connect(ui.quitAction, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
   connect(ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
   connect(ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
+  connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
 
   connect(ui.newAction, SIGNAL(triggered()), this, SLOT(newScript()));
-  connect(ui.openAction, SIGNAL(triggered()), this, SLOT(open()));
+  //connect(ui.openAction, SIGNAL(triggered()), this, SLOT(open()));
+  connect(ui.openAction, SIGNAL(triggered()), this, SLOT(load()));
   connect(ui.openTechnologicalAction, SIGNAL(triggered()), this, SLOT(openTechnological()));
   connect(ui.saveAction, SIGNAL(triggered()), this, SLOT(save()));
   connect(ui.saveAsAction, SIGNAL(triggered()), this, SLOT(saveAs()));
@@ -81,15 +153,21 @@ void MainWindow::connectSignals()
   connect(ui.copyAction, SIGNAL(triggered()), this, SLOT(editCopy()));
   connect(ui.pasteAction, SIGNAL(triggered()), this, SLOT(editPaste()));
 
-  //connect(ui.setZeroCoodinateButton, SIGNAL(clicked()), this, SLOT(setTechnologicalZero()));
+  connect(ui.setZeroCoodinateButton, SIGNAL(clicked()), this, SLOT(setTechnologicalZero()));
 
   connect(&taskExecutor, SIGNAL(started(const QString&, int)), this, SLOT(taskStarted(const QString&, int)), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(stageStarted(const QString&, int)), this, SLOT(taskStageStarted(const QString&, int)), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(stageProgressed()), this, SLOT(taskStageProgressed()), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(finished()), this, SLOT(taskFinished()), Qt::QueuedConnection);
   connect(&taskExecutor, SIGNAL(terminated(const QString&)), this, SLOT(taskTerminated(const QString&)), Qt::QueuedConnection);
-
-  //connect(scriptExecutor, SIGNAL(scriptFinished()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
+  //*******
+  connect(scriptExecutor, SIGNAL(scriptStarted()), &scanFactory, SLOT(startNewScan()), Qt::QueuedConnection);
+  //*******
+  connect(scriptExecutor, SIGNAL(errorMessage(const QString&)), this, SLOT(showScriptErrorMessage(const QString&)), Qt::QueuedConnection);
+  connect(scriptExecutor, SIGNAL(lineChanged(int)), this, SLOT(highlightScriptLine(int)), Qt::QueuedConnection);
+  connect(scriptExecutor, SIGNAL(scriptFinished()), this, SLOT(unhighlightScriptLine()), Qt::QueuedConnection);
+  connect(scriptExecutor, SIGNAL(scriptFinished()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
+  connect(this, SIGNAL(scriptStarted(const QString&, const QString&, bool)), scriptExecutor, SLOT(runScript(const QString&, const QString&, bool)), Qt::QueuedConnection);
 
   connect(&scanFactory, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), this, SLOT(showScan(const std::shared_ptr<Scan>&)));
 }
@@ -99,10 +177,14 @@ void MainWindow::loadConfiguration()
   namespace urb = uts::reflection::binding;
 
   try {
-  
-    processingParameters.load();
+      processingParameters.load();
   } catch (...) {
     QMessageBox::critical(this, "Сбой загрузки настроек", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
+  }
+  try{
+      scripts.load();
+  }  catch (...) {
+      QMessageBox::critical(this, "Сбой загрузки настроек скриптов", QString::fromUtf8(boost::current_exception_diagnostic_information().c_str()));
   }
 }
 
@@ -112,57 +194,111 @@ QWidget* MainWindow::getCurrentMdiWidget()
   return win ? win->widget() : 0;
 }
 
+void MainWindow::showScriptErrorMessage(const QString& msg)
+{
+    QMessageBox::critical(this, "Ошибка в программе", msg);
+}
+
+void MainWindow::highlightScriptLine(int lineNumber)
+{
+    auto currentWidget = getCurrentMdiWidget();
+    if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
+        ew->highlightLine(lineNumber);
+    }
+}
+
+void MainWindow::unhighlightScriptLine()
+{
+    auto currentWidget = getCurrentMdiWidget();
+    if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
+        ew->unhighlightLine();
+    }
+}
+
+void MainWindow::updateCoordinates()
+{
+    try {
+        if (devices::xAxisMotor) {
+            ui.xLabel->setText(QString::number(devices::xAxisMotor->getMachineCoordinate()));
+            ui.x0Label->setText(QString::number(devices::xAxisMotor->getTechnologicalCoordinate()));
+        }
+
+        if (devices::yAxisMotor) {
+            ui.yLabel->setText(QString::number(devices::yAxisMotor->getMachineCoordinate()));
+            ui.y0Label->setText(QString::number(devices::yAxisMotor->getTechnologicalCoordinate()));
+        }
+    } catch (...) {
+    }
+}
+
 void MainWindow::setTechnologicalZero()
 {
-  //devices::xAxisMotor->setTechnologicalZero();
-  //devices::yAxisMotor->setTechnologicalZero();
+    if (devices::xAxisMotor)
+    {
+        devices::xAxisMotor->setTechnologicalZero();
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", "xAxisMotor отсутствует");
+    }
+    if (devices::yAxisMotor)
+    {
+        devices::yAxisMotor->setTechnologicalZero();
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", "yAxisMotor отсутствует");
+    }
+
 }
 
 void MainWindow::taskStarted(const QString& name, int stageCount)
 {
-  //ui.backgroundTasksBox->show();
-  //ui.taskLabel->setText(name);
-  //ui.taskProgressBar->setMaximum(stageCount);
-  //ui.taskProgressBar->setValue(0);
+  ui.backgroundTasksBox->show();
+  ui.taskLabel->setText(name);
+  ui.taskProgressBar->setMaximum(stageCount);
+  ui.taskProgressBar->setValue(0);
   taskProgressed = false;
 }
 
 void MainWindow::taskStageStarted(const QString& name, int maximumValue)
 {
-  //ui.stageLabel->setText(name);
-  //ui.stageProgressBar->setMaximum(maximumValue);
-  //ui.stageProgressBar->setValue(0);
-  //if (taskProgressed)
-    //ui.taskProgressBar->setValue(ui.taskProgressBar->value() + 1);
-  //taskProgressed = true;
+  ui.stageLabel->setText(name);
+  ui.stageProgressBar->setMaximum(maximumValue);
+  ui.stageProgressBar->setValue(0);
+  if (taskProgressed)
+    ui.taskProgressBar->setValue(ui.taskProgressBar->value() + 1);
+  taskProgressed = true;
 }
 
 void MainWindow::taskStageProgressed()
 {
-  //ui.stageProgressBar->setValue(ui.stageProgressBar->value() + 1);
+  ui.stageProgressBar->setValue(ui.stageProgressBar->value() + 1);
 }
 
 void MainWindow::taskFinished()
 {
-  //ui.backgroundTasksBox->hide();
+  ui.backgroundTasksBox->hide();
 }
 
 void MainWindow::taskTerminated(const QString& errorMessage)
 {
-  //ui.backgroundTasksBox->hide();
+  ui.backgroundTasksBox->hide();
   QMessageBox::critical(this, "Ошибка", errorMessage);
 }
 
 void MainWindow::newScript()
 {
+  auto ew = new EditorWindow;
+  ew->setAttribute(Qt::WA_DeleteOnClose, true);
+  ui.mdiArea->addSubWindow(ew);
+  ew->showMaximized();
+}
+
+void MainWindow::newRtWindow()
+{
     auto ew = new realtime::RTScanCollector{ m_rtCtxt, *processingParameters };
     ew->setAttribute(Qt::WA_DeleteOnClose, true);
     ui.mdiArea->addSubWindow(ew);
-    ew->showMaximized(); 
-  /*auto ew = new EditorWindow;
-  ew->setAttribute(Qt::WA_DeleteOnClose, true);
-  ui.mdiArea->addSubWindow(ew);
-  ew->showMaximized();*/
+    ew->showMaximized();
 }
 
 void MainWindow::open()
@@ -231,6 +367,18 @@ void MainWindow::saveAs()
   }
 }
 
+void MainWindow::load()
+{
+  auto currentWidget = getCurrentMdiWidget();
+  if (auto ew = dynamic_cast<Loadable*>(currentWidget)) {
+      ew->lastOpenDir = lastOpenDir;
+      ew->scanFactory = &scanFactory;
+      ew->processingParameters = &processingParameters;
+      ew->load(taskExecutor, ui.mdiArea);
+  }
+
+}
+
 void MainWindow::editUndo()
 {
   auto currentWidget = getCurrentMdiWidget();
@@ -271,19 +419,73 @@ void MainWindow::editPaste()
   }
 }
 
-void MainWindow::start()
+void MainWindow::runScript()
+{
+    auto currentWidget = getCurrentMdiWidget();
+    if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
+        QFile common(QString::fromStdString(scripts->common));
+        if (common.open(QIODevice::ReadOnly)) {
+            auto commonReadData = common.readAll().data();
+            auto fromstdstr = QString::fromStdString(scripts->common);
+            emit scriptStarted(QString::fromUtf8(commonReadData), fromstdstr, true);
+        }
+
+        scanFactory.startNewScan(*processingParameters);
+        ScanControlDialog scd;
+        connect(scriptExecutor, SIGNAL(scriptFinished()), &scd, SLOT(accept()));
+        connect(scriptProgressReporter, SIGNAL(taskStarted(int)), &scd, SLOT(newScanTask(int)), Qt::QueuedConnection);
+        connect(scriptProgressReporter, SIGNAL(taskProgressed()), &scd, SLOT(scanTaskProgressed()), Qt::QueuedConnection);
+        connect(scriptProgressReporter, SIGNAL(taskFinished()), &scd, SLOT(scanTaskFinished()), Qt::QueuedConnection);
+
+        emit scriptStarted(ew->scriptCode(), "", false);
+
+        if (scd.exec() == QMessageBox::Abort) {
+            stop();
+            unhighlightScriptLine();
+        }
+    }
+}
+
+void MainWindow::runAutoScan()
+{
+    QFile common(QString::fromStdString(scripts->common));
+    if (common.open(QIODevice::ReadOnly)) {
+        emit scriptStarted(QString::fromUtf8(common.readAll().data()), QString::fromStdString(scripts->common), true);
+    }
+    AutoScanWindow asw(QString::fromStdString(scripts->autoScan), 0, 0);//devices::xAxisMotor->getMachineCoordinate(),devices::yAxisMotor->getMachineCoordinate());
+
+    bool b = this->connect(&asw, SIGNAL(setProperty(const QString&, const QScriptValue&)), scriptExecutor, SLOT(setProperty(const QString&, const QScriptValue&)));
+    connect(&asw, SIGNAL(startScanScript(const QString&, const QString&, bool)), this, SIGNAL(scriptStarted(const QString&, const QString&, bool)));
+    connect(&asw, SIGNAL(stop()), this, SLOT(stop()));
+    asw.exec();
+}
+
+void MainWindow::startRt()
 {
     try {
+        //devices::coile->switchOnGenerator();
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        devices::coile->switchSingleWorkingMode(timing);
+    }
+    catch (...) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось запустить генератор");
+    }
+
+    try {
         auto collector = dynamic_cast<ScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
-        if (collector)
-            collector->start();
+        if (!collector) {
+            newRtWindow();
+            collector = dynamic_cast<ScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        }
+        collector->start();
     }
     catch (...) {
 
     }
 }
 
-void MainWindow::stop()
+void MainWindow::stopRt()
 {
     try {
         auto collector = dynamic_cast<ScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
@@ -293,7 +495,15 @@ void MainWindow::stop()
     catch (...) {
 
     }
+    try {
+        devices::coile->stop();
+    }
+    catch (...) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось остановить генератор");
+    }
+
 }
+
 void MainWindow::showManualControlDialog()
 {
   auto mcd = new ManualControlDialog;
@@ -337,10 +547,38 @@ void MainWindow::enqueueAssembleScanTask()
   }
 }
 
-
+void MainWindow::stop()
+{
+    scriptExecutor->stop();
+    devices::audioDataCollector->stop();
+    devices::coil->stop();
+    devices::xAxisMotor->stop();
+    devices::yAxisMotor->stop();
+}
 
 void MainWindow::initialize()
 {
+    if (!scripts->initialization.empty()) {
+        QFile common(QString::fromStdString(scripts->common));
+        if (common.open(QIODevice::ReadOnly)) {
+            emit scriptStarted(QString::fromUtf8(common.readAll().data()), QString::fromStdString(scripts->common), true);
+        }
+
+        QFile init(QString::fromStdString(scripts->initialization));
+        if (! init.open(QIODevice::ReadOnly)) {
+            QMessageBox::critical(this, "Ошибка", "Не удалось считать программу инициализации");
+            return;
+        }
+
+        emit scriptStarted(QString::fromUtf8(init.readAll().data()), QString::fromStdString(scripts->initialization), false);
+
+        QMessageBox stopScriptBox(QMessageBox::NoIcon, "Выполняется инициализация", "Остановить инициализацию", QMessageBox::Abort);
+        stopScriptBox.setDefaultButton(QMessageBox::Abort);
+        connect(scriptExecutor, SIGNAL(scriptFinished()), &stopScriptBox, SLOT(accept()));
+        if (stopScriptBox.exec() == QMessageBox::Abort) {
+            stop();
+        }
+    }
 }
 
 void MainWindow::showScan(const std::shared_ptr<Scan>& scan)
@@ -360,6 +598,9 @@ void MainWindow::closeEvent(QCloseEvent* evt)
       return;
     }
   }
+
+  scriptExecutorThread->quit();
+  scriptExecutorThread->wait();
   evt->accept();
 }
 

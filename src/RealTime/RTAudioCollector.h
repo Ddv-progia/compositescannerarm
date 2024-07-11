@@ -15,6 +15,6 @@ namespace realtime {
 		void stop();
 		void dataReady(const uts::devtalk::ByteSeq& data, const ::Ice::Current & = ::Ice::Current()) override;
 		~RTAudioCollector();
-		Q_SIGNAL void newData();
+		Q_SIGNAL void newData(size_t startpositionOfChunk, size_t sizeOfChunk, std::time_t timeStampNewData, std::time_t timeStampFromChunk);
 	};
 }

@@ -410,7 +410,7 @@ void FrequencyRose::createGrid(std::map<double,FrequencyRosePoint*>& pointList)
 
 
 
-void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>* pointList)
+void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>& pointList)
 {
   if(analyser->sizeOfData()==0) return;
 
@@ -421,7 +421,8 @@ void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std:
     auto point = new FrequencyRosePoint(findCoordinates(i*angleStep,convert(value.second,nullCircleRadius)),value.first,value.second,this);
     connect(point,SIGNAL(pointSelected(FrequencyRange,double)),SIGNAL(rangeSelected(FrequencyRange,double)));
     connect(point,SIGNAL(pointUnselected()),SIGNAL(rangeUnselected()));
-    pointList->at(i*angleStep)=point;
+    pointList[i*angleStep]=point;
+    //pointList->at(i*angleStep)=point;
 	connect(this,SIGNAL(pointsReady()),point,SLOT(show()));
     i++;
   }
@@ -429,8 +430,12 @@ void MinMaxFrequencyRose::fillPointList(FrequencyRoseDataAnalyzer* analyser,std:
 
 MinMaxFrequencyRose::MinMaxFrequencyRose(RangedMultiArray data, double factor, std::vector<ColorStop>& colorList,QWidget* parent):FrequencyRose(colorList,factor,parent)
 {
-  fillPointList(new MinFrequencyRoseDataAnalyzer(data),&minPoints);
-  fillPointList(new MaxFrequencyRoseDataAnalyzer(data),&maxPoints);
+  //fillPointList(&MinFrequencyRoseDataAnalyzer(data),minPoints);
+  //fillPointList(&MaxFrequencyRoseDataAnalyzer(data),maxPoints);
+  //fillPointList(new MinFrequencyRoseDataAnalyzer(data),&minPoints);
+  //fillPointList(new MaxFrequencyRoseDataAnalyzer(data),&maxPoints);
+  fillPointList(new MinFrequencyRoseDataAnalyzer(data),minPoints);
+  fillPointList(new MaxFrequencyRoseDataAnalyzer(data),maxPoints);
 
   sizeLimit = std::max<qreal>(std::abs(maxPoints.begin()->second->point().x()),std::abs(maxPoints.begin()->second->point().y()));
   std::for_each(maxPoints.begin(),maxPoints.end(),

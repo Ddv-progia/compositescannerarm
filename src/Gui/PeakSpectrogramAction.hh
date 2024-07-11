@@ -69,6 +69,8 @@ public:
   explicit SpectorogramData(boost::multi_array<float, 2>&& data, double sampleRate, std::size_t step, std::size_t nfft)
     : data(std::move(data)), sampleRate(sampleRate), step(step), nfft(nfft)
   { 
+      //setInterval(Qt::XAxis, QwtInterval(0, (this->data.shape()[0] - 1) * step / sampleRate));
+      //setInterval(Qt::YAxis, QwtInterval(0, (this->data.shape()[1] - 1) * sampleRate / double(nfft)));
       m_intervals.at(Qt::XAxis) = QwtInterval(0, (this->data.shape()[0] - 1) * step / sampleRate);
       m_intervals.at(Qt::YAxis) = QwtInterval(0, (this->data.shape()[1] - 1) * sampleRate / double(nfft));
       
@@ -82,6 +84,8 @@ public:
         }
       }
     }
+
+    //setInterval(Qt::ZAxis, QwtInterval(minValue, maxValue));
     m_intervals.at(Qt::ZAxis) = QwtInterval(minValue, maxValue);
   }
 

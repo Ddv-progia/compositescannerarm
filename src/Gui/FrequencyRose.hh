@@ -107,7 +107,7 @@ class MinMaxFrequencyRose: public FrequencyRose //роза минимумов и
   std::map<double,FrequencyRosePoint*> maxPoints;
   std::map<double,FrequencyRosePoint*> minPoints;
 
-  void fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>* pointList);
+  void fillPointList(FrequencyRoseDataAnalyzer* analyser,std::map<double,FrequencyRosePoint*>& pointList);
 public:
   MinMaxFrequencyRose(RangedMultiArray data, double factor, std::vector<ColorStop>& colorList,QWidget* parent = 0);
   void paintEvent(QPaintEvent* event);

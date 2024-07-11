@@ -19,6 +19,7 @@
 
 #include <regex>
 #include "Gui/AssignColorForColorBarDialog.hh"
+#include "Core/ConfigurationLocator.hh"
 
 namespace adp = boost::adaptors;
 
@@ -161,7 +162,7 @@ void AssignColorForColorBarDialog::distributeHSV() {
 }
 
 void AssignColorForColorBarDialog::saveParamsToXMLFile() {
-    QFile xmlFile("etc/paramsColorStopsList.xml");
+    QFile xmlFile(Configuration::getConfigurationPathname("etc/paramsColorStopsList.xml"));
     if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
     {
         qDebug() << "Already opened or there is another issue";
@@ -184,7 +185,7 @@ void AssignColorForColorBarDialog::saveParamsToXMLFile() {
 }
 
 void AssignColorForColorBarDialog::saveToXMLFile() {
-    QFile xmlFile("etc/colorValues.xml");
+    QFile xmlFile(Configuration::getConfigurationPathname("etc/colorValues.xml"));
     if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
     {
         qDebug() << "Already opened or there is another issue";
@@ -213,7 +214,7 @@ void AssignColorForColorBarDialog::saveToXMLFile() {
 
 void AssignColorForColorBarDialog::loadFromXMLFile() {
     QDomDocument documentXML;
-    QFile xmlFile("etc/colorValues.xml");
+    QFile xmlFile(Configuration::getConfigurationPathname("etc/colorValues.xml"));
     if (!xmlFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "Already opened or there is another issue";
@@ -247,7 +248,7 @@ void AssignColorForColorBarDialog::loadFromXMLFile() {
 
 void AssignColorForColorBarDialog::loadParamsFromXMLFile() {
     QDomDocument documentXML;
-    QFile xmlFile("etc/paramsColorStopsList.xml");
+    QFile xmlFile(Configuration::getConfigurationPathname("etc/paramsColorStopsList.xml"));
     if (!xmlFile.open(QIODevice::ReadOnly))
     {
         qDebug() << "Already opened or there is another issue";

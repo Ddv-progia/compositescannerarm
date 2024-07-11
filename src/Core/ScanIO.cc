@@ -80,31 +80,34 @@ namespace {
 
 void saveToTempDirectory(const std::vector<SourceScanLine>& lines)
 {
-  /*auto dir = QDir::current();
+  auto dir = QDir::current();
   if(dir.exists("temp"))
     dir.rmdir("temp");
   dir.mkdir("temp");
   dir.cd("temp");
   Scan scan;
   scan.lines = lines;
-  saveToWaveDirectory(dir.absolutePath(), scan);*/
+  saveToWaveDirectory(dir.absolutePath(), scan);
 }
 
 
 void saveToWaveDirectory(const QString& dirName, const Scan& scan)
 {
-  /*namespace urb = uts::reflection::binding;
+  namespace urb = uts::reflection::binding;
 
-  //РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ СЃС‹СЂС‹С… РґР°РЅРЅС‹С… С…СЂР°РЅРёС‚СЃСЏ РІ РѕС‚РґРµР»СЊРЅРѕРј xml С„Р°Р№Р»Рµ. 
-  //РІРїРѕСЃР»РµРґСЃС‚РІРёРё СЃР±РѕСЂРєР° РѕСЃСѓС‰РµСЃС‚РІР»СЏРµС‚СЃСЏ СЃРѕРіР»Р°СЃРЅРѕ СЌС‚РѕРјСѓ С„Р°Р№Р»Сѓ
+  //информация о сырых данных хранится в отдельном xml файле. 
+  //впоследствии сборка осуществляется согласно этому файлу
   RawScanInfo info;
   auto& lines = scan.lines;
   for (std::size_t i = 0; i < lines.size(); i++) {
     auto fileName = QDir(dirName).filePath(QString("line-%1.wav").arg(i));
     saveLineToWaveFile(fileName, lines[i]);
-    info.lines.push_back(RawScanLineInfo{ QString("line-%1.wav").arg(i).toStdString(), lines[i].sampleRate, lines[i].startCoordinate, lines[i].finalCoordinate, lines[i].lineCoordinate });
+    info.lines.push_back(RawScanLineInfo{ QString("line-%1.wav").arg(i).toStdString(), lines[i].sampleRate,
+        lines[i].startCoordinate, lines[i].finalCoordinate, lines[i].lineCoordinate, lines[i].finalLineCoordinate,
+        //lines[i].timestampStart, lines[i].timestampEnd });
+         });
   }
 
-  PersistentVariable<RawScanInfo> rawScan(QDir(dirName).filePath("line.xml").toStdString(), "Raw-Scan");
-  rawScan.save();*/
+  PersistentVariable<RawScanInfo> rawScan(info, QDir(dirName).filePath("line.xml").toStdString(), "Raw-Scan");
+  rawScan.save();
 }

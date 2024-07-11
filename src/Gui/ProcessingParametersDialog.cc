@@ -554,8 +554,8 @@ ProcessingParametersDialog::ProcessingParametersDialog(const ProcessingParameter
 
   // Скрываем параметр ui.peakPauseCountBox "Длительность паузы после пика", 
   // т.к. его использование закомменчено.
-  ui.label_16->setVisible(false); // метка "Длительность паузы после пика"
-  ui.peakPauseCountBox->setVisible(false);
+  ui.label_16->setVisible(true); // метка "Длительность паузы после пика"
+  ui.peakPauseCountBox->setVisible(true);
   colorDialog = new AssignColorForColorBarDialog(params, false,  this);
   // Прячем кнопки перемещения итемов, т.к. реализация не завершена.
   colorDialog->ui.moveTopButton->setVisible(false);
@@ -663,24 +663,30 @@ void ProcessingParametersDialog::fillWidgets()
   ui.redFixedBox->setValue(params.defectRendering.redFixed);
   ui.greenFixedBox->setValue(params.defectRendering.greenFixed);
   ui.blueFixedBox->setValue(params.defectRendering.blueFixed);
-  //ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.rangesTableView->setModel(new RangesTableModel(this->params.ranges, this->params.extremumOfRanges, this));
   ui.rangesTableView->setItemDelegateForColumn(2, new ExtremumDelegate(this));
 
-  //ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this->params.extremumOfRanges, this));
-  //ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
-  //ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
-  //ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setModel(new DefectsTableModel(this->params.defectPoints, this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(1, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(5, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectsTableView->setItemDelegateForColumn(9, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
 
   ui.blurCheckBox->setChecked(this->params.defectSearching.useBlur);
   ui.blurHEdit->setText(QString::number(this->params.defectSearching.blurHeight));
   ui.blurWEdit->setText(QString::number(this->params.defectSearching.blurWidth));
   ui.unionCheckBox->setChecked(this->params.defectSearching.useUnion);
   ui.separationCheckBox->setChecked(this->params.defectSearching.useSeparation);
-  //ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
-  //ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
+  ui.defectRangesTableView->setModel(new DefectRangesTableModel(this->params.defectSearching.defectRanges,this->params.ranges, this->params.extremumOfRanges,this));
+  ui.defectRangesTableView->setItemDelegateForColumn(0, new DefectRangeDelegate(this->params.ranges, this->params.extremumOfRanges, this));
   ui.approximationComboBox->setCurrentIndex(this->params.defectSearching.edgesApproximationType-1);
   ui.defectInterpretationComboBox->setCurrentIndex((int)this->params.defectSearching.isDefectInside);
   ui.minAreaOfDefectDblSpinBox->setValue(this->params.defectSearching.minDefectArea);
+  
+  ui.heightBox->setValue(this->params.headAndScanCollectorParameters.height);
+  ui.widthBox->setValue(this->params.headAndScanCollectorParameters.width);
+  ui.spinBoxHeadsSampleRate->setValue(this->params.headAndScanCollectorParameters.headsSampleRate);
+  ui.spinBoxSoundsSampleRate->setValue(this->params.headAndScanCollectorParameters.soundsSampleRate);
+  ui.spinBoxMaxRecordingTime->setValue(this->params.headAndScanCollectorParameters.maximumTimeMinutes);
 }
 
 void ProcessingParametersDialog::updateParameters()
@@ -693,7 +699,13 @@ void ProcessingParametersDialog::updateParameters()
   params.peakMagnitudeLimit = ui.peakMagnitudeLimitBox->value();
   params.peakBackstep = ui.peakBackstepBox->value();
   params.peakForestep = ui.peakForestepBox->value();
-  params.peakPauseCount = ui.peakPauseCountBox->value();
+  params.peakPauseCount = unsigned int(ui.peakPauseCountBox->value());
+
+  params.headAndScanCollectorParameters.height             = ui.heightBox->value();
+  params.headAndScanCollectorParameters.width              = ui.widthBox->value();
+  params.headAndScanCollectorParameters.headsSampleRate    = ui.spinBoxHeadsSampleRate->value();
+  params.headAndScanCollectorParameters.soundsSampleRate   = ui.spinBoxSoundsSampleRate->value();
+  params.headAndScanCollectorParameters.maximumTimeMinutes = ui.spinBoxMaxRecordingTime->value();
   
   params.columnModelOrder = ui.columnModelOrderBox->value();
 

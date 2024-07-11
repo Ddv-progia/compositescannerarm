@@ -6,21 +6,26 @@
 
 #include <QtCore/QString>
 #include <QtGui/QSyntaxHighlighter>
+#include <QMdiArea>
 #include <QtWidgets/QTextEdit>
+#include <qregularexpression.h>
 
+#include "Core/PersistentVariable.hh"
+#include "Core/ScanFactory.hh"
 #include "Gui/Saveable.hh"
+#include "Gui/Loadable.hh"
 
 class ScriptSyntaxHighlighter : public QSyntaxHighlighter
 {
   struct HighlightingRule
   {
-    //QRegExp pattern;
+    QRegularExpression pattern;
     QTextCharFormat format;
 
     HighlightingRule() { }
 
-    HighlightingRule(/*const QRegExp& pattern,*/ const QTextCharFormat& format)
-       : /*pattern(pattern),*/ format(format)
+    HighlightingRule(const QRegularExpression& pattern, const QTextCharFormat& format)
+       : pattern(pattern), format(format)
     { }
   };
 
@@ -33,7 +38,7 @@ protected:
   void highlightBlock(const QString& text);
 };
 
-class EditorWindow : public QTextEdit, public Saveable
+class EditorWindow : public QTextEdit, public Saveable, public Loadable
 {
   Q_OBJECT
 
@@ -46,8 +51,9 @@ public:
 
   void save();
   void saveAs();
-  Q_SLOT virtual void save(BackgroundTaskExecutor&) override;
-  Q_SLOT virtual void saveAs(BackgroundTaskExecutor&) override;
+  Q_SLOT void save(BackgroundTaskExecutor&) override;
+  Q_SLOT void saveAs(BackgroundTaskExecutor&) override;
+  Q_SLOT void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0)  override ;
   Q_SLOT void highlightLine(int lineNumber);
   Q_SLOT void unhighlightLine();
 
@@ -61,6 +67,7 @@ private:
   void init();
   void loadFromFile(const QString& pathname);
   void saveToFile(const QString& newPathname);
+
 
   Q_SLOT void programModified();
 };

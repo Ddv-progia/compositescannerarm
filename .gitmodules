@@ -1,21 +1,21 @@
 [submodule "cmake/modules"]
 	path = cmake/modules
-	url = git@10.0.254.1:unitestsaratovllc/cmakemodules.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/cmakemodules.git
 [submodule "iface/DevTalk"]
 	path = iface/DevTalk
-	url = git@10.0.254.1:unitestsaratovllc/devtalkinterface.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/devtalkinterface.git
 [submodule "iface/DevTalkCAND"]
 	path = iface/DevTalkCAND
-	url = git@10.0.254.1:unitestsaratovllc/devtalkcandinterface.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/devtalkcandinterface.git
 [submodule "libs/DevTalk"]
 	path = libs/DevTalk
-	url = git@10.0.254.1:unitestsaratovllc/devtalkunified.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/devtalkunified.git
 [submodule "libs/DevTalkCAND"]
 	path = libs/DevTalkCAND
-	url = git@10.0.254.1:unitestsaratovllc/devtalkcand.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/devtalkcand.git
 [submodule "libs/DevTalkTSD"]
 	path = libs/DevTalkTSD
-	url = git@10.0.254.1:unitestsaratovllc/devtalktsd.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/devtalktsd.git
 [submodule "libs/UCL"]
 	path = libs/UCL
-	url = git@10.0.254.1:unitestsaratovllc/unitestcommonlibrary.git
+	url = ssh://git@10.0.254.1:822/unitestsaratovllc/unitestcommonlibrary.git

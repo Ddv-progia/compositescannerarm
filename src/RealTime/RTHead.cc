@@ -2,6 +2,8 @@
 #include "Core/Devices.hh"
 #include <array>
 #include <thread>
+#include <chrono>
+
 
 extern uts::devtalk::device::utscp::APLHeadPrx devices::head;
 
@@ -17,13 +19,13 @@ start(int sampleRate) {
         try {
             m_isStarted.store(true, std::memory_order_seq_cst);
             if (head)
-                head->getPosition(period * 1000, 0);
+                head->getPosition(period * 1000000, 0);
             m_isStarted.store(false, std::memory_order_seq_cst);
         }
         catch (...) {
             std::cout << "APLHead not found" << '\n';
         }
-        }, devices::head, 1000 / sampleRate);
+        }, devices::head, 1 / sampleRate);
     m_thread.detach();
 }
 
@@ -37,6 +39,13 @@ stop() {
 
 void realtime::RTHead::
 dataReady(const ::uts::devtalk::ByteSeq& data, const ::Ice::Current&) {
+    //using namespace std::chrono;
+    ////int64_t timeStamp = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    std::time_t timeStamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+    //std::time_t timeStamp = 0;
+    //timeStamp = std::time(nullptr);
+    //const auto p1 = std::chrono::system_clock::now();
     std::vector<int> intData(data.size() / sizeof(int) );
     int *pos = (int *)data.data();
     for (auto &floatVal : intData)
@@ -55,7 +64,10 @@ dataReady(const ::uts::devtalk::ByteSeq& data, const ::Ice::Current&) {
     float x = ((-angPx * 2.0) + sqrt(d)) / 2;
     float y = x * k + (angPy - k * angPx);
     float z = (m_hand.edgeLengths.at(2) * sin(enc2Rad)) + m_hand.edgeLengths.at(3) * sin(enc3Rad);
-    emit newData(x, y, z);
+
+
+    //memcpy(&timeStamp, &timestampint64_t, sizeof(std::time_t));
+    emit newData(x, y, z, timeStamp);
 }
 
 realtime::RTHead::

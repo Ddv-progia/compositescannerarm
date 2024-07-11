@@ -14,25 +14,27 @@ class FieldWidget : public QGraphicsView
     int m_height;
     QGraphicsScene* m_scene;
     Cursor* m_cursor;
-    Area* m_area;
-    std::shared_ptr<Scan> m_scan = nullptr;
+    std::shared_ptr<ScanArm> m_scan = nullptr;
     std::unique_ptr<QTimer> m_updateTimer;
     std::unique_ptr<QTimer> m_findPeakTimer;
-
+    Area* m_area;
     uint m_curIndex = 0;
     size_t m_numArea = 0;
 
 public:
-    FieldWidget(int width = 500,int height = 500);
+    FieldWidget(int width,int height);
     ~FieldWidget();
-    void setScan(std::shared_ptr<Scan> scan);
+    void setScan(std::shared_ptr<ScanArm> scan);
     void setNumArea(size_t numArea);
-    std::shared_ptr<Scan> scan() { return m_scan; }
+    std::shared_ptr<ScanArm> scan() { return m_scan; }
 
 public slots:
     void timeout();
     void findPeak();
     void changeMode(int btn, bool value);
+    void stopTimers();
+    void runTimers();
+    void drawArea();
 };
 
 #endif // FIELDWIDGET_H

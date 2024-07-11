@@ -22,12 +22,19 @@ class OneWaveWidget : public QWidget
     QWidget *m_graphicsWidget;
     float m_dividerFrequency = 1;
     float m_dividerAmplitude = 1;
+    Qt::GlobalColor m_penColor = Qt::green;
+    Qt::GlobalColor m_xAxeColor = Qt::white;
+    Qt::GlobalColor m_yAxeColor = Qt::white;
 public:
-    OneWaveWidget();
+    OneWaveWidget(QString title = "OneWave", QString xAxeTitle = "Time", QString yAxeTitle = "Amplitude", Qt::GlobalColor m_penColor = Qt::green,
+                  Qt::GlobalColor m_xAxeColor = Qt::darkBlue,
+                  Qt::GlobalColor m_yAxeColor = Qt::darkBlue);
     ~OneWaveWidget();
     void update(const QList<QPointF> &newPoints);
     void setRangeFrequency(int min = 0, int max = 1000, float divider = 1);
     void setRangeAmplitude(int min = 0, int max = 1000, float divider = 1);
+    void setXAxeTitle(QString  xAxeTitle);
+    void setYAxeTitle(QString  yAxeTitle);
 public slots:
     void changeVerticalCoord(int downValue ,int upValue);
     void changeHorizontalCoord(int downValue ,int upValue);

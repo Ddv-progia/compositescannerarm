@@ -54,6 +54,7 @@ public:
   }
   unsigned char colorIndex (const QwtInterval &interval, double value) const
   {
+    //return linearMap->colorIndex(globalInterval, value);
     return linearMap->colorIndex(0,globalInterval,value);
   }
 };

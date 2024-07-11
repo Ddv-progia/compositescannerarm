@@ -11,4 +11,5 @@
 
 Q_DECLARE_METATYPE(SourceScanLine)
 Q_DECLARE_METATYPE(std::shared_ptr<Scan>)
+Q_DECLARE_METATYPE(std::shared_ptr<ScanArm>)
 Q_DECLARE_METATYPE(std::vector<float>)

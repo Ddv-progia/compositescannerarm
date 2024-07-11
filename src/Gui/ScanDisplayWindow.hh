@@ -21,6 +21,7 @@
 #include "Core/ScanFactory.hh"
 #include "Core/ScanIO.hh"
 #include "Gui/Saveable.hh"
+#include "Gui/Loadable.hh"
 #include "Gui/DefectsTable.hh"
 #include "Core/ImageProcessing.hh"
 
@@ -28,22 +29,22 @@
 #include "Gui/DefectClassificationTable.hh"
 
 
-class ScanPlotDefectsMarker : public QwtPlotItem
+class ScanPlotDefectsMarker: public QwtPlotItem
 {
-	//отображает контуры дефектов поверх Ч-скана
+	//отображает контуры дефектов поверх С-скана
 	std::vector<Defect> defects;
 	std::vector<Defect*> selectedDefects;
 public:
 	ScanPlotDefectsMarker(const QwtText& title = QwtText("Defects marker"));
 
-	virtual void draw(QPainter* painter, const QwtScaleMap& xMap, const QwtScaleMap& yMap, const QRectF& canvasRect) const override;
-	void setDefects(std::vector<Defect> filteredDefects) {
+  virtual void draw (QPainter* painter, const QwtScaleMap& xMap, const QwtScaleMap& yMap, const QRectF& canvasRect) const override;
+  void setDefects(std::vector<Defect> filteredDefects) {
 		selectedDefects.clear();
 		defects = filteredDefects;
 	}
 	virtual int rtti() const override;
 
-	//рисует маску, использу§ переданный набор контуров, впоследствии маска используетс§ в draw()
+	//рисует маску, используя переданный набор контуров, впоследствии маска используется в draw()
 	QImage buildMaskImage() const;
 
 	//выбор одного отдельного контура, выделение его на экране цветом
@@ -54,7 +55,7 @@ public:
 };
 
 
-class ScanDisplayWindow : public QWidget, public Saveable
+class ScanDisplayWindow : public QWidget, public Saveable, public Loadable
 {
 	Q_OBJECT
 public:
@@ -62,6 +63,7 @@ public:
 
 	virtual void save(BackgroundTaskExecutor& taskExecutor) override;
 	virtual void saveAs(BackgroundTaskExecutor& taskExecutor) override;
+	virtual void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
 
 	void exportWave(const QString dirname);
 	ProcessingParameters getProcessingParameters() const;
@@ -72,6 +74,8 @@ private:
 	std::shared_ptr<Scan> scan;
 	int commonRangeNum;
 	bool showCommonRange;
+	ScanFactory* scanFactory;
+	ProcessingParameters* processingParameters;
 
 	QComboBox* kindBox;
 	QComboBox* plotBox;
@@ -139,6 +143,7 @@ private:
 	QGridLayout* widgetLayout;
 	void swapItemsByIndexes(int firstItemIndex, int secondItemIndex);
 	Q_SLOT void setAdditionalGraphicsVisibility(bool isVisible);
+	//Q_SLOT void onChangeFactorSpinbox();
 
 	void updateRangeViewPoint();
 	void updateResidualsViewPoint();
@@ -162,6 +167,7 @@ private:
 	Q_SLOT void selectContour(size_t n);
 	Q_SLOT void setDefectMask();
 	Q_SLOT void changeExtremums();
+	Q_SLOT void changeExtremum(Extremum ex);
 	Q_SLOT void getSelectedContour(const QItemSelection& selected, const QItemSelection& deselected);
 	QTableView* getDefectTableView();
 
@@ -172,8 +178,8 @@ private:
 	Q_SLOT void setDefectsVisible(bool isVisible);
 	Q_SLOT void showUserRange();
 
-	//чернова¤ верси¤, нужен рефакторинг
-	Q_SLOT void refreshClassificationParameters(std::vector<DefectType> defects)
+	//черновая версия, нужен рефакторинг
+	Q_SLOT void refreshClassificationParameters(std::vector<DefectType>& defects)
 	{
 		scan->parameters.defectClassification = defects;
 	}
@@ -181,17 +187,15 @@ private:
 	Q_SLOT void showClassificationTable(bool isVisible)
 	{
 		analyseRegion = isVisible;
-		if (isVisible) {
+		if(isVisible){
 			defectClassificationWindow = new DefectClassificationWidget(scan);
-			bool b = connect(defectClassificationWindow, SIGNAL(defectClassificationRefreshed(std::vector<DefectType>&)), SLOT(refreshClassificationParameters(std::vector<DefectType>&)));
+			bool b = connect(defectClassificationWindow,SIGNAL(defectClassificationRefreshed(std::vector<DefectType>&)),SLOT(refreshClassificationParameters(std::vector<DefectType>&)));
 			defectClassificationWindow->show();
-		}
-		else {
+		} else {
 			defectClassificationWindow->hide();
 			defectClassificationWindow->disconnect();
 			defectClassificationWindow->deleteLater();
 		}
-
 	}
 
 

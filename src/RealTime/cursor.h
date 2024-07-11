@@ -12,8 +12,9 @@ class Cursor : public QGraphicsItem
     int m_width = 0;
     int m_height = 0;
     float m_pixelpermm = 1;
+    Qt::GlobalColor m_color = Qt::white;
 public:
-    Cursor(int width , int height);
+    Cursor(int width , int height, Qt::GlobalColor color = Qt::white);
     ~Cursor();
     void setPosition(float x, float y);
     QRectF boundingRect() const override;

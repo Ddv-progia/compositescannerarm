@@ -1,0 +1,13 @@
+--
+-- Core/ScriptSettings.rtg
+--
+
+module Core.ScriptSettings is
+
+import Std.String
+
+struct ScriptSettings is
+  common : Std::String
+	autoScan : Std::String
+  initialization : Std::String
+end

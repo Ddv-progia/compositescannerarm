@@ -2,12 +2,17 @@
  * Gui/EditorWindow.cc
  */
 
+#include <db_cxx.h>
 #include <QtCore/QFile>
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
+#include "Core/LoadScanTask.hh"
 #include "Gui/EditorWindow.hh"
+
+#include <UCL/Exception.hh>
+
 
 ScriptSyntaxHighlighter::ScriptSyntaxHighlighter(QTextDocument* parent)
   : QSyntaxHighlighter(parent)
@@ -26,44 +31,53 @@ ScriptSyntaxHighlighter::ScriptSyntaxHighlighter(QTextDocument* parent)
   QTextCharFormat numberFormat;
   numberFormat.setForeground(Qt::darkMagenta);
 
-  /*highlightingRules << HighlightingRule(QRegExp("[-+]?[0-9_]+(\\.[0-9_]+)?"), numberFormat)
-                    << HighlightingRule(QRegExp("\\b([a-zA-Z][_a-zA-Z0-9]*)\\b"), identifierFormat)
-                    << HighlightingRule(QRegExp("\\bbreak\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\belse\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bnew\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bvar\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bcase\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bfinally\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\breturn\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bvoid\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bcatch\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bfor\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bswitch\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bwhile\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bcontinue\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bfunction\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bthis\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bwith\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bdefault\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bif\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bthrow\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bdelete\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bin\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\btry\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\bdo\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\binstanceof\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("\\btypeof\\b"), keywordFormat)
-                    << HighlightingRule(QRegExp("//[^\n]*"), singleLineCommentFormat)
-                    ;*/
+  highlightingRules << HighlightingRule(QRegularExpression ("[-+]?[0-9_]+(\\.[0-9_]+)?"), numberFormat)
+                    << HighlightingRule(QRegularExpression ("\\b([a-zA-Z][_a-zA-Z0-9]*)\\b"), identifierFormat)
+                    << HighlightingRule(QRegularExpression ("\\bbreak\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\belse\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bnew\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bvar\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bcase\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bfinally\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\breturn\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bvoid\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bcatch\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bfor\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bswitch\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bwhile\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bcontinue\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bfunction\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bthis\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bwith\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bdefault\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bif\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bthrow\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bdelete\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bin\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\btry\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\bdo\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\binstanceof\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("\\btypeof\\b"), keywordFormat)
+                    << HighlightingRule(QRegularExpression ("//[^\n]*"), singleLineCommentFormat)
+                    ;
 }
 
 void ScriptSyntaxHighlighter::highlightBlock(const QString& text)
 {
   foreach (const HighlightingRule& rule, highlightingRules) {
-    /*QRegExp expression(rule.pattern);
-    for (int index = expression.indexIn(text); index >= 0;
-      index = expression.indexIn(text, index + expression.matchedLength()))
-      setFormat(index, expression.matchedLength(), rule.format);*/
+    //QRegularExpression expression(rule.pattern);
+    //QRegExp expression(rule.pattern);
+    //for (int index = expression.indexIn(text); index >= 0;
+    //  index = expression.indexIn(text, index + expression.matchedLength()))
+    //  
+    //    setFormat(index, expression.matchedLength(), rule.format);
+  //TODO проверить работу
+    QRegularExpression re(rule.pattern);
+    auto it = re.globalMatch(text);
+    while (it.hasNext()) {
+        auto match = it.next();
+        setFormat(match.capturedStart(), match.capturedLength(), rule.format);
+    }
   }
 }
 
@@ -137,6 +151,43 @@ void EditorWindow::save(BackgroundTaskExecutor& te)
 void EditorWindow::saveAs(BackgroundTaskExecutor&)
 {
   saveAs();
+}
+
+void EditorWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
+{
+    auto pathnames = QFileDialog::getOpenFileNames(this, "Открыть", lastOpenDir, "Все файлы сканера (*.js *.csp)");
+    if (pathnames.isEmpty()) return;
+
+    bool newPartCreated = false;
+    for (auto& pathname : pathnames) {
+        QString normalizedSuffix = QFileInfo(pathname).suffix().toLower();
+        if (normalizedSuffix == "js") {
+            auto ew = new EditorWindow(pathname, this);
+            ew->setAttribute(Qt::WA_DeleteOnClose);
+            mdiArea->addSubWindow(ew);
+            ew->showMaximized();
+        }
+        else if (normalizedSuffix == "csp") {
+            try {
+                taskExecutor.enqueue(new LoadScanTask(pathname, *scanFactory, **processingParameters, false));
+
+            }
+            catch (DbException& exc) {
+                QMessageBox::critical(this, "Ошибка", exc.what());
+            }
+            catch (uts::Exception& exc) {
+                auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+                if (msg) {
+                    QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+                }
+                else {
+                    QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+                }
+            }
+        }
+    }
+
+    lastOpenDir = QFileInfo(pathnames.back()).dir().path();
 }
 
 void EditorWindow::saveToFile(const QString& newPathname)

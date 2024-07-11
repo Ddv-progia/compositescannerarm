@@ -45,6 +45,7 @@ QT6_WRAP_UI(CompositeScanner_Generated_UI
   Gui/MainWindow.ui
   Gui/ManualControlDialog.ui
   Gui/ProcessingParametersDialog.ui
+  Gui/AutoScanWindow.ui
   Gui/SingleCommandPanel.ui
   Gui/KernelDialog.ui
   Gui/DefectClassificationWidget.ui)
@@ -52,7 +53,7 @@ QT6_WRAP_UI(CompositeScanner_Generated_UI
 SET(CompositeScanner_Data_FILES 
   Core/DevicesConfiguration.rtg
   Core/ScanData.rtg
-  )
+  Core/ScriptSettings.rtg)
   
  
 RTGEN_TO_CPP(CompositeScanner_Generated_Data
@@ -106,11 +107,28 @@ add_executable(CompositeScanner #WIN32
   Core/ScanIO.hh
   Core/ScanProcessingTask.cc
   Core/ScanProcessingTask.hh
+  Core/ScanProcessingTaskRt.cc
+  Core/ScanProcessingTaskRt.hh
+  Core/ScriptExecutor.cc
+  Core/ScriptExecutor.hh
+  Core/ScriptSettings.rtg
+  Core/StepMotor.cc
+  Core/StepMotor.hh
   Core/WMACompression.cc
   Core/WMACompression.hh
   Core/ImageProcessing.cc
   Core/ImageProcessing.hh
 
+  Core/QtScript/AudioDataCollector.cc
+  Core/QtScript/AudioDataCollector.hh
+  Core/QtScript/Coil.cc
+  Core/QtScript/Coil.hh
+  Core/QtScript/Functions.cc
+  Core/QtScript/Functions.hh
+  Core/QtScript/ProgressReporter.cc
+  Core/QtScript/ProgressReporter.hh
+  Core/QtScript/StepMotor.cc
+  Core/QtScript/StepMotor.hh
   Core/Qwt/ColumnPolynomialRasterData.cc
   Core/Qwt/ColumnPolynomialRasterData.hh
   Core/Qwt/DefectPointsItem.cc
@@ -197,6 +215,8 @@ add_executable(CompositeScanner #WIN32
   Gui/ScanControlDialog.hh
   Gui/ScanDisplayWindow.cc
   Gui/ScanDisplayWindow.hh
+  Gui/AutoScanWindow.cc
+  Gui/AutoScanWindow.hh
   Gui/StandardColorMap.hh
   Gui/FrequencyRose.cc
   Gui/FrequencyRose.hh
@@ -214,7 +234,6 @@ SOURCE_GROUP(Core/QtScript REGULAR_EXPRESSION Core/QtScript/.*)
 SOURCE_GROUP(Gui REGULAR_EXPRESSION Gui/.*)
 SOURCE_GROUP(RealTime REGULAR_EXPRESSION RealTime/.*)
 SOURCE_GROUP("" FILES main.cc)
-
 target_link_libraries(CompositeScanner
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${BERKELEY_DB_LIBRARIES}
@@ -238,7 +257,9 @@ target_link_libraries(CompositeScanner
   Qt6::Xml
   #Qt6::Script
   #Qt6::ScriptTools
+  #Qt6::AxContainer
   Qt6::Charts
+  Qt6::Qml
 
   DevTalk-Interface
   UCL-Customization

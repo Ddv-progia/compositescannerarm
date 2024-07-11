@@ -13,3 +13,5 @@ public:
 	static QString getConfigurationPathname(const QString& basename);
 };
 
+QString getConfigurationPathname(const QString& basename);
+

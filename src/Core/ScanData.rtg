@@ -30,11 +30,29 @@ enum ScanProcessingStage is
 	RangesSelected,
 	LinesAligned,
 	RangesNormalized,
-	ModelSubstracted
+	ModelSubstracted,
+	RtRawDataObtained,
+	RtPeaksDetected,
+	RtLinesTrimmed,
+	RtDirectionNormalized,
+	RtFrequencyRangesSplited,
+	RtRangesSmoothed,
+	RtRangesSelected,
+	RtLinesAligned,
+	RtRangesNormalized,
+	RtModelSubstracted
 
 struct FrequencyRange is 
   from : Double_Precision_Real
   to : Double_Precision_Real
+end
+
+struct Peak is
+  beginIndex : Unsigned_Integer
+  endIndex   : Unsigned_Integer
+  x          : Double_Precision_Real= { 0.0 }
+  y          : Double_Precision_Real= { 0.0 }
+  z          : Double_Precision_Real= { 0.0 }
 end
 
 
@@ -128,15 +146,26 @@ struct SpecNormalizationParams is
   sigma :  Double_Precision_Real
 end
 
+struct HeadAndScanCollectorParameters is
+  maximumTimeMinutes :  Unsigned_Integer = { 60 }
+  soundsSampleRate :  Unsigned_Integer = { 96000 }
+  headsSampleRate :  Unsigned_Integer = { 100 }
+  width  :  Unsigned_Integer = { 300 }
+  height :  Unsigned_Integer = { 200 }
+end
+
+
 struct ProcessingParameters is
   initialSkip :  Double_Precision_Real
 
   peakMagnitudeLimit :  Double_Precision_Real
   peakBackstep :  Double_Precision_Real
   peakForestep :  Double_Precision_Real
-  peakPauseCount : Double_Precision_Real
+  peakPauseCount : Unsigned_Integer
+  --peakPauseCount : Double_Precision_Real
 
   ranges : Std::Vector(FrequencyRange)
+  extremumOfRanges : Std::Vector(Extremum)
   defectPoints : Std::Vector(DefectKindView)
   columnModelOrder :  Unsigned_Integer
   smoothingPointsCount : Unsigned_Integer
@@ -150,6 +179,8 @@ struct ProcessingParameters is
   defectSearching : DefectSearchingParameters
 
   factorForFrequencyRoseWidget: Double_Precision_Real
+
+  headAndScanCollectorParameters: HeadAndScanCollectorParameters
 end
 
 
@@ -162,6 +193,25 @@ struct SourceScanLine is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+end
+
+struct SourceScanChunk is
+--  samples : Std::Vector(Single_Precision_Real)
+--  sampleRate :  Unsigned_Integer
+--  startCoordinate :  Double_Precision_Real
+--  finalCoordinate :  Double_Precision_Real
+--  lineCoordinate :  Double_Precision_Real
+--  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+--  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+--  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+  timestamp           : Unsigned_Long_Long_Integer = { 0 }
+  timestampFromSound  : Unsigned_Long_Long_Integer = { 0 }
+  startpositionOfChunk: Unsigned_Long_Long_Integer = { 0 }
+  sizeOfChunk         : Unsigned_Long_Long_Integer = { 0 }
+end
+
+struct SourceScanChunks is
+  chunks: Std::Vector(SourceScanChunk)
 end
 
 struct RawScanLineInfo is
@@ -194,7 +244,16 @@ struct SourceScanLineSlice is
 
 end
 
+struct PeaksLine is
+  peaks : Std::Vector(Peak)
+  startCoordinate :  Double_Precision_Real
+  finalCoordinate :  Double_Precision_Real
+  lineCoordinate :  Double_Precision_Real
+  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  timestampStart : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
 
+end
 
 
 struct RangeScanLine is
@@ -259,11 +318,12 @@ struct DefectsView is
 end
 
 struct Position is
-	x         : Single_Precision_Real
+	x           : Single_Precision_Real
 	y           : Single_Precision_Real
 	z           : Single_Precision_Real
 	zenithAngle : Single_Precision_Real
 	rotation    : Single_Precision_Real
+	timeStamp   : Unsigned_Long_Long_Integer = { 0 }
 end
 
 struct Trajectory is
@@ -276,9 +336,29 @@ struct Sound is
 	sampleRate  : Unsigned_Integer
 end
 
-struct Peak is
-  beginIndex : Unsigned_Integer
-  endIndex : Unsigned_Integer
+struct Scan is 
+  lines : Std::Vector(SourceScanLine)
+  parameters :  ProcessingParameters
+
+  trimmedLines : Std::Vector(SourceScanLineSlice)
+  peaks : Std::Vector(PeaksLine)
+  ranges : Std::Vector(Std::Vector(RangeScanLine))
+  commonRanges : Std::Vector(Std::Vector(RangeScanLine))
+
+  spec : Std::Vector(Std::Vector(RangeScanLine))
+  normalizedSpec : Std::Vector(Std::Vector(RangeScanLine))
+       
+  normalizedRanges : Std::Vector(NormalizedRange)
+  commonNormalizedRanges : Std::Vector(NormalizedRange)
+  averageColumns : Std::Vector(Std::Vector(Double_Precision_Real))
+  averageColumnPolyniomials : Std::Vector(Polynomial)
+  rangesResiduals : Std::Vector(NormalizedRange)
+  rawDefectPoints : Std::Vector(DefectsView)
+  renderedDefectPoints : Std::Vector(DefectsView)
+  renderedDefectPointsFixedColor : Std::Vector(DefectsView)
+  processingStage : ScanProcessingStage
+  currentRange :  Unsigned_Integer
+  scanName :  Std::String
 end
 
 struct OriginalData is
@@ -288,17 +368,7 @@ struct OriginalData is
 	parameters		:	ProcessingParameters
 end
 
-struct PeaksLine is
-  peaks : Std::Vector(Peak)
-  startCoordinate :  Double_Precision_Real
-  finalCoordinate :  Double_Precision_Real
-  lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
-  timestampStart : Unsigned_Long_Long_Integer = { 0 }
-  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-end
-
-struct Scan is 
+struct ScanArm is 
 	--original							:	OriginalData
 	sound								:	Sound
 	trajectory							:	Trajectory

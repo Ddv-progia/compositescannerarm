@@ -3,12 +3,14 @@
  */
 #include "Core/Devices.hh"
 #include <boost/format.hpp>
-#include <thread>
+#include <thread>         // std::this_thread::sleep_for
 #include <chrono>  
 #include <DevTalk/Factory/AudioDataCollector.hh>
+#include <DevTalk/Factory/SerialPort.hh>
 #include <DevTalk/LowLevelBoard/APLSystem.hh>
-
-
+#include <DevTalk/Factory/UnitestAPLSystem.hh>
+#include <DevTalk/Factory/UnitestAPLCoil.hh>
+#include <DevTalk/Device/APLMultiDevice.hh>
 
 //#include <DevTalkCAND/Plugin.hh>
 //#include <DevTalk/Drivers/Unitest/APLMultiDevice.hh>
@@ -33,53 +35,120 @@ namespace {
 }
 
 uts::devtalk::AudioDataCollectorPrx devices::audioDataCollector;
+uts::devtalk::CoilPrx devices::coil;
+::uts::devtalk::device::utscp::APLCoilPrx coilApl;
+devices::StepMotorPtr devices::xAxisMotor;
+devices::StepMotorPtr devices::yAxisMotor;
+
 uts::devtalk::device::utscp::APLHeadPrx devices::head;
 uts::devtalk::device::utscp::APLCoilPrx  devices::coile;
 uts::devtalk::utscp::APLSystemPrx devices::aplSystemPrx;
+uts::devtalk::utscp::APLSystemPrx devices::aplSystem1112Prx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevicePrx;
+uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevice1112Prx;
 uts::devtalk::AudioDataCollectorFactoryPrx audioDataCollectorFactory;
+
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 {
     //RTReceiverI *rese = new RTReceiverI(comm, "AudioDataCollector");
     audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
     auto adcs = audioDataCollectorFactory->getNames();
-    if(adcs.empty())
+    if (adcs.empty())
         throw std::exception("Устройств записи звука не найдено");
-    auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
-    if (name == adcs.end()) {
-        QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
-        for (auto value : adcs)
-            devices += QString::fromStdString(value) + "\n";
-        QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
-            QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
-        name = adcs.begin();
+    else {
+        auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
+        if (name == adcs.end()) {
+            QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
+            for (auto value : adcs)
+                devices += QString::fromStdString(value) + "\n";
+            QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
+                QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
+            name = adcs.begin();
+        }
+        audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
     }
-    audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
+    uts::devtalk::utscp::UnitestAPLSystemFactoryPrx aplMultiDeviceFactory;
+    uts::devtalk::utscp::UnitestAPLCoilFactoryPrx   coilFactory;
+    uts::devtalk::utscp::UnitestAPLHeadFactoryPrx   headFactory;
 
-    uts::devtalk::utscp::UnitestAPLSystemFactoryPrx aplMultiDeviceFactory = getObject<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
-    uts::devtalk::utscp::UnitestAPLCoilFactoryPrx coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
-    uts::devtalk::utscp::UnitestAPLHeadFactoryPrx headFactory = getObject<uts::devtalk::utscp::UnitestAPLHeadFactoryPrx>(comm, "Factory/APL-Head");
-    if (aplMultiDeviceFactory) {
-        aplSystemPrx = aplMultiDeviceFactory->make(conf.aplSystem.name, conf.aplSystem.address, conf.aplSystem.port);
-        aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
-        objectKeeper.registerObject(aplSystemPrx);
-        objectKeeper.registerObject(aplMultiDevicePrx);
-        //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        if (!aplMultiDevicePrx)
-            throw std::exception("Невозможно получить driver APLMultiDevicePrx");
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    if (conf.coil == 2022) {  // Если версия катушки 2022, значит катушка управляется платой APL
+        aplMultiDeviceFactory = getObject<uts::devtalk::utscp::UnitestAPLSystemFactoryPrx>(comm, "Factory/Unitest-APL-System");
+        coilFactory = getObject<uts::devtalk::utscp::UnitestAPLCoilFactoryPrx>(comm, "Factory/APL-Coil");
+        headFactory = getObject<uts::devtalk::utscp::UnitestAPLHeadFactoryPrx>(comm, "Factory/APL-Head");
+        if (aplMultiDeviceFactory) {
+            aplSystemPrx = aplMultiDeviceFactory->make(conf.aplSystem.name, conf.aplSystem.address, conf.aplSystem.port);
+            aplMultiDevicePrx = uts::devtalk::drivers::utscp::APLMultiDevicePrx::checkedCast(aplSystemPrx, "APL-Multi-Device");
+            objectKeeper.registerObject(aplSystemPrx);
+            objectKeeper.registerObject(aplMultiDevicePrx);
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            if (!aplMultiDevicePrx)
+                throw std::exception("Невозможно получить driver APLMultiDevicePrx");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-        try{
-            if (aplMultiDevicePrx) {
-                if (coilFactory) {
-                    coile = coilFactory->make("1", aplMultiDevicePrx);
-                    objectKeeper.registerObject(coile);
-                }
-                if (headFactory) {
-                    head = headFactory->make(aplMultiDevicePrx);
-                    objectKeeper.registerObject(head);
+            try {
+                if (aplMultiDevicePrx) {
+                    if (coilFactory) {
+                        coile = coilFactory->make("1", aplMultiDevicePrx);
+                        objectKeeper.registerObject(coile);
+                    }
+                    if (headFactory) {
+                        head = headFactory->make(aplMultiDevicePrx);
+                        objectKeeper.registerObject(head);
+                    }
                 }
             }
+            catch (uts::devtalk::CommunicationException& exc) {
+                QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.reason.c_str()));
+            }
+            catch (Ice::Exception& exc) {
+                QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
+            }
+            /*std:: cout << " Level " <<coile->switchOnGenerator();*/
+        }
+    }
+    else {
+        auto coilFactory = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
+        auto serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
+
+        auto motorPortConfig = new uts::devtalk::WindowsSerialPortConfig;
+        motorPortConfig->baudRate = 9600;
+        motorPortConfig->dataBits = uts::devtalk::SerialPort::DataBits8;
+        motorPortConfig->deviceName = conf.comPort;
+        motorPortConfig->handshake = uts::devtalk::SerialPort::HandshakeNo;
+        motorPortConfig->parity = uts::devtalk::SerialPort::ParityNone;
+        motorPortConfig->stopBits = uts::devtalk::SerialPort::StopBits1;
+        motorPortConfig->readIntervalTimeout = 4000;
+        motorPortConfig->readTotalTimeoutConstant = 100;
+        motorPortConfig->readTotalTimeoutMultiplier = 1;
+        motorPortConfig->writeTotalTimeoutConstant = 0;
+        motorPortConfig->writeTotalTimeoutMultiplier = 0;
+        try {
+            auto motorPort = serialPortFactory->make(motorPortConfig);
+            objectKeeper.registerObject(motorPort);
+
+            coil = coilFactory->make(uts::devtalk::SerialDeviceProtocolVersion8, motorPort, conf.coil);
+            objectKeeper.registerObject(coil);
+            //uts::devtalk::SerialPortFactoryPrx serialPortFactory;
+            //serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
+
+            auto serialMotorFactory = getObject<uts::devtalk::SerialStepMotorFactoryPrx>(comm, "Factory/SerialStepMotor");
+
+            uts::devtalk::SerialStepMotorConfig xcfg;
+            xcfg.port = motorPort;
+            xcfg.address = conf.xStepMotor.address;
+            xcfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
+            auto xAxisPrx = serialMotorFactory->make(xcfg);
+
+            uts::devtalk::SerialStepMotorConfig ycfg;
+            ycfg.port = motorPort;
+            ycfg.address = conf.yStepMotor.address;
+            ycfg.protocolVersion = uts::devtalk::SerialDeviceProtocolVersion8;
+            auto yAxisPrx = serialMotorFactory->make(ycfg);
+
+            xAxisMotor = std::make_shared<devices::StepMotor>(xAxisPrx, conf.xStepMotor.stepsPerRevolution, conf.xStepMotor.motorReduction, conf.xStepMotor.toothStep, conf.xStepMotor.toothCount);
+            yAxisMotor = std::make_shared<devices::StepMotor>(yAxisPrx, conf.yStepMotor.stepsPerRevolution, conf.yStepMotor.motorReduction, conf.yStepMotor.toothStep, conf.yStepMotor.toothCount);
+            objectKeeper.registerObject(xAxisPrx);
+            objectKeeper.registerObject(yAxisPrx);
         }
         catch (uts::devtalk::CommunicationException& exc) {
             QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.reason.c_str()));
@@ -87,7 +156,8 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
         catch (Ice::Exception& exc) {
             QMessageBox::critical(0, "Ошибка", QString::fromUtf8(exc.what()));
         }
-        /*std:: cout << " Level " <<coile->switchOnGenerator();*/
+
+
     }
 
   bool simulate = false; 

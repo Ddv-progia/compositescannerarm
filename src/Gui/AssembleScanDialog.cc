@@ -10,9 +10,11 @@
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/transform.hpp>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QListWidget>
 
 #include <regex>
 #include "Gui/AssembleScanDialog.hh"
+#include <QListWidgetItem>
 
 namespace adp = boost::adaptors;
 
@@ -47,7 +49,8 @@ void AssembleScanDialog::addSource()
 {
   QString filter;
   if(ui.sourcesList->count()!=0){
-    filter = (std::regex_match(ui.sourcesList->item(0)->text().toStdString(),std::regex("(.*)(xml)"))) ? "Файлы сборки (*.xml)" : "Звуковые файлы (*.wav)";
+      std::string strLocal = ui.sourcesList->item(0)->text().toStdString();
+    filter = (std::regex_match(strLocal,std::regex("(.*)(xml)"))) ? "Файлы сборки (*.xml)" : "Звуковые файлы (*.wav)";
   }else
     filter = "Файлы сборки (*.xml);;Звуковые файлы (*.wav)";
   

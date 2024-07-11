@@ -15,20 +15,25 @@ class Area : public QThread, public QGraphicsItem
     float m_x = 0;
     float m_y = 0;
     QImage* m_curentPixmap, * m_doublePixmap;
-    std::shared_ptr<Scan> m_scan = nullptr;
+    std::shared_ptr<ScanArm> m_scan = nullptr;
     boost::sync_queue < PixelInfo > m_srcCoords;
     int m_width, m_height;
+    Qt::GlobalColor m_backgroundColor = Qt::lightGray;
     double m_pixelpermm = 1;
     void virtual run();
     void swapPixMap();
     float max = 0;
     float min = 0;
+    QPainter* m_painter;
+
 public:
-    Area(int width , int height);
+    Area(int width , int height, Qt::GlobalColor backgrColor = Qt::lightGray);
     ~Area();
-    void setScan(std::shared_ptr<Scan> scan);
+    std::vector< std::vector<double>> peaksValue;
+    void setScan(std::shared_ptr<ScanArm> scan);
     void drawPoint(int x, int y);
     void clear();
+    void drawAllPoints();
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) override;
 };

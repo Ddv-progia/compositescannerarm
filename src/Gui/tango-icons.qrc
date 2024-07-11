@@ -1,5 +1,7 @@
 <RCC>
-  <qresource prefix="icons/actions">
+  <qresource prefix="/icons/actions">
+    <file>icons/actions/hand-Scanning-stop.png</file>
+    <file>icons/actions/media-scan-start.png</file>
     <file>icons/actions/document-open-tech.png</file>
     <file>icons/actions/preferences-system.png</file>
     <file>icons/app.png</file>
