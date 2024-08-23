@@ -63,6 +63,7 @@ private:
   Q_SLOT void unhighlightScriptLine();
 
   Q_SLOT void updateCoordinates();
+  Q_SLOT void updateCursorCoordinates();
   Q_SLOT void setTechnologicalZero();
 
   Q_SLOT void taskStarted(const QString& name, int stageCount);
@@ -85,6 +86,8 @@ private:
   Q_SLOT void editCopy();
   Q_SLOT void editPaste();
 
+  Q_SLOT void startRtCoil();
+  Q_SLOT void startRtCursor();
   Q_SLOT void startRt();
   Q_SLOT void runAutoScan();
   Q_SLOT void runScript();
@@ -105,4 +108,5 @@ private:
   Q_SLOT void coilManualControl();
 
   Q_SLOT void showScan(const std::shared_ptr<Scan>& scan);
+  Q_SLOT void showHideUnusedAction(bool needShow = false);
 };

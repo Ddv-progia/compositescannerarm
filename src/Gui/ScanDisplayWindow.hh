@@ -129,6 +129,7 @@ private:
 	QWidget* bottomHolder;
 
 	QScrollArea* scanScrollArea;
+	QScrollArea* commandScrollArea;
 
 	void updateRangesPlot();
 	void createColoredRangeSelector();
@@ -141,6 +142,7 @@ private:
 	Q_SLOT void selectRange(int idx, Extremum ex);
 
 	QGridLayout* widgetLayout;
+	QVBoxLayout* mainLayout;
 	void swapItemsByIndexes(int firstItemIndex, int secondItemIndex);
 	Q_SLOT void setAdditionalGraphicsVisibility(bool isVisible);
 	//Q_SLOT void onChangeFactorSpinbox();

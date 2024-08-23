@@ -31,7 +31,7 @@ setScan(std::shared_ptr<ScanArm> scan) {
     m_scanArm = scan;
     const auto &parameters = m_scanArm->parameters;
     const auto& backStep = m_scanArm->sound.sampleRate * parameters.peakBackstep;
-    const auto& foreStep = m_scanArm->sound.sampleRate * parameters.peakForestep;
+    const auto& foreStep = m_scanArm->sound.sampleRate * parameters.headAndScanCollectorParameters.peakForestepSound;
     //const auto& backStep = m_scanArm->sound.sampleRate * parameters.peakBackstep * 10.0; //TODO magic number 10
     //const auto& foreStep = m_scanArm->sound.sampleRate * parameters.peakForestep * 10.0;
     m_oneWave->setRangeFrequency(0, (backStep + foreStep) );

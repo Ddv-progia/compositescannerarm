@@ -152,6 +152,10 @@ struct HeadAndScanCollectorParameters is
   headsSampleRate :  Unsigned_Integer = { 100 }
   width  :  Unsigned_Integer = { 300 }
   height :  Unsigned_Integer = { 200 }
+  countOfPeakToCatchForAreaBox: Unsigned_Integer = {1}
+  peakForestepSound:  Double_Precision_Real = {0.0}
+  currentNumArea:  Unsigned_Integer = {1}
+  firstStepShift: Double_Precision_Real = {0.0}
 end
 
 
@@ -397,5 +401,9 @@ struct ScanArm is
 	processingStage 					:	ScanProcessingStage                             with UCL::Reflection::Binding::Transient_Member
 	currentRange 						:	Unsigned_Integer                                with UCL::Reflection::Binding::Transient_Member
 	scanName 							:	Std::String                                     with UCL::Reflection::Binding::Transient_Member
+	shiftX                              :   Single_Precision_Real                           = {0.0}
+	shiftY                              :   Single_Precision_Real                           = {0.0}
+	shiftZ                              :   Single_Precision_Real                           = {0.0}
+	shiftIsCorrect                      :   Boolean                                         = {false}
 end
 

@@ -90,6 +90,10 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
     //auto step = 1000; 
     //auto step = 250;
     //auto step = 500;
+    if (step == 0) {
+        step = 1000;
+        params.stepForSplitFrequencyRanges = step;
+    }
     unsigned int maxFrequency = line.sampleRate / 2 - step;
 
     //for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
@@ -158,7 +162,7 @@ std::tuple<std::size_t, std::size_t, std::size_t> ScanProcessingTask::getNormali
   for (auto& line : scan.ranges) {
     if (line.empty())
       break;
-    if (! line.front().samples.empty()) {
+    if ((! line.front().samples.empty())&&(line.front().sampleIndexes.front()< line.front().sampleIndexes.back())) {
       std::vector<std::size_t> lineDistances;
       boost::adjacent_difference(line.front().sampleIndexes, std::back_inserter(lineDistances));
       distanceAcc(*boost::min_element(lineDistances));
@@ -181,6 +185,10 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
   if (step == 0 && startIndex == 0 && stopIndex == 0) return;
   //if (step == 0) step=1000; //******* TODO разобраться с вылетом при step=0
   if (step == 0) step= scan.parameters.stepForSplitFrequencyRanges; //******* TODO разобраться с вылетом при step=0
+  if (step == 0) {
+      scan.parameters.stepForSplitFrequencyRanges = 1000;
+      step = 1000;
+  }
   auto rangesCount = scan.parameters.ranges.size();
   std::size_t commonRangesCount = 0;
   if (scan.commonRanges.size()>0) {
@@ -790,7 +798,7 @@ void ScanProcessingTask::operator() ()
       emit stageStarted("Вычитание моделей столбцов", scan->parameters.ranges.size());
       subtractColumnModels(*scan, scan->averageColumnPolyniomials);
     } else {
-      emit stageStarted("Усреднение столбцов столбцов", scan->parameters.ranges.size());
+      emit stageStarted("Усреднение столбцов", scan->parameters.ranges.size());
       scan->averageColumns = averageColumns(*scan);
       scan->rangesResiduals.clear();
       scan->rangesResiduals = scan->normalizedRanges;

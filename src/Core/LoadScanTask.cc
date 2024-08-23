@@ -91,10 +91,13 @@ void LoadScanTask::operator()()
 
     if (! ignoreSavedParameters) {
       parameters.initialSkip = getVal<double>(db, "parameters.initialSkip");
-      parameters.stepForSplitFrequencyRanges = getVal<double>(db, "parameters.stepForSplitFrequencyRanges");
+      parameters.stepForSplitFrequencyRanges = getVal<double>(db, "parameters.stepForSplitFrequencyRanges",1000);
+      if (parameters.stepForSplitFrequencyRanges == 0) parameters.stepForSplitFrequencyRanges = 1000;
       parameters.peakMagnitudeLimit = getVal<double>(db, "parameters.peakMagnitudeLimit");
       parameters.peakBackstep = getVal<double>(db, "parameters.peakBackstep");
       parameters.peakForestep = getVal<double>(db, "parameters.peakForestep");
+      //parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox = getVal<double>(db, "parameters.countOfPeakToCatchForAreaBox",1);
+      
       //parameters.peakPauseCount= getVal<unsigned int>(db, "parameters.peakPauseCount", 10000);
       //parameters.peakPauseCount= getVal<double>(db, "parameters.peakPauseCount", 1000);
       // parameters.peakPauseCount - экспериментальное значение. Для определения ширины пика.

@@ -154,23 +154,29 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   plotBox = new QComboBox;
 
   auto additionalPlotsButton = new QPushButton("Детальный график");
+  additionalPlotsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   additionalPlotsButton->setCheckable(true);
   auto plotsButton = new QPushButton("Графики");
+  plotsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  plotsButton->setCheckable(true);
   auto resizeToWindowButton = new QPushButton("Сохранять пропорции");
+  resizeToWindowButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   resizeToWindowButton->setCheckable(true);
   auto defectsButton = new QPushButton("Отображать дефекты");
+  defectsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   defectsButton->setCheckable(true);
 
   auto defectClassificationButton = new QPushButton("Классификатор");
+  defectClassificationButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   defectClassificationButton->setCheckable(true);
 
   auto commandLayout = new QHBoxLayout;
 
   commandLayout->addWidget(kindBox);
   commandLayout->addWidget(plotBox);
-  commandLayout->addStretch();
+  commandLayout->insertStretch(2,3);
 
-  commandLayout->addStretch();
+  //commandLayout->addStretch();
   commandLayout->addWidget(additionalPlotsButton);
   commandLayout->addWidget(plotsButton);
   commandLayout->addWidget(resizeToWindowButton);
@@ -359,15 +365,23 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   bottomLayout->addWidget(table, 2, 1);
   bottomHolder->setLayout(bottomLayout);
 
+  mainLayout = new QVBoxLayout;
+
   widgetLayout = new QGridLayout;
-  widgetLayout->setContentsMargins(0, 0, 0, 0);
-  widgetLayout->setSpacing(0);
+  widgetLayout->setContentsMargins(2, 2, 2, 2);
+  widgetLayout->setSpacing(1);
 
   infoWidget = new QWidget;
   infoWidget->setLayout(infoLayout);
   rangeSelector = new QWidget;
 
-  widgetLayout->addLayout(commandLayout, 0, 0);
+  commandScrollArea = new QScrollArea;
+  commandScrollArea->setFrameStyle(1);
+  commandScrollArea->setLayout(commandLayout);
+  commandScrollArea->setWidgetResizable(false);
+  //commandScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  widgetLayout->addWidget(commandScrollArea, 0, 0);
+  //widgetLayout->addLayout(commandLayout, 0, 0);
   widgetLayout->addWidget(rangeSelector, 0, 2);
   widgetLayout->addWidget(scanScrollArea, 3, 0);
   widgetLayout->addWidget(scanRightColorScale, 3, 1);
@@ -546,14 +560,17 @@ void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::v
     }
 
     for(auto row = begin.y(); row <= end.y(); row++) {
-      if (end.x() >= spec[row][nRange].samples.size() || end.y() >= spec.size()) {
-        end.setX(spec[row][nRange].samples.size() - 1);
-        end.setY(spec.size() - 1);
-      }
+        if ((spec.size()>row)&&(spec[row].size()>nRange)) {
+            if (end.x() >= spec[row][nRange].samples.size() || end.y() >= spec.size()) 
+            {
+                end.setX(spec[row][nRange].samples.size() - 1);
+                end.setY(spec.size() - 1);
+            }
 
-      for(auto column = begin.x(); column <= end.x(); column++) {
-        acc(spec[row][nRange].samples[column]);
-      }
+            for (auto column = begin.x(); column <= end.x(); column++) {
+                acc(spec[row][nRange].samples[column]);
+            }
+        }
     }
     auto sigma = std::sqrt(ba::variance(acc));
     auto average = ba::mean(acc);

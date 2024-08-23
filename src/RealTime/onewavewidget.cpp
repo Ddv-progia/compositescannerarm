@@ -73,6 +73,7 @@ void OneWaveWidget::update(const QList<QPointF> &newPoints){ //Добавляе�
 
 void OneWaveWidget::setRangeFrequency(int min, int max, float divider) {
     if (!m_sliderFrequency) return;
+    m_dividerFrequency = divider;
     m_sliderFrequency->setRange(min, max);
     m_sliderFrequency->setSpan(m_sliderFrequency->minimum(), m_sliderFrequency->maximum());
     xAxis->setRange(m_sliderFrequency->minimum() / m_dividerFrequency, m_sliderFrequency->maximum() / m_dividerFrequency);

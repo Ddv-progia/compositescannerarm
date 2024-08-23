@@ -28,6 +28,7 @@
 #include "Core/QtScript/StepMotor.hh"
 #include "Core/ScanCollector.hh"
 #include "RealTime/RTScanCollector.h"
+#include "RealTime/cursor.h"
 
 #include "Gui/AssembleScanDialog.hh"
 #include "Gui/AssignColorForColorBarDialog.hh"
@@ -48,7 +49,7 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
 {
   ui.setupUi(this);
   ui.backgroundTasksBox->hide();
-
+  showHideUnusedAction(false);
   updateTimer = new QTimer(this);
 
   prepareScriptEnvironment();
@@ -123,6 +124,7 @@ void MainWindow::connectSignals()
 {
   connect(ui.runScriptAction, SIGNAL(triggered()), this, SLOT(runScript()));
   connect(ui.runHahdleScanAction, SIGNAL(triggered()), this, SLOT(startRt()));
+  connect(ui.runCursorAction, SIGNAL(triggered()), this, SLOT(startRtCursor()));
   connect(ui.stopAction, SIGNAL(triggered()), this, SLOT(stop()));
   connect(ui.stopHandleScanAction, SIGNAL(triggered()), this, SLOT(stopRt()));
   connect(ui.initializeAction, SIGNAL(triggered()), this, SLOT(initialize()));
@@ -135,6 +137,7 @@ void MainWindow::connectSignals()
 
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
+  connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCursorCoordinates()));
 
   connect(ui.newAction, SIGNAL(triggered()), this, SLOT(newScript()));
   connect(ui.newRtAction, SIGNAL(triggered()), this, SLOT(newRtWindow()));
@@ -214,6 +217,26 @@ void MainWindow::unhighlightScriptLine()
     auto currentWidget = getCurrentMdiWidget();
     if (auto ew = qobject_cast<EditorWindow*>(currentWidget)) {
         ew->unhighlightLine();
+    }
+}
+
+void MainWindow::updateCursorCoordinates()
+{
+    if ((ui.mdiArea->currentSubWindow() == nullptr) ||(ui.mdiArea->currentSubWindow()->widget()==nullptr)){
+        return;
+      }
+    try {
+        auto collector = dynamic_cast<realtime::RTScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        if (collector) {
+            //auto xy = collector->m_field->m_cursor->getPositionXY();
+ 
+            ui.xLabel->setText(QString::number(collector->m_field->getPositionX()));
+            ui.x0Label->setText(QString::number(0.0));
+            ui.yLabel->setText(QString::number(collector->m_field->getPositionY()));
+            ui.y0Label->setText(QString::number(0.0));
+        }
+
+    } catch (...) {
     }
 }
 
@@ -462,6 +485,38 @@ void MainWindow::runAutoScan()
     asw.exec();
 }
 
+void MainWindow::startRtCoil()
+{
+    try {
+        //devices::coile->switchOnGenerator();
+        IceUtil::Handle<uts::devtalk::CompletionWaitTiming> timing = new uts::devtalk::CompletionWaitTiming;
+        timing->firstTestDelay = timing->testPause = timing->timeout = 0;
+        devices::coile->switchSingleWorkingMode(timing);
+    }
+    catch (...) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось запустить генератор");
+    }
+}
+
+void MainWindow::startRtCursor()
+{
+
+    try {
+        auto collector = dynamic_cast<realtime::RTScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        if (!collector) {
+            newRtWindow();
+            collector = dynamic_cast<realtime::RTScanCollector*>(ui.mdiArea->currentSubWindow()->widget());
+        }
+        if (!collector) {}
+        else {
+            collector->startCursor();
+        }
+    }
+    catch (...) {
+
+    }
+}
+
 void MainWindow::startRt()
 {
     try {
@@ -590,6 +645,31 @@ void MainWindow::showScan(const std::shared_ptr<Scan>& scan)
   ui.mdiArea->addSubWindow(sdw);
   sdw->showMaximized();
   connect(sdw,SIGNAL(refreshScan(std::shared_ptr<Scan>&)),&scanFactory,SLOT(recalculateScan(std::shared_ptr<Scan>&)));
+}
+
+void MainWindow::showHideUnusedAction(bool needShow)
+{
+    ui.runScriptAction->setVisible(needShow);
+    ui.stopAction->setVisible(needShow);
+    ui.initializeAction->setVisible(needShow);
+    ui.autoScanAction->setVisible(needShow);
+    ui.showManualControlDialogAction->setVisible(needShow);
+    //ui.quitAction, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
+    //ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
+    //ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
+    //ui.makeBScanAction, SIGNAL(triggered()), this, SLOT(makeBScanAction()));
+
+    //ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
+
+    //ui.coilManualControlAction->setVisible(needShow);
+
+    ui.undoAction ->setVisible(needShow);
+    ui.redoAction ->setVisible(needShow);
+    ui.cutAction  ->setVisible(needShow);
+    ui.copyAction ->setVisible(needShow);
+    ui.pasteAction->setVisible(needShow);
+    ui.setZeroCoodinateButton->setVisible(needShow);
+
 }
 
 void MainWindow::closeEvent(QCloseEvent* evt)

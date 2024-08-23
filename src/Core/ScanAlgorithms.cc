@@ -43,7 +43,7 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
   }
   std::vector<Peak> peaks;
   std::size_t srcSize = std::distance(srcBegin, srcEnd);
-  //*******
+ //*******
  // Попытка выделить пики по-другому
  //std::size_t peakStart = 0;
  //std::size_t peakEnd = 0;
@@ -74,8 +74,11 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
  //*******
   for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
     if (std::abs(*(srcBegin + i)) > peakLimit) {
-      peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(i - backstep)), (unsigned int)(i + forestep) });
-      i += (forestep+ pauseCount);
+        auto startPos = i - backstep;
+        //if (startPos < 0) startPos = 0;
+      peaks.push_back(Peak{ (unsigned int)std::max((unsigned int)0, static_cast<unsigned int>(startPos)), (unsigned int)(i + forestep) });
+      //i += (forestep+ pauseCount);
+      i += forestep + backstep;
     } else {
       i++;
     }
@@ -220,7 +223,7 @@ std::vector<FrequencyRange> constructFrequencyRanges(int beginFreq, int endFreq,
 std::vector<FrequencyRange> constructCommonRanges()
 {
   std::vector<FrequencyRange> result;
-  auto ranges = constructFrequencyRanges(0,12000,2000);
+  auto ranges = constructFrequencyRanges(100,12000,2000);
   result.insert(result.end(),ranges.begin(),ranges.end());
   ranges = constructFrequencyRanges(12000,30000,3000);
   result.insert(result.end(),ranges.begin(),ranges.end());

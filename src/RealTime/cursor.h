@@ -17,6 +17,7 @@ public:
     Cursor(int width , int height, Qt::GlobalColor color = Qt::white);
     ~Cursor();
     void setPosition(float x, float y);
+    std::pair<float, float> getPositionXY();
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) override;
 

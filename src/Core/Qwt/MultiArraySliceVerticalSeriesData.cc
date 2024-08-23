@@ -9,7 +9,16 @@ MultiArraySliceVerticalSeriesData::MultiArraySliceVerticalSeriesData(const boost
                                                                      const std::vector<double>& lineCoordinates)
   : line(line), lineCoordinates(lineCoordinates)
 {
-  rect = qwtBoundingRect(*this);
+  //rect = qwtBoundingRect(*this);
+  try
+  {
+      rect = qwtBoundingRect(*this);
+  }
+  catch (const std::exception&)
+  {
+
+  }
+
 }
 
 size_t MultiArraySliceVerticalSeriesData::size() const

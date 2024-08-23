@@ -55,6 +55,8 @@ void SaveScanTask::operator() ()
     putVal<double>(db, "parameters.peakBackstep", scan.parameters.peakBackstep);
     putVal<double>(db, "parameters.peakForestep", scan.parameters.peakForestep);
     putVal<unsigned int>(db, "parameters.peakPauseCount", scan.parameters.peakPauseCount);
+    //putVal<unsigned int>(db, "parameters.peakPauseCount", scan.parameters.countOfPeakToCatchForAreaBox);
+
     //putVal<double>(db, "parameters.peakPauseCount", scan.parameters.peakPauseCount);
     
     putVal<std::uint32_t>(db, "parameters.ranges.@size", scan.parameters.ranges.size());    

@@ -279,7 +279,7 @@
    </widget>
    <widget class="QMenu" name="menu_4">
     <property name="title">
-     <string>Ручное управние</string>
+     <string>Ручное управление</string>
     </property>
     <addaction name="showManualControlDialogAction"/>
     <addaction name="coilManualControlAction"/>
@@ -324,6 +324,7 @@
    <addaction name="currentProcessingParametersAction"/>
    <addaction name="separator"/>
    <addaction name="runHahdleScanAction"/>
+   <addaction name="runCursorAction"/>
    <addaction name="stopHandleScanAction"/>
    <addaction name="makeBScanAction"/>
   </widget>
@@ -614,6 +615,15 @@
    </property>
    <property name="toolTip">
     <string>Новое окно Ручного сканирования</string>
+   </property>
+  </action>
+  <action name="runCursorAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/cursor-start.png</normaloff>:/icons/actions/icons/actions/cursor-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>runCursor</string>
    </property>
   </action>
  </widget>

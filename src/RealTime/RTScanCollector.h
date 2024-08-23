@@ -28,6 +28,7 @@ namespace realtime {
 		time_t m_minimumTimeStampProlong = 10;
 		static bool m_isStarted;
 		bool m_isThisStarted = false;
+		bool m_isThisCursorStarted = false;
 		const size_t SEC_PER_MINUTE = 60;
 		//const size_t MAXIMUM_TIME = 60;
 		//const size_t SOUDS_SAMPLE_RATE = 100000;
@@ -44,10 +45,15 @@ namespace realtime {
 	public:
 		//std::shared_ptr<Scan> ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
 		void ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
+		void SetShift(float x, float y, float z);
 
 		FieldWidget* m_field;
 		explicit RTScanCollector(RTContext& trCtxt, ProcessingParameters &parameters, ScanFactory& scanFactory);
+		explicit RTScanCollector(RTContext& trCtxt, ScanFactory& scanFactory, ScanArm scanArm);
+		void resizeRtPeaks(int width, int height);
+		Q_SLOT void setAreaAdditionalScale(double value);
 		Q_SLOT virtual void start() override;
+		Q_SLOT virtual void startCursor();
 		Q_SLOT virtual void stop() override;
 		Q_SLOT virtual void pause() override {};
 		Q_SLOT void headData(float x, float y, float z, time_t timeStamp);

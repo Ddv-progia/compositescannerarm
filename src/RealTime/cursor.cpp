@@ -24,6 +24,11 @@ setPosition(float x, float y) {
 	update();
 }
 
+std::pair<float, float> Cursor::getPositionXY()
+{
+	return std::pair<float, float>(m_x, m_y);
+}
+
 QRectF Cursor::
 boundingRect() const {
 	return QRectF{ -m_pixelpermm,  -m_pixelpermm, (qreal)m_width + m_pixelpermm * 2, (qreal)m_height + m_pixelpermm * 2 };

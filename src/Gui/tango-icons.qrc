@@ -68,5 +68,6 @@
     <file>icons/actions/view-fullscreen.png</file>
     <file>icons/actions/view-refresh.png</file>
     <file>icons/actions/window-new.png</file>
+    <file>icons/actions/cursor-start.png</file>
   </qresource>
 </RCC>

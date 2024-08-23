@@ -641,7 +641,11 @@ void ProcessingParametersDialog::fillWidgets()
   ui.peakMagnitudeLimitBox->setValue(params.peakMagnitudeLimit);
   ui.peakBackstepBox->setValue(params.peakBackstep);
   ui.peakForestepBox->setValue(params.peakForestep);
+  ui.peakForestepSoundBox->setValue(params.headAndScanCollectorParameters.peakForestepSound);
+  ui.firstStepShiftBox->setValue(params.headAndScanCollectorParameters.firstStepShift);
+
   ui.peakPauseCountBox->setValue(params.peakPauseCount);
+  ui.countOfPeakToCatchForAreaBox->setValue(params.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox);
   ui.columnModelOrderBox->setValue(params.columnModelOrder);
   ui.smoothingPointsCountBox->setValue(params.smoothingPointsCount);
   ui.normalizeCheckBox->setChecked(params.shouldNormalize);
@@ -701,7 +705,10 @@ void ProcessingParametersDialog::updateParameters()
   params.peakMagnitudeLimit = ui.peakMagnitudeLimitBox->value();
   params.peakBackstep = ui.peakBackstepBox->value();
   params.peakForestep = ui.peakForestepBox->value();
+  params.headAndScanCollectorParameters.peakForestepSound = ui.peakForestepSoundBox->value();
+  params.headAndScanCollectorParameters.firstStepShift = ui.firstStepShiftBox->value();
   params.peakPauseCount = unsigned int(ui.peakPauseCountBox->value());
+  params.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox = unsigned int(ui.countOfPeakToCatchForAreaBox->value());
 
   params.headAndScanCollectorParameters.height             = ui.heightBox->value();
   params.headAndScanCollectorParameters.width              = ui.widthBox->value();

@@ -19,21 +19,69 @@
 
 bool realtime::RTScanCollector::m_isStarted = false;
 
+void realtime::RTScanCollector::
+resizeRtPeaks(int width, int height) {
+    for (auto& linePeak : m_scanArm->rtPeaks) {
+        for (auto& peaks : linePeak)
+            peaks.resize(0);
+        linePeak.resize(0);
+    }
+    m_scanArm->rtPeaks.resize(height);
+    for (auto& linePeak : m_scanArm->rtPeaks)
+        linePeak.resize(width);
+}
+Q_SLOT void realtime::RTScanCollector::setAreaAdditionalScale(double value)
+{
+    m_field->setAreaAdditionalScale(value);
+    //return Q_SLOT void();
+}
 realtime::RTScanCollector::
 RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters, ScanFactory& scanFactory)
     : m_rtCtxt(trCtxt), m_parameters(parameters), scanFactory(scanFactory)
 {
-    auto mainLayout = new QVBoxLayout;
-    auto splitter   = new QSplitter(Qt::Vertical);
-    
-    setLayout(mainLayout);
     m_soundDisplay = new SoundDisplay();
     m_peakDisplay = new PeakDisplay();
-    m_field = new FieldWidget(m_parameters.headAndScanCollectorParameters.width, m_parameters.headAndScanCollectorParameters.height);
-    splitter->addWidget(m_soundDisplay);
-    splitter->addWidget(m_peakDisplay);
-    splitter->addWidget(m_field);
-    mainLayout->addWidget(splitter);
+    m_field = new FieldWidget(m_parameters.headAndScanCollectorParameters.width, m_parameters.headAndScanCollectorParameters.height, m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox);
+    auto leftFrame = new QFrame();
+    //m_field->group->setParent(leftFrame);
+    auto leftFrameLayout = new QVBoxLayout;
+    QList<QAbstractButton*> buttonList = m_field->group->buttons();
+    for (QList<QAbstractButton*>::const_iterator it = buttonList.cbegin(); it != buttonList.cend(); ++it)
+    {
+        leftFrameLayout->addWidget(*it);
+    }
+    //auto scaleFrame = new QFrame();
+    //auto scaleFrameLayout = new QVBoxLayout;
+    auto scaleSpinBox = new QDoubleSpinBox();
+    scaleSpinBox->setMaximum(100.0);
+    scaleSpinBox->setMinimum(0.001);
+    scaleSpinBox->setSingleStep(0.01);
+    scaleSpinBox->setValue(1.0);
+    connect(scaleSpinBox, &QDoubleSpinBox::valueChanged,this,  &realtime::RTScanCollector::setAreaAdditionalScale);
+
+    //scaleFrameLayout->addWidget(scaleSpinBox);
+    //scaleFrame->setLayout(scaleFrameLayout);
+    //leftFrameLayout->addWidget(scaleFrame);
+    leftFrameLayout->addWidget(scaleSpinBox);
+    leftFrame->setLayout(leftFrameLayout);
+    auto mainLayout = new QVBoxLayout;
+    auto topPanelLayout = new QHBoxLayout;
+    auto splitterTopPanelVsField   = new QSplitter(Qt::Vertical);
+    auto splitterSoundDisplayVsPeakDisplay = new QSplitter(Qt::Horizontal);
+    splitterSoundDisplayVsPeakDisplay->addWidget(leftFrame);
+    splitterSoundDisplayVsPeakDisplay->addWidget(m_soundDisplay);
+    splitterSoundDisplayVsPeakDisplay->addWidget(m_peakDisplay);
+    splitterSoundDisplayVsPeakDisplay->setStretchFactor(0, 1);
+    splitterSoundDisplayVsPeakDisplay->setStretchFactor(1, 5);
+    splitterSoundDisplayVsPeakDisplay->setStretchFactor(2, 2);
+
+    splitterTopPanelVsField->addWidget(splitterSoundDisplayVsPeakDisplay);
+    splitterTopPanelVsField->addWidget(m_field);
+    splitterTopPanelVsField->setStretchFactor(0, 1);
+    splitterTopPanelVsField->setStretchFactor(1, 5);
+
+    mainLayout->addWidget(splitterTopPanelVsField);
+    setLayout(mainLayout);
 
     m_scanArm = std::make_shared<ScanArm>();
     m_scanArm->parameters = m_parameters;
@@ -41,6 +89,7 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters, ScanFactory
     m_scanArm->sound.samples.reserve(m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
     m_scanArm->trajectory.sampleRate = m_parameters.headAndScanCollectorParameters.headsSampleRate;
     m_scanArm->trajectory.pos.reserve(m_scanArm->trajectory.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
+    resizeRtPeaks(m_parameters.headAndScanCollectorParameters.width, m_parameters.headAndScanCollectorParameters.height);
 
     sourceScanChunks = std::make_shared<SourceScanChunks>();
     sourceScanChunks->chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
@@ -49,6 +98,56 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters, ScanFactory
     m_peakDisplay->setScan(m_scanArm);
     m_field->setScan(m_scanArm);
     m_field->setScanChunks(sourceScanChunks);
+}
+
+realtime::RTScanCollector::
+RTScanCollector(RTContext& trCtxt, ScanFactory& scanFactory, ScanArm scanArm)
+    : m_rtCtxt(trCtxt), scanFactory(scanFactory)
+{
+    auto mainLayout = new QVBoxLayout;
+    auto splitter   = new QSplitter(Qt::Vertical);
+    
+    setLayout(mainLayout);
+    m_soundDisplay = new SoundDisplay();
+    m_peakDisplay = new PeakDisplay();
+    m_scanArm = std::make_shared<ScanArm>(scanArm);
+    if (m_scanArm->shiftIsCorrect) {
+        m_shift.x = m_scanArm->shiftX;
+        m_shift.y = m_scanArm->shiftY;
+        m_shift.z = m_scanArm->shiftZ;
+        m_shift.is_correct = m_scanArm->shiftIsCorrect;
+
+    }
+    m_parameters = m_scanArm->parameters;
+    m_field = new FieldWidget(m_parameters.headAndScanCollectorParameters.width, m_parameters.headAndScanCollectorParameters.height, m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox);
+    splitter->addWidget(m_soundDisplay);
+    splitter->addWidget(m_peakDisplay);
+    splitter->addWidget(m_field);
+    mainLayout->addWidget(splitter);
+
+    sourceScanChunks = std::make_shared<SourceScanChunks>();
+    sourceScanChunks->chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
+
+    m_soundDisplay->setScan(m_scanArm);
+    m_peakDisplay->setScan(m_scanArm);
+    m_field->setScan(m_scanArm);
+    m_field->setScanChunks(sourceScanChunks);
+    m_field->findPeak();
+    m_field->timeout();
+}
+
+void realtime::RTScanCollector::
+startCursor() {
+    if (m_isThisCursorStarted)
+        return;
+    if (auto head = std::dynamic_pointer_cast<realtime::RTHead>(m_rtCtxt.getRTDevice("APLHead"))) {
+        connect(head.get(), &realtime::RTHead::newData, this, &realtime::RTScanCollector::headData);
+        //connect(head.get(), &realtime::RTHead::newData, head.get(), &realtime::RTHead::onNewData);
+
+        head->start(m_scanArm->trajectory.sampleRate);
+    }
+    m_field->runCursorTimer();
+    m_isThisCursorStarted = true;
 }
 
 void realtime::RTScanCollector::
@@ -89,7 +188,7 @@ stop() {
     }
     m_field->stopTimers();
     emit ready(m_scanArm);
-
+    m_isThisCursorStarted = false;
 }
 
 void realtime::RTScanCollector::
@@ -112,6 +211,12 @@ headData(float x, float y, float z, time_t timeStamp) {
         m_scanArm->sound.samples.clear();
         //m_scanArm->trajectory.pos.clear();
         m_shift.is_correct = true;
+        
+        m_scanArm->shiftX = m_shift.x;
+        m_scanArm->shiftY = m_shift.y;
+        m_scanArm->shiftZ = m_shift.z;
+        m_scanArm->shiftIsCorrect = true;
+
     }
     auto trajectory_pos_size = m_scanArm->trajectory.pos.size();
     m_scanArm->trajectory.pos.push_back({x + m_shift.x,y + m_shift.y,z + m_shift.z, 0, 0,unsigned long long int(timeStamp)});
@@ -153,10 +258,6 @@ void realtime::RTScanCollector::saveAs(BackgroundTaskExecutor& taskExecutor, QMd
 void realtime::RTScanCollector::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea) {
     auto newPathname = QFileDialog::getOpenFileName(this, "Открыть скан", QString(), "скан (*.ask)");
     if (!newPathname.isEmpty()) {
-        auto ew = new realtime::RTScanCollector{ m_rtCtxt, this->m_parameters, scanFactory};
-        ew->setAttribute(Qt::WA_DeleteOnClose, true);
-        mdiArea->addSubWindow(ew);
-        ew->showMaximized();
 
         //Core::BinaryPersistentVariable<OriginalData > binaryScan{ newPathname.toStdString() };
         Core::BinaryPersistentVariable<ScanArm > binaryScan{ newPathname.toStdString() };
@@ -173,25 +274,33 @@ void realtime::RTScanCollector::load(BackgroundTaskExecutor& taskExecutor, QMdiA
             //    QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
             //}
         }
-        *m_scanArm = *binaryScan;
-        ew->m_scanArm->parameters = binaryScan->parameters;
-        ew->m_scanArm->sound.sampleRate = binaryScan->sound.sampleRate;
-        ew->m_scanArm->sound.samples.reserve(binaryScan->sound.samples.size());
-        ew->m_scanArm->sound.samples = std::move(binaryScan->sound.samples);
-        ew->m_scanArm->trajectory.sampleRate = binaryScan->trajectory.sampleRate;
-        ew->m_scanArm->trajectory.pos.reserve(binaryScan->trajectory.pos.size());
-        ew->m_scanArm->trajectory.pos = std::move(binaryScan->trajectory.pos);
-        ew->m_scanArm->rtPeaks.reserve(binaryScan->rtPeaks.size());
-        ew->m_scanArm->rtPeaks = std::move(binaryScan->rtPeaks);
-
-        ew->m_soundDisplay->setScan(m_scanArm);
-        ew->m_peakDisplay->setScan(m_scanArm);
-        m_field->setScan(m_scanArm);
-        m_field->findPeak();
-        m_field->timeout();
-        m_field->drawArea();
-        //m_field->runTimers();
-        //m_isThisStarted = m_isStarted = true;
+        binaryScan->scanName = newPathname.toStdString();
+   
+        //auto ew = new realtime::RTScanCollector{ m_rtCtxt, this->m_parameters, scanFactory};
+        auto ew = new realtime::RTScanCollector{ m_rtCtxt, scanFactory, *binaryScan };
+        ew->setWindowTitle(newPathname);
+        ew->setAttribute(Qt::WA_DeleteOnClose, true);
+        mdiArea->addSubWindow(ew);
+        ew->showMaximized();
+        //*m_scanArm = *binaryScan;
+        //ew->m_scanArm->parameters = binaryScan->parameters;
+        //ew->m_scanArm->sound.sampleRate = binaryScan->sound.sampleRate;
+        //ew->m_scanArm->sound.samples.reserve(binaryScan->sound.samples.size());
+        //ew->m_scanArm->sound.samples = std::move(binaryScan->sound.samples);
+        //ew->m_scanArm->trajectory.sampleRate = binaryScan->trajectory.sampleRate;
+        //ew->m_scanArm->trajectory.pos.reserve(binaryScan->trajectory.pos.size());
+        //ew->m_scanArm->trajectory.pos = std::move(binaryScan->trajectory.pos);
+        //ew->m_scanArm->rtPeaks.reserve(binaryScan->rtPeaks.size());
+        ////std::memcpy(&m_scanArm->rtPeaks,&binaryScan->rtPeaks, sizeof binaryScan->rtPeaks);
+        //ew->m_scanArm->rtPeaks = std::move(binaryScan->rtPeaks);
+        //ew->m_soundDisplay->setScan(ew->m_scanArm);
+        //ew->m_peakDisplay->setScan(ew->m_scanArm);
+        ////m_field->setScan(m_scanArm);
+        ////m_field->findPeak();
+        ////m_field->timeout();
+        ////m_field->drawArea();
+        //////m_field->runTimers();
+        //////m_isThisStarted = m_isStarted = true;
 
         // отобразим анализ загруженного .ask скана
         //{
@@ -237,12 +346,19 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
 {
     //std::shared_ptr<Scan> scan;
     m_scan = std::make_shared<Scan>();
-    m_scan->parameters.initialSkip =                 m_parameters.initialSkip;
-    m_scan->parameters.stepForSplitFrequencyRanges = m_parameters.stepForSplitFrequencyRanges;
-    m_scan->parameters.peakMagnitudeLimit =          m_parameters.peakMagnitudeLimit;
-    m_scan->parameters.peakBackstep =                m_parameters.peakBackstep;
-    m_scan->parameters.peakForestep =                m_parameters.peakForestep;
-    m_scan->parameters.peakPauseCount =              m_parameters.peakPauseCount;
+    m_scan->parameters.initialSkip =                  m_parameters.initialSkip;
+    m_scan->parameters.stepForSplitFrequencyRanges =  m_parameters.stepForSplitFrequencyRanges;
+    m_scan->parameters.peakMagnitudeLimit =           m_parameters.peakMagnitudeLimit;
+    m_scan->parameters.peakBackstep =                 m_parameters.peakBackstep;
+    m_scan->parameters.peakForestep =                 m_parameters.peakForestep;
+    m_scan->parameters.peakPauseCount =               m_parameters.peakPauseCount;
+    m_scan->parameters.headAndScanCollectorParameters.peakForestepSound            = m_parameters.headAndScanCollectorParameters.peakForestepSound;
+    m_scan->parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox = m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
+    m_scan->parameters.headAndScanCollectorParameters.currentNumArea =  m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
+    m_scan->parameters.headAndScanCollectorParameters.firstStepShift =  m_parameters.headAndScanCollectorParameters.firstStepShift;
+    auto m_field_NumArea = m_field->getNumArea();
+    m_scan->parameters.headAndScanCollectorParameters.currentNumArea = m_field_NumArea;
+    m_parameters.headAndScanCollectorParameters.currentNumArea = m_field_NumArea;
 
     
     ::std::vector< ::FrequencyRange > ranges;
@@ -287,18 +403,8 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
 
     auto rtPeaksSizeY = scanArm->rtPeaks.size();
     const auto& sound = scanArm->sound;
-    size_t maxPeaksLenght = 0;
-    ::std::vector< ::std::vector<  size_t > > peaksLenght;
-    for (auto line: scanArm->rtPeaks) {
-        ::std::vector<  size_t > l;
-        for (auto peaks : line) {
-            size_t s = peaks.size();
-            if (maxPeaksLenght < s) maxPeaksLenght = s;
-            l.push_back(s);
-        }
-        peaksLenght.push_back(l);
-    }
-
+    size_t maxPeakLenght = 0;
+    ::std::vector< ::std::vector<  size_t > > peaksLengt;
     for (std::size_t i = 0; i < rtPeaksSizeY; i++) {
         size_t lineLenght = 0;
         ::std::vector< size_t  >  peaksLengtLine;
@@ -312,20 +418,20 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
             if (peaksLenght > maxPeakLenght) maxPeakLenght = peaksLenght;
             peaksLengtLine.push_back(peaksLenght);
         }
-        peaksLenght.push_back(peaksLengtLine);
+        peaksLengt.push_back(peaksLengtLine);
     }
     //***
-    for (std::size_t i = 0; i < rtPeaksSizeY; i++) {
+    for (std::size_t i = 0; i < rtPeaksSizeY; i += m_field_NumArea) {
         SourceScanLine line;
         auto rtPeaksSizeX = scanArm->rtPeaks.at(i).size();
         line.startCoordinate = 0;
         line.finalCoordinate = rtPeaksSizeX;
-        line.lineCoordinate = i;
+        line.lineCoordinate = (rtPeaksSizeY-1)-i; //**********
         line.finalLineCoordinate = i;
         line.sampleRate = sound.sampleRate;
 
 
-        for (std::size_t j = 0; j < rtPeaksSizeX; j++) {
+        for (std::size_t j = 0; j < rtPeaksSizeX; j+= m_field_NumArea) {
             auto peaks = scanArm->rtPeaks.at(i).at(j);
             //const auto& lastPeak = peaks.back();
             std::size_t insertedLength = 0;
@@ -334,7 +440,7 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
                     sound.samples.begin() + peak.beginIndex,
                     sound.samples.begin() + peak.endIndex);
             }
-            auto insertMoreLength = maxPeakLenght - peaksLenght.at(i).at(j);
+            auto insertMoreLength = maxPeakLenght - peaksLengt.at(i).at(j);
             line.samples.insert(line.samples.end(), insertMoreLength, 0.0);
 
         }
@@ -361,6 +467,14 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
     //}
 
     //return m_scan;
+}
+
+void realtime::RTScanCollector::SetShift(float x, float y, float z)
+{
+    m_shift.x = x;
+    m_shift.y = y;
+    m_shift.z = z;
+    m_shift.is_correct = true;
 }
 
 void realtime::RTScanCollector::
