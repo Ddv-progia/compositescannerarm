@@ -16,7 +16,7 @@ namespace realtime {
         QVBoxLayout* m_mainLayout;
 
         std::unique_ptr<QTimer> m_updateTimer;
-        std::shared_ptr<ScanArm> m_scan = nullptr;
+        std::shared_ptr<ScanArm> m_scanArm = nullptr;
 
     public:
         SoundDisplay();

@@ -1,7 +1,6 @@
 /*
  * Gui/MainWindow.cc
  */
-
 #include <memory>
 #include <db_cxx.h>
 #include <QtCore/QFile>
@@ -42,7 +41,6 @@
 #include "Gui/AutoScanWindow.hh"
 
 
-
 MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor), scanFactory(scanFactory), m_rtCtxt(rtCtxt),
   processingParameters(Configuration::getConfigurationPathname("etc\\Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
@@ -50,6 +48,7 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
 {
   ui.setupUi(this);
   ui.backgroundTasksBox->hide();
+
   updateTimer = new QTimer(this);
 
   prepareScriptEnvironment();
@@ -132,10 +131,13 @@ void MainWindow::connectSignals()
   connect(ui.quitAction, SIGNAL(triggered()), QApplication::instance(), SLOT(quit()));
   connect(ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
   connect(ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
+  connect(ui.makeBScanAction, SIGNAL(triggered()), this, SLOT(makeBScanAction()));
+
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
 
   connect(ui.newAction, SIGNAL(triggered()), this, SLOT(newScript()));
+  connect(ui.newRtAction, SIGNAL(triggered()), this, SLOT(newRtWindow()));
   //connect(ui.openAction, SIGNAL(triggered()), this, SLOT(open()));
   connect(ui.openAction, SIGNAL(triggered()), this, SLOT(load()));
   connect(ui.openTechnologicalAction, SIGNAL(triggered()), this, SLOT(openTechnological()));
@@ -295,7 +297,7 @@ void MainWindow::newScript()
 
 void MainWindow::newRtWindow()
 {
-    auto ew = new realtime::RTScanCollector{ m_rtCtxt, *processingParameters };
+    auto ew = new realtime::RTScanCollector{ m_rtCtxt, *processingParameters, scanFactory};
     ew->setAttribute(Qt::WA_DeleteOnClose, true);
     ui.mdiArea->addSubWindow(ew);
     ew->showMaximized();
@@ -355,7 +357,7 @@ void MainWindow::save()
 {
   auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
-    ew->save(taskExecutor);
+    ew->save(taskExecutor, ui.mdiArea);
   }
 }
 
@@ -363,7 +365,7 @@ void MainWindow::saveAs()
 {
   auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Saveable*>(currentWidget)) {
-    ew->saveAs(taskExecutor);
+    ew->saveAs(taskExecutor,ui.mdiArea);
   }
 }
 
@@ -633,6 +635,21 @@ void MainWindow::exportWave()
       sdw->exportWave(dirname);
     }
   }  
+}
+void MainWindow::makeBScanAction()
+{
+    try {
+        auto currentWidget = getCurrentMdiWidget();
+        if (auto ew = dynamic_cast<realtime::RTScanCollector*>(currentWidget)) {
+            ew->processingParameters = &processingParameters;
+            ew->makeScanAndShow(ew->m_scanArm, taskExecutor, scanFactory, ui.mdiArea);
+        }
+    }
+    catch (...) {
+
+    }
+
+
 }
 
 void MainWindow::coilManualControl()

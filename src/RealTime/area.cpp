@@ -30,7 +30,7 @@ Area::
 }
 
 void Area::setScan(std::shared_ptr<ScanArm> scan) {
-	m_scan = scan;
+	m_scanArm = scan;
 	
 	start();
 }
@@ -58,32 +58,34 @@ run() {
 	//m_doublePixmap->fill(QColor(0, 0, 0, 0));
 	PixelInfo pixel;
 	QColor color;
-	bool needRecalculateAfterMaxMinChange = false;
+	//bool m_needRecalculateAfterMaxMinChange = false;
 	while (!m_srcCoords.empty()) {
 		m_srcCoords.pull(pixel);
 		int f_y = pixel.y * m_pixelpermm;
 		int f_x = pixel.x * m_pixelpermm;
-		if (m_scan->rtPeaks.at(pixel.y).at(pixel.x).empty())
+		if (m_scanArm->rtPeaks.at(pixel.y).at(pixel.x).empty())
 			continue;
-		float value = averagePeaksAmplitude(m_scan->rtPeaks.at(pixel.y).at(pixel.x), m_scan->sound.samples);
+		float value = getValueFromPeaks(&m_scanArm->rtPeaks.at(pixel.y).at(pixel.x), &m_scanArm->sound.samples);
+		////float value = averagePeaksAmplitude(m_scanArm->rtPeaks.at(pixel.y).at(pixel.x), m_scanArm->sound.samples);
+		////peaksValue.at(pixel.y).at(pixel.x) = value;
+		//float value = m_scanArm->rtPeaks.at(pixel.y).at(pixel.x).size();
 		peaksValue.at(pixel.y).at(pixel.x) = value;
 		if (max < value || min > value) {
 			max = max > value ? max : value;
 			min = min < value ? min : value;
-			needRecalculateAfterMaxMinChange = true;
+			m_needRecalculateAfterMaxMinChange = true;
 		}
-		else {
-			float converted = (value - min) / (max - min);
-			color.setHsvF(converted, 1, 1, 1);
-			//painter.setPen({ color, 1 * m_pixelpermm + 1 });
-			//painter.drawPoint(f_x, f_y);
-			m_painter->setPen({ color, 1 * m_pixelpermm + 1 });
-			m_painter->drawPoint(f_x, f_y);
-		}
-
+		float converted = (value - min) / (max - min);
+		color.setHsvF(converted, 1, 1, 1);
+		//painter.setPen({ color, 1 * m_pixelpermm + 1 });
+		//painter.drawPoint(f_x, f_y);
+		m_painter->setPen({ color, 1 * m_pixelpermm + 1 });
+		m_painter->drawPoint(f_x, f_y);
 	}
-	if (needRecalculateAfterMaxMinChange) {
+	if (m_needRecalculateAfterMaxMinChange) {
 		drawAllPoints();
+
+		m_needRecalculateAfterMaxMinChange = false;
 	}
 
 	//swapPixMap();
@@ -111,35 +113,75 @@ void Area::clear() {
 	m_doublePixmap->fill(m_backgroundColor);
 }
 
+void Area::findMinMax()
+{
+	bool notFoundYet = true;
+	for (int y = 0; y < m_scanArm->rtPeaks.size(); ++y) {
+		int f_y = y * m_pixelpermm;
+		for (int x = 0; x < m_scanArm->rtPeaks.at(y).size(); ++x) {
+			int f_x = x * m_pixelpermm;
+			if (m_scanArm->rtPeaks.at(y).at(x).empty())
+				continue;
+			float value = getValueFromPeaks(&m_scanArm->rtPeaks.at(y).at(x), &m_scanArm->sound.samples);
+			if (notFoundYet) {
+				max = value;
+				min = 0;
+				notFoundYet = false;
+			}
+			else {
+				if (max < value)
+					max = value;
+				else if(min > value) min = value;
+			}
+		}
+	}
+
+}
+
+float Area::getValueFromPeaks(const ::std::list< ::Peak >* peaks, const ::std::vector< float >* samples)
+{
+	//float value = averagePeaksAmplitude(*peaks, *samples);
+	float value = peaks->size();
+	return value;
+}
+
 void Area::drawAllPoints()
 {
 	QColor color;
 
-	for (int y = 0; y < m_scan->rtPeaks.size(); ++y) {
+	for (int y = 0; y < m_scanArm->rtPeaks.size(); ++y) {
 		int f_y = y * m_pixelpermm;
-		for (int x = 0; x < m_scan->rtPeaks.at(y).size(); ++x) {
+		for (int x = 0; x < m_scanArm->rtPeaks.at(y).size(); ++x) {
 			int f_x = x * m_pixelpermm;
-			if (m_scan->rtPeaks.at(y).at(x).empty())
+			if (m_scanArm->rtPeaks.at(y).at(x).empty())
 				continue;
 			float value = 0.0;
-			if (peaksValue.at(y).at(x) != 0) {
-				value = peaksValue.at(y).at(x);
-			}
-			else {
-				value = averagePeaksAmplitude(m_scan->rtPeaks.at(y).at(x), m_scan->sound.samples);
-				peaksValue.at(y).at(x) = value;
-			}
-			//float value = averagePeaksAmplitude(m_scan->rtPeaks.at(y).at(x), m_scan->sound.samples);
+			//if (peaksValue.at(y).at(x) != 0) {
+			//	value = peaksValue.at(y).at(x);
+			//}
+			//else {
+			//	//value = averagePeaksAmplitude(m_scanArm->rtPeaks.at(y).at(x), m_scanArm->sound.samples);
+			//	//peaksValue.at(y).at(x) = value;
+			//	value = m_scanArm->rtPeaks.at(y).at(x).size();
+			//	peaksValue.at(y).at(x) = value;
+			//}
+			value = getValueFromPeaks(&m_scanArm->rtPeaks.at(y).at(x), &m_scanArm->sound.samples);
+			peaksValue.at(y).at(x) = value;
+
+			//float value = averagePeaksAmplitude(m_scanArm->rtPeaks.at(y).at(x), m_scanArm->sound.samples);
 			//if (max < value || min < value) {
 			//	max = max > value ? max : value;
 			//	min = min < value ? min : value;
 			//}
-			float converted = (value - min) / (max - min);
-			color.setHsvF(converted, 1, 1, 1);
-			//painter.setPen({ color, 1 * m_pixelpermm + 1 });
-			//painter.drawPoint(f_x, f_y);
-			m_painter->setPen({ color, 1 * m_pixelpermm + 1 });
+			
+			float converted = (max == min) ? value:(value - min) / (max - min);
+			color.setHsvF(converted, 0, 1, 1);
+			////painter.setPen({ color, 1 * m_pixelpermm + 1 });
+			////painter.drawPoint(f_x, f_y);
+			//m_painter->setPen({ color, 1 * m_pixelpermm + 1 });
+			m_painter->setPen(color);
 			m_painter->drawPoint(f_x, f_y);
+			m_painter->drawImage(boundingRect(), *m_curentPixmap, boundingRect());
 		}
 	}
 }

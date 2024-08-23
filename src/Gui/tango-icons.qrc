@@ -1,5 +1,16 @@
 <RCC>
   <qresource prefix="/icons/actions">
+    <file>icons/actions/sinus.png</file>
+    <file>icons/actions/coil-parameters.png</file>
+    <file>icons/actions/coil-parameters4.png</file>
+    <file>icons/actions/coil-parameters3.png</file>
+    <file>icons/actions/coil-parameters2.png</file>
+    <file>icons/actions/documentRt-new2.png</file>
+    <file>icons/actions/documentRt-new.png</file>
+    <file>icons/actions/document-open-tech3.png</file>
+    <file>icons/actions/document-open-tech2.png</file>
+    <file>icons/actions/makeB-Scan.png</file>
+    <file>icons/actions/handle_motors2.png</file>
     <file>icons/actions/hand-Scanning-stop.png</file>
     <file>icons/actions/media-scan-start.png</file>
     <file>icons/actions/document-open-tech.png</file>

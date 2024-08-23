@@ -19,6 +19,13 @@ namespace realtime {
 			float z{ 0.0 };
 			bool is_correct = false;
 		}m_shift;
+		struct LastPosition {
+			float x = 0.0;
+			float y = 0.0;
+			float z = 0.0;
+			std::time_t m_timeStampLast = 0;
+		}m_positionLast;
+		time_t m_minimumTimeStampProlong = 10;
 		static bool m_isStarted;
 		bool m_isThisStarted = false;
 		const size_t SEC_PER_MINUTE = 60;
@@ -30,20 +37,25 @@ namespace realtime {
 		
 		realtime::RTContext& m_rtCtxt;
 		ProcessingParameters m_parameters;
+		ScanFactory& scanFactory;
 		SoundDisplay *m_soundDisplay;
 		PeakDisplay* m_peakDisplay;
 		RTScanCollector() = delete;
 	public:
+		//std::shared_ptr<Scan> ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
+		void ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
+
 		FieldWidget* m_field;
-		explicit RTScanCollector(RTContext& trCtxt, ProcessingParameters &parameters);
+		explicit RTScanCollector(RTContext& trCtxt, ProcessingParameters &parameters, ScanFactory& scanFactory);
 		Q_SLOT virtual void start() override;
 		Q_SLOT virtual void stop() override;
 		Q_SLOT virtual void pause() override {};
 		Q_SLOT void headData(float x, float y, float z, time_t timeStamp);
 		Q_SLOT void audioData(size_t startpositionOfChunk, size_t sizeOfChunk, std::time_t timeStampNewData, std::time_t timeStampFromChunk);
-		Q_SLOT virtual void save(BackgroundTaskExecutor& taskExecutor) override;
-		Q_SLOT virtual void saveAs(BackgroundTaskExecutor& taskExecutor) override;
+		Q_SLOT virtual void save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
+		Q_SLOT virtual void saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
 		Q_SLOT void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0)  override;
+		Q_SLOT void makeScanAndShow(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea = 0);
 
 
 		//virtual void load(BackgroundTaskExecutor& taskExecutor) override;

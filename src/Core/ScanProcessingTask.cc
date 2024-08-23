@@ -86,11 +86,14 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
 
     std::vector<FrequencyRange> ranges;
     
-    auto step = 1000; 
+    auto step = params.stepForSplitFrequencyRanges;
+    //auto step = 1000; 
     //auto step = 250;
     //auto step = 500;
+    unsigned int maxFrequency = line.sampleRate / 2 - step;
 
-    for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
+    //for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
+    for(auto startFrequency = 0; startFrequency<= maxFrequency; startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
@@ -148,9 +151,9 @@ void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<st
 
 std::tuple<std::size_t, std::size_t, std::size_t> ScanProcessingTask::getNormalizedIndexes(Scan& scan) const
 {
-  ba::accumulator_set<int, ba::stats<ba::tag::mean>> distanceAcc;
-  ba::accumulator_set<int, ba::stats<ba::tag::mean>> startIndexAcc;
-  ba::accumulator_set<int, ba::stats<ba::tag::mean>> stopIndexAcc;
+  ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> distanceAcc;
+  ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> startIndexAcc;
+  ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> stopIndexAcc;
 
   for (auto& line : scan.ranges) {
     if (line.empty())
@@ -176,14 +179,18 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
   std::size_t stopIndex;
   std::tie(step, startIndex, stopIndex) = getNormalizedIndexes(scan);
   if (step == 0 && startIndex == 0 && stopIndex == 0) return;
-  if (step == 0) step=1000; //******* TODO разобраться с вылетом при step=0
+  //if (step == 0) step=1000; //******* TODO разобраться с вылетом при step=0
+  if (step == 0) step= scan.parameters.stepForSplitFrequencyRanges; //******* TODO разобраться с вылетом при step=0
   auto rangesCount = scan.parameters.ranges.size();
-  auto commonRangesCount = scan.commonRanges.front().size();
+  std::size_t commonRangesCount = 0;
+  if (scan.commonRanges.size()>0) {
+    commonRangesCount = scan.commonRanges.front().size();
+  }
   scan.normalizedRanges.resize(rangesCount);
   scan.commonNormalizedRanges.resize(commonRangesCount);
   auto extremum = ::Extremum::Max;
   for (std::size_t rangeIndex = 0; rangeIndex < rangesCount; rangeIndex++) {
-    params.extremumOfRanges[rangeIndex];
+    //params.extremumOfRanges[rangeIndex];
     if (rangeIndex < params.extremumOfRanges.size())
         extremum = params.extremumOfRanges[rangeIndex];
     else
@@ -192,8 +199,8 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
     emit stageProgressed();
   }
   extremum = ::Extremum::Max;
-  for(std::size_t rangeIndex = 0; rangeIndex < commonRangesCount; rangeIndex++){
-    normalizeRange(scan.commonNormalizedRanges[rangeIndex],scan.commonRanges, rangeIndex, step, startIndex, stopIndex, extremum);
+  for(std::size_t rangeIndex2 = 0; rangeIndex2 < commonRangesCount; rangeIndex2++){
+    normalizeRange(scan.commonNormalizedRanges[rangeIndex2],scan.commonRanges, rangeIndex2, step, startIndex, stopIndex, extremum);
     emit stageProgressed();
   }
 }
@@ -215,62 +222,70 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.view.resize(be);
   normalizedRange.averView.resize(be); //*******
   normalizedRange.diffView.resize(be); //*******
-
+  if (rangeIndex >= ranges[0].size()) return;
   normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
   normalizedRange.min = normalizedRange.max;
   normalizedRange.aver = normalizedRange.max; //*******
   normalizedRange.diff = normalizedRange.max; //*******
   namespace ba = boost::accumulators;
   ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max>> accDiff;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accDiff;
 
   for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
-    for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
-      float maxPeak = 0.0;
-      float minPeak = 0.0;
-      float justPeak = 0.0; //*******
-      float diffPeak = 0.0; //*******
-      if(scan->parameters.useSubRanges){
-        //*******
-        //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-        std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-        //diffPeak = maxPeak - minPeak;
-        diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
+      if (rangeIndex >= ranges[lineIndex].size()) return;
+
+      for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
+          float maxPeak = 0.0;
+          float minPeak = 0.0;
+          float justPeak = 0.0; //*******
+          float diffPeak = 0.0; //*******
+          if (ranges[lineIndex][rangeIndex].samples.size() > 0) {
+              if (scan->parameters.useSubRanges) {
+                  //*******
+                  //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                  std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                  diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
+                  //diffPeak = maxPeak - minPeak;
 
 
-        //******* Преобразуем среднее по заданию Сергея Ивановича begin
-        int N = 0;
-        for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
-            N++;
-        }
-        justPeak = justPeak * std::sqrt(N);
-        //******* Преобразуем среднее по заданию Сергея Ивановича end
+                  //******* Преобразуем среднее по заданию Сергея Ивановича begin
+                  int N = 0;
+                  for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
+                      N++;
+                  }
+                  justPeak = justPeak * std::sqrt(N);
+                  //******* Преобразуем среднее по заданию Сергея Ивановича end
 
-        //minPeak = peaks.first;
-        //maxPeak = peaks.second;
-        //*******
-      }else{
-        maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-        minPeak = maxPeak;
-        justPeak = maxPeak; //*******
-        diffPeak = maxPeak; //*******
+                  //diffPeak = justPeak - (maxPeak - minPeak - 1); //******* Преобразуем разницу 18/07/2024
+
+                  //minPeak = peaks.first;
+                  //maxPeak = peaks.second;
+                  //*******
+              }
+              else {
+                  maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                  minPeak = maxPeak;
+                  justPeak = maxPeak; //*******
+                  diffPeak = maxPeak; //*******
+              }
+              acc(justPeak); //******* 
+              accDiff(diffPeak); //******* 
+              if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
+              if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
+          }
+              normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
+              normalizedRange.minView[peakIndex][lineIndex] = minPeak;
+              normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
+              normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
+              //normalizedRange.aver = justPeak; //*******
+          
       }
-      normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
-      normalizedRange.minView[peakIndex][lineIndex] = minPeak;
-      normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
-      normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
-      //normalizedRange.aver = justPeak; //*******
-      acc(justPeak); //******* 
-      accDiff(diffPeak); //******* 
-      if(maxPeak> normalizedRange.max) normalizedRange.max = maxPeak;
-      if(minPeak< normalizedRange.min) normalizedRange.min = minPeak;
-    }
   }
   auto average = ba::mean(acc);
   normalizedRange.aver = average; //******* среднее по всем средним
   //normalizedRange.diff = ba::mean(accDiff); //******* среднее по всем разницам
   //normalizedRange.diff = ba::max(accDiff); //******* максимум по всем разницам
-  normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //******* 
+  normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
 
   normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
   normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
@@ -310,17 +325,25 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
 
 float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx)
 {
-  auto iidx = boost::lower_bound(line.sampleIndexes, idx);
+    if ((line.sampleIndexes.size() > 0) && (line.samples.size()>0)) {
+        auto iidx = boost::lower_bound(line.sampleIndexes, idx);
 
-  if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
-    auto idx = std::distance(line.sampleIndexes.begin(), iidx);
-    return line.samples[idx];
-  } else if (iidx != line.sampleIndexes.end()) {
-    auto idx = std::distance(line.sampleIndexes.begin(), iidx);
-    return line.samples[idx > 0 ? idx : 0];
-  } else {
-    return 0.0;
-  }
+        if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
+            auto idx = std::distance(line.sampleIndexes.begin(), iidx);
+            return line.samples[idx];
+        }
+        else if (iidx != line.sampleIndexes.end()) {
+            auto idx = std::distance(line.sampleIndexes.begin(), iidx);
+            return line.samples[idx > 0 ? idx : 0];
+        }
+        else {
+            return 0.0;
+        }
+    }
+    else {
+        return 0.0;
+    }
+
 }
 
 float ScanProcessingTask::getAverageSubrangePeak(const RangeScanLine& line, std::size_t idx)
@@ -387,14 +410,12 @@ Polynomial ScanProcessingTask::signleRangeModel(const std::vector<double>& colum
 {
   std::vector<double> xs;
   std::vector<double> ys;
-
   for (std::size_t i = 0; i < column.size(); i++) {
     if (! ((! (column[i] > -std::numeric_limits<double>::infinity())) && (! (column[i] < -std::numeric_limits<double>::infinity())))) {
       xs.push_back(lineCoordinates[i]);
       ys.push_back(column[i]);
     }
   }
-
   return Polynomial{ uts::regression::leastSquares<std::vector<double>>(xs, ys, order) };
 }
 
@@ -509,36 +530,36 @@ void ScanProcessingTask::smoothRanges(Scan& scan)
 RangeScanLine ScanProcessingTask::findAverageLine(std::vector<RangeScanLine>& rangedLines,FrequencyRange range)
 {
   RangeScanLine result;
+  if (rangedLines.size() > 0) {
+      result = *rangedLines.begin();
+      result.subBegin = rangedLines.begin();
+      result.subEnd = rangedLines.end();
 
-  result = *rangedLines.begin();
-  result.subBegin = rangedLines.begin();
-  result.subEnd = rangedLines.end();
+      for (auto iter = rangedLines.begin(); iter < rangedLines.end(); iter++) {
+          if (iter->range.from == rangedLines.front().range.from && iter->range.to == rangedLines.back().range.to) continue;
+          if (floor(iter->range.from / 500) == floor(range.from / 500))  //TODO 500- magic number?
+              result.subBegin = iter;
+          if (floor(iter->range.to / 500) == floor(range.to / 500))
+              result.subEnd = iter + 1;
+      }
 
-  for(auto iter = rangedLines.begin();iter<rangedLines.end();iter++){ 
-	if(iter->range.from == rangedLines.front().range.from && iter->range.to == rangedLines.back().range.to) continue;
-    if(floor(iter->range.from/500)==floor(range.from/500))
-      result.subBegin = iter;
-    if(floor(iter->range.to/500)==floor(range.to/500))
-       result.subEnd = iter+1;
-  }
+      std::vector<ba::accumulator_set<float, ba::stats<ba::tag::mean>>> accs;
+      auto size = result.subBegin->samples.size();
+      accs.resize(size);
 
-  std::vector<ba::accumulator_set<float,ba::stats<ba::tag::mean>>> accs;
-  auto size =  result.subBegin->samples.size();
-  accs.resize(size);
+      for (auto i = 0; i < size; i++) {
+          for (auto iter = result.subBegin; iter < result.subEnd; iter++) {
+              float sample = iter->samples[i];
+              if (sample != 0)
+                  accs[i](iter->samples[i]);
+          }
+      }
+      result.samples.clear();
 
-  for(auto i = 0; i<size;i++){
-    for(auto iter =  result.subBegin;iter<result.subEnd;iter++){
-      float sample = iter->samples[i];
-      if(sample!=0)
-        accs[i](iter->samples[i]);
-    }
+      for (auto& acc : accs)
+          result.samples.push_back(ba::mean(acc));
   }
   result.range = range;
-  result.samples.clear();
-
-  for(auto& acc:accs)
-    result.samples.push_back(ba::mean(acc));
-
   return result;
 }
 
@@ -571,12 +592,12 @@ void ScanProcessingTask::selectRangesFromSpec(Scan& scan)
     for(auto& range : commonRanges){
       commonRangedLine.push_back(findAverageLine(line,range));
     }
-	if(scan.parameters.shouldNormalize){
+	if((scan.parameters.shouldNormalize)&&(line.size()>0)){
 		auto normLine = line.back();
 		////normLine.subBegin = line.end()-1; //было так. Непонятно зачем. 
 		////normLine.subEnd = line.end();     //было так. Непонятно зачем. 
-		//normLine.subBegin = line.begin(); //так работает //******* 
-		//normLine.subEnd = line.end();     //так работает //******* 
+		normLine.subBegin = line.begin(); //так работает //******* 
+		normLine.subEnd = line.end();     //так работает //******* 
 		//commonRangedLine.push_back(normLine); //последняя линия - сумма нормирования
         commonRangedLine.push_back(findAverageLine(line, normLine.range)); // сделали так - усредняем по всему диапазону //******* 
     }
@@ -614,10 +635,11 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan,const std::vector<SpecNo
 	auto average = params[nRange].average;
 
     for(auto& line:scan.normalizedSpec){
-      for(auto& point : line[nRange].samples)
-          point = (point - average) / (3 * sigma);
+        if (line.size() > nRange) {
+            for (auto& point : line[nRange].samples)
+                point = (point - average) / (3 * sigma);
+        }
 	}
-
     stageProgressed();
   }
 }
@@ -625,19 +647,22 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan,const std::vector<SpecNo
 void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanLine>>& spec)
 {
   for(auto& line:spec){
-    std::vector<float> sums;
-    if(line.size() == 0)
-      BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Description("Ошибка нормализации спектрограммы: число полученных линий в спектре равно 0"));
-	  sums.resize(line.begin()->samples.size());
-	  for(auto sampleNum = 0;sampleNum<line.begin()->samples.size();sampleNum++){
-		  for(auto& range : line)
-			  sums[sampleNum]+=range.samples[sampleNum];
-		  for(auto& range : line)
-			  range.samples[sampleNum] /=sums[sampleNum];
-	  }
-	  line.push_back(RangeScanLine(line.back()));
-	  line.back().samples = sums;
-    line.back().range = FrequencyRange{ line.front().range.from, (line.end() - 2)->range.to };
+    if (line.size() == 0) {
+        //BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Description("Ошибка нормализации спектрограммы: число полученных линий в спектре равно 0"));
+    }
+    else {
+        std::vector<float> sums;
+        sums.resize(line.begin()->samples.size());
+        for (auto sampleNum = 0; sampleNum < line.begin()->samples.size(); sampleNum++) {
+            for (auto& range : line)
+                sums[sampleNum] += range.samples[sampleNum];
+            for (auto& range : line)
+                range.samples[sampleNum] /= sums[sampleNum];
+        }
+        line.push_back(RangeScanLine(line.back()));
+        line.back().samples = sums;
+        line.back().range = FrequencyRange{ line.front().range.from, (line.end() - 2)->range.to }; //TODO почему -2?
+    }
     emit stageProgressed();
   }
 }
@@ -647,6 +672,17 @@ void ScanProcessingTask::operator() ()
   if (rawLines.empty()) {
     emit finished();
     return;
+  }
+  else
+  {
+      ba::accumulator_set<std::size_t, ba::stats<ba::tag::sum>> samplesCountAcc;
+
+      for (const auto& line : rawLines) samplesCountAcc(line.samples.size());
+
+      auto count = ba::sum(samplesCountAcc);
+      if (count==0) {
+          return;
+      }
   }
 
   auto stagesNumber = 12 + (params.columnModelOrder > 0 ? 1 : 0)+(params.shouldNormalize ? 1 : 0);
@@ -718,8 +754,14 @@ void ScanProcessingTask::operator() ()
     }
 
     emit stageStarted("Поиск относительного уровня сигнала",scan->normalizedSpec.size());
-    if(scan->parameters.specNormalization.size() < scan->spec.begin()->size())
-      findRelativeSignals(*scan);
+    //if (scan->parameters.specNormalization.size() < scan->spec.begin()->size())
+    //    findRelativeSignals(*scan);
+    //else
+    //    findRelativeSignals(*scan, scan->parameters.specNormalization);
+    if ((scan->spec.size()>0) && (scan->parameters.specNormalization.size() < scan->spec.at(0).size()))
+    {
+        findRelativeSignals(*scan);
+    }
     else
       findRelativeSignals(*scan,scan->parameters.specNormalization);
   case ScanProcessingStage::FrequencyRangesSplited:

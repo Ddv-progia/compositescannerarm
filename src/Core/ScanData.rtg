@@ -181,6 +181,7 @@ struct ProcessingParameters is
   factorForFrequencyRoseWidget: Double_Precision_Real
 
   headAndScanCollectorParameters: HeadAndScanCollectorParameters
+  stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
 end
 
 
@@ -207,6 +208,7 @@ struct SourceScanChunk is
   timestamp           : Unsigned_Long_Long_Integer = { 0 }
   timestampFromSound  : Unsigned_Long_Long_Integer = { 0 }
   startpositionOfChunk: Unsigned_Long_Long_Integer = { 0 }
+  endpositionOfChunk  : Unsigned_Long_Long_Integer = { 0 }
   sizeOfChunk         : Unsigned_Long_Long_Integer = { 0 }
 end
 

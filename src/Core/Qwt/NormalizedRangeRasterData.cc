@@ -15,12 +15,17 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
 {
 
   m_intervals.at(Qt::XAxis) = QwtInterval(range.startCoordinate, range.finalCoordinate);
-  if (range.lineCoordinates.back() > range.lineCoordinates.front()) {
-      m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.front(),range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]));
-  } else {
-      m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]),range.lineCoordinates.front());
+  if (range.lineCoordinates.size() > 0) {
+      if (range.lineCoordinates.back() > range.lineCoordinates.front()) {
+          m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.front(), range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]));
+      }
+      else {
+          m_intervals.at(Qt::YAxis) = QwtInterval(range.lineCoordinates.back() + (range.lineCoordinates.back() - range.lineCoordinates[range.lineCoordinates.size() - 2]), range.lineCoordinates.front());
+      }
   }
-
+  else {
+      m_intervals.at(Qt::YAxis) = QwtInterval(0.0,0.0);
+  }
   float minVal = std::numeric_limits<float>::max();
   float maxVal = -std::numeric_limits<float>::max();
  /* std::cout << static_cast<int>(range.extremum); */

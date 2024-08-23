@@ -143,12 +143,12 @@ void EditorWindow::saveAs()
     return saveToFile(newPathname);
   }
 }
-void EditorWindow::save(BackgroundTaskExecutor& te)
+void EditorWindow::save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
   save();
 }
 
-void EditorWindow::saveAs(BackgroundTaskExecutor&)
+void EditorWindow::saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
   saveAs();
 }

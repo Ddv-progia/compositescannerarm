@@ -19,9 +19,12 @@ namespace {
 
     Dbt key((void*)name.c_str(), name.size());
     Dbt value;
-    value.set_data(&result);
-    value.set_ulen(sizeof(T));
+    //value.set_data(&result);
+    //value.set_ulen(sizeof(T));
+    //value.set_flags(DB_DBT_USERMEM);
     value.set_flags(DB_DBT_USERMEM);
+    value.set_ulen(sizeof(T));
+    value.set_data(&result);
 
     db.get(0, &key, &value, 0);
 
@@ -35,9 +38,12 @@ namespace {
 
     Dbt key((void*)name.c_str(), name.size());
     Dbt value;
-    value.set_data(&result);
-    value.set_ulen(sizeof(T));
+    //value.set_data(&result);
+    //value.set_ulen(sizeof(T));
+    //value.set_flags(DB_DBT_USERMEM);
     value.set_flags(DB_DBT_USERMEM);
+    value.set_ulen(sizeof(T));
+    value.set_data(&result);
 
     if (db.get(0, &key, &value, 0) != DB_NOTFOUND) {
       return result;
@@ -60,9 +66,12 @@ namespace {
   {
     Dbt key((void*)name.c_str(), name.size());
     Dbt value;
-    value.set_data((void*)x.data());
-    value.set_ulen(x.size() * sizeof(T));
+    //value.set_data((void*)x.data());
+    //value.set_ulen(x.size() * sizeof(T));
+    //value.set_flags(DB_DBT_USERMEM);
     value.set_flags(DB_DBT_USERMEM);
+    value.set_ulen(x.size() * sizeof(T));
+    value.set_data((void*)x.data());
     db.get(0, &key, &value, 0);
   }
 
@@ -82,10 +91,11 @@ void LoadScanTask::operator()()
 
     if (! ignoreSavedParameters) {
       parameters.initialSkip = getVal<double>(db, "parameters.initialSkip");
+      parameters.stepForSplitFrequencyRanges = getVal<double>(db, "parameters.stepForSplitFrequencyRanges");
       parameters.peakMagnitudeLimit = getVal<double>(db, "parameters.peakMagnitudeLimit");
       parameters.peakBackstep = getVal<double>(db, "parameters.peakBackstep");
       parameters.peakForestep = getVal<double>(db, "parameters.peakForestep");
-      parameters.peakPauseCount= getVal<unsigned int>(db, "parameters.peakPauseCount", 1000);
+      //parameters.peakPauseCount= getVal<unsigned int>(db, "parameters.peakPauseCount", 10000);
       //parameters.peakPauseCount= getVal<double>(db, "parameters.peakPauseCount", 1000);
       // parameters.peakPauseCount - экспериментальное значение. Для определения ширины пика.
       // (см. ScanAlgorythm) Использование закомментировано.

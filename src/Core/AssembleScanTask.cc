@@ -152,8 +152,9 @@ void AssembleScanTask::operator()()
                 emit stageProgressed();
             }
             emit finished();
-            auto scanName = sourceFilenames.begin()->section("-", 0);
-            scanFactory.finishScan(boost::optional<QString&>(scanName));
+            //auto scanName = sourceFilenames.begin()->section("-", 0);
+            //scanFactory.finishScan(boost::optional<QString&>(scanName));
+            scanFactory.finishScan();
         }
     }
     catch (QString& err) {

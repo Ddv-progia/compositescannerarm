@@ -14,19 +14,23 @@ class FieldWidget : public QGraphicsView
     int m_height;
     QGraphicsScene* m_scene;
     Cursor* m_cursor;
-    std::shared_ptr<ScanArm> m_scan = nullptr;
+    std::shared_ptr<ScanArm> m_scanArm = nullptr;
+    std::shared_ptr<SourceScanChunks> m_scanArmChunks = nullptr;
     std::unique_ptr<QTimer> m_updateTimer;
     std::unique_ptr<QTimer> m_findPeakTimer;
     Area* m_area;
-    uint m_curIndex = 0;
+    size_t m_curIndex = 0;
+    size_t m_curChunkIndex = 0;
+    size_t m_curTrajectoryIndex = 0;
     size_t m_numArea = 0;
 
 public:
     FieldWidget(int width,int height);
     ~FieldWidget();
     void setScan(std::shared_ptr<ScanArm> scan);
+    void setScanChunks(std::shared_ptr<SourceScanChunks> scanChunks);
     void setNumArea(size_t numArea);
-    std::shared_ptr<ScanArm> scan() { return m_scan; }
+    std::shared_ptr<ScanArm> scan() { return m_scanArm; }
 
 public slots:
     void timeout();
@@ -35,6 +39,17 @@ public slots:
     void stopTimers();
     void runTimers();
     void drawArea();
+private:
+    ::std::vector< float > *data;
+    ::std::vector< ::Position > *dataCoord;
+    uint backStep=0;
+    uint foreStep=0;
+    uint pause=0;
+    double comparator=0.00001;
+    double koeffOfSamplesRate = 1.0;
+    unsigned int soundSampleRate = 1;
+    bool getCoordinateOfPeak(size_t indexInSound, ::Peak& peak);
+
 };
 
 #endif // FIELDWIDGET_H

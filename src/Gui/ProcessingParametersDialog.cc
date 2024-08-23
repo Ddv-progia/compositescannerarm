@@ -637,6 +637,7 @@ ProcessingParameters ProcessingParametersDialog::getProcessingParameters() const
 void ProcessingParametersDialog::fillWidgets()
 {
   ui.initialSkipBox->setValue(params.initialSkip);
+  ui.stepForSplitFrequencyRangesSpinBox->setValue(params.stepForSplitFrequencyRanges);
   ui.peakMagnitudeLimitBox->setValue(params.peakMagnitudeLimit);
   ui.peakBackstepBox->setValue(params.peakBackstep);
   ui.peakForestepBox->setValue(params.peakForestep);
@@ -693,6 +694,7 @@ void ProcessingParametersDialog::updateParameters()
 {
   params.colorStopsList = (colorDialog->getProcessingParameters()).colorStopsList;
   params.initialSkip = ui.initialSkipBox->value();
+  params.stepForSplitFrequencyRanges = ui.stepForSplitFrequencyRangesSpinBox->value();
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
   params.useSubRanges = ui.useSubRangesCheckBox->isChecked();

@@ -61,8 +61,8 @@ class ScanDisplayWindow : public QWidget, public Saveable, public Loadable
 public:
 	explicit ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget* parent = 0);
 
-	virtual void save(BackgroundTaskExecutor& taskExecutor) override;
-	virtual void saveAs(BackgroundTaskExecutor& taskExecutor) override;
+	virtual void save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
+	virtual void saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
 	virtual void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
 
 	void exportWave(const QString dirname);

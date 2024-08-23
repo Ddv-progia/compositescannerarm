@@ -107,9 +107,9 @@ void OneWaveWidget::changeHorizontalCoord(int downValue ,int upValue){
 
 /*void OneWaveWidget::redraw() {
     QList<QPointF> points;
-    auto sampl = m_scan->originalScan.sound.samples;
+    auto sampl = m_scanArm->originalScan.sound.samples;
     //QVector<QPoint> points{ 5000 < sampl.size() ? 5000 : sampl.size() };
-    //int samplPerSecond = m_scan->originalScan.sound.sampleRate;
+    //int samplPerSecond = m_scanArm->originalScan.sound.sampleRate;
     int x = 0;
     int indBegin = 50000 < sampl.size() ? 50000 : sampl.size();
     for (int ind = indBegin, x = 0; ind > 0; --ind ) {

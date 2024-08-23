@@ -20,6 +20,13 @@ namespace realtime {
 			const double ENC_TO_RAD = ENC_MAX / (PI * 2.0);
 		}m_hand;
 
+		struct LastPosition {
+			float x=0.0;
+			float y=0.0;
+			float z=0.0;
+			std::time_t m_timeStampLast = 0;
+		}m_positionLast;
+
 		std::thread m_thread;
 		std::atomic_bool m_isStarted;
 	public:
@@ -29,5 +36,8 @@ namespace realtime {
 		void dataReady(const uts::devtalk::ByteSeq& data, const ::Ice::Current & = ::Ice::Current()) override;
 		~RTHead();
 		Q_SIGNAL void newData(float x, float y, float z, std::time_t timeStamp);
+	public slots:
+		void onNewData(float x, float y, float z, std::time_t timeStamp);
+
 	};
 }

@@ -16,8 +16,8 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
           float peakLimit, 
           double backstepSeconds,
           double forestepSeconds,
-    unsigned int peakPauseCountSeconds=20);
-    //double peakPauseCountSeconds=20);
+    //unsigned int peakPauseCountSeconds=20);
+    double peakPauseCountSeconds=20);
 
 
 std::vector<std::vector<float>>

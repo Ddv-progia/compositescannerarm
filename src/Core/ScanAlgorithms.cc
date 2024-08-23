@@ -7,6 +7,8 @@
 #include <numeric>
 #include <fftw3.h>
 #include <boost/format.hpp>
+#include <QString>
+#include <QtWidgets/QMessageBox>
 #include <UCL/Exception.hh>
 #include <UCL/SignalProcessing/Decimate.hh>
 #include <UCL/SignalProcessing/Difference.hh>
@@ -28,11 +30,12 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
           float peakLimit, 
           double backstepSeconds, 
           double forestepSeconds,
-          unsigned int peakPauseCountSeconds)
-          //double peakPauseCountSeconds)
+          //unsigned int peakPauseCountSeconds)
+          double peakPauseCountSeconds)
 {
   const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
   const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
+  const auto pauseCount = static_cast<std::size_t>(std::floor(peakPauseCountSeconds * sampleRate + 0.5));
 
   if (forestep == 0) {
     BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() 
@@ -72,16 +75,17 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
   for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
     if (std::abs(*(srcBegin + i)) > peakLimit) {
       peaks.push_back(Peak{ (unsigned int)std::max(0, static_cast<int>(i - backstep)), (unsigned int)(i + forestep) });
-      i += forestep;
+      i += (forestep+ pauseCount);
     } else {
       i++;
     }
   }
   //*******
 
-  if(peaks.size()==0)
-    BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() << uts::ErrInfo_Description("Пики не найдены. Проверьте настройки пикового детектора"));
-
+  //if (peaks.size() == 0) {
+  //    //BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() << uts::ErrInfo_Description("Пики не найдены. Проверьте настройки пикового детектора"));
+  //    QMessageBox::critical(nullptr, "Сбой загрузки настроек", QString::fromUtf8("Пики не найдены. Проверьте настройки пикового детектора"));
+  //}
   return peaks;
 }
 
@@ -97,6 +101,8 @@ namespace {
     switch (peaks.size()) {
     default:
       return peakLength(peaks[1]);
+    case 0:
+      return std::size_t(0);
     case 1:
       return peakLength(peaks.front());
     case 2:

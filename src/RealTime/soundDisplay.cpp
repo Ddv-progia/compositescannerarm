@@ -23,8 +23,8 @@ SoundDisplay::SoundDisplay()
 
 void SoundDisplay::
 setScan(std::shared_ptr<ScanArm> scan) {
-    m_scan = scan;
-    //m_chartView->setPeakMagnitude(m_scan->parameters.peakMagnitudeLimit);
+    m_scanArm = scan;
+    //m_chartView->setPeakMagnitude(m_scanArm->parameters.peakMagnitudeLimit);
 }
 
 SoundDisplay::
@@ -34,19 +34,19 @@ SoundDisplay::
 
 
 void SoundDisplay::update(){
-    if (!m_scan)
+    if (!m_scanArm)
         return;
     QList<QPointF> points;
-    //auto &sampl = m_scan->sound.samples;
+    //auto &sampl = m_scanArm->sound.samples;
     ////QVector<QPoint> points{ 5000 < sampl.size() ? 5000 : sampl.size() };
-    ////int samplPerSecond = m_scan->originalScan.sound.sampleRate;
+    ////int samplPerSecond = m_scanArm->originalScan.sound.sampleRate;
     int x = 0;
-    auto size_local = m_scan->sound.samples.size(); 
+    auto size_local = m_scanArm->sound.samples.size(); 
     //int indBegin = 50000 < size_local ? 50000 : sampl.size();
     int indBegin = 50000 < size_local ? 50000 : size_local ;
     for (int ind = indBegin, x = 0; ind > 0; --ind /*-= 100*/) {
         //points.push_back({ QPointF(float(x++) * 0.01, sampl[sampl.size() - ind]) });
-        points.push_back({ QPointF(float(x++) * 0.01, m_scan->sound.samples[size_local - ind]) });
+        points.push_back({ QPointF(float(x++) * 0.01, m_scanArm->sound.samples[size_local - ind]) });
     }
     m_oneWave->update(points);
 }

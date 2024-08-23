@@ -51,8 +51,8 @@ public:
 
   void save();
   void saveAs();
-  Q_SLOT void save(BackgroundTaskExecutor&) override;
-  Q_SLOT void saveAs(BackgroundTaskExecutor&) override;
+  Q_SLOT void save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
+  Q_SLOT void saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
   Q_SLOT void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0)  override ;
   Q_SLOT void highlightLine(int lineNumber);
   Q_SLOT void unhighlightLine();

@@ -255,6 +255,7 @@
     <addaction name="saveTechnologicalParametersAction"/>
     <addaction name="separator"/>
     <addaction name="quitAction"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
@@ -300,6 +301,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="newAction"/>
+   <addaction name="newRtAction"/>
    <addaction name="openAction"/>
    <addaction name="openTechnologicalAction"/>
    <addaction name="saveAction"/>
@@ -316,12 +318,14 @@
    <addaction name="initializeAction"/>
    <addaction name="autoScanAction"/>
    <addaction name="showManualControlDialogAction"/>
+   <addaction name="coilManualControlAction"/>
    <addaction name="separator"/>
    <addaction name="technologicalParametersAction"/>
    <addaction name="currentProcessingParametersAction"/>
    <addaction name="separator"/>
    <addaction name="runHahdleScanAction"/>
    <addaction name="stopHandleScanAction"/>
+   <addaction name="makeBScanAction"/>
   </widget>
   <action name="quitAction">
    <property name="icon">
@@ -343,7 +347,7 @@
   <action name="showManualControlDialogAction">
    <property name="icon">
     <iconset resource="tango-icons.qrc">
-     <normaloff>:/icons/actions/icons/actions/applications-system.png</normaloff>:/icons/actions/icons/actions/applications-system.png</iconset>
+     <normaloff>:/icons/actions/icons/actions/handle_motors2.png</normaloff>:/icons/actions/icons/actions/handle_motors2.png</iconset>
    </property>
    <property name="text">
     <string>Манипулятор...</string>
@@ -533,7 +537,7 @@
   <action name="openTechnologicalAction">
    <property name="icon">
     <iconset resource="tango-icons.qrc">
-     <normaloff>:/icons/actions/icons/actions/document-open-tech.png</normaloff>:/icons/actions/icons/actions/document-open-tech.png</iconset>
+     <normaloff>:/icons/actions/icons/actions/document-open-tech3.png</normaloff>:/icons/actions/icons/actions/document-open-tech3.png</iconset>
    </property>
    <property name="text">
     <string>Открыть с технологическими параметрами...</string>
@@ -543,6 +547,10 @@
    </property>
   </action>
   <action name="coilManualControlAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/coil-parameters4.png</normaloff>:/icons/actions/icons/actions/coil-parameters4.png</iconset>
+   </property>
    <property name="text">
     <string>Датчик АСК...</string>
    </property>
@@ -582,6 +590,30 @@
    </property>
    <property name="text">
     <string>Стоп ручного сканирования</string>
+   </property>
+  </action>
+  <action name="makeBScanAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/sinus.png</normaloff>:/icons/actions/icons/actions/sinus.png</iconset>
+   </property>
+   <property name="text">
+    <string>makeBScanAction</string>
+   </property>
+   <property name="toolTip">
+    <string>Запустить анализ скана</string>
+   </property>
+  </action>
+  <action name="newRtAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/documentRt-new2.png</normaloff>:/icons/actions/icons/actions/documentRt-new2.png</iconset>
+   </property>
+   <property name="text">
+    <string>newRt</string>
+   </property>
+   <property name="toolTip">
+    <string>Новое окно Ручного сканирования</string>
    </property>
   </action>
  </widget>

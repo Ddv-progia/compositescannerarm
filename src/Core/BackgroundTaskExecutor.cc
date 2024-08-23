@@ -46,7 +46,6 @@ void BackgroundTaskExecutor::enqueue(ProgressReportingTask* task)
 void BackgroundTaskExecutor::operator()()
 {
   try {
-
     while (true) {
       std::unique_ptr<ProgressReportingTask> t(impl->getTask());
       connect(t.get(), SIGNAL(started(const QString&, int)), this, SIGNAL(started(const QString&, int)), Qt::DirectConnection);
@@ -55,7 +54,6 @@ void BackgroundTaskExecutor::operator()()
       connect(t.get(), SIGNAL(finished()), this, SIGNAL(finished()), Qt::DirectConnection);
       connect(t.get(), SIGNAL(terminated(const QString&)), this, SIGNAL(terminated(const QString&)), Qt::DirectConnection);
       connect(t.get(), SIGNAL(createdTask(ProgressReportingTask*)), this, SLOT(enqueue(ProgressReportingTask*)), Qt::DirectConnection);
-
       try {
         (*t)();
       } catch (boost::exception& exc) {
@@ -69,7 +67,6 @@ void BackgroundTaskExecutor::operator()()
         emit terminated(QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
       }
     }
-
   } catch (boost::thread_interrupted&) {
   }
 }

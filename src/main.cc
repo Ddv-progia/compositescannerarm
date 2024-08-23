@@ -1,12 +1,17 @@
 /*
  * main.cc
  */
+#include <windows.h>
+#include <shellapi.h>
+#include <chrono>
+#include <thread>
 
 #include <boost/thread/thread.hpp>
 #include <Ice/Initialize.h>
 #include <Ice/Communicator.h>
 #include <QtCore/QFile>
 #include <QtCore/QXmlStreamReader>
+#include <QtCore/QMutex>
 //#include <QtCore/QTextCodec>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
@@ -22,16 +27,140 @@
 #include "Core/DevicesConfigurationReflection.hh"
 #include "Core/InitializeMediaFoundationTask.hh"
 #include "Core/ObjectKeeper.hh"
+#include <QtCore/QObject>
+
 #include "Core/ScanFactory.hh"
 #include "Gui/MainWindow.hh"
 #include "Core/PersistentVariable.hh"
 #include <UCL/Customization/FromVariable/String.hh>
 
 
+void __cdecl ThreadFunc(void* str)
+{
+    auto CommandResult = L"";
+    bool Result = false;
+    bool IsRunning = false;
+    DWORD retSize;
+    LPTSTR pTemp = NULL;
+    //std::string* strStr = static_cast<std::string*>(str);
+    QString* strStr = static_cast<QString*>(str);
+    QString s = "/r "+ * strStr;
+    //std::string* strStr = static_cast<std::string*>(str);
+    //std::string s = "/ r "+ * strStr;
+    LPCWSTR cmndStr;
+    ////cmndStr = s.c_str();
+    //cmndStr = reinterpret_cast<LPCWSTR>(s.c_str());
+    cmndStr = reinterpret_cast<LPCWSTR>(s.utf16());
+    
+    //Result = (BOOL)ShellExecute(GetActiveWindow(), L"OPEN", L"cmd", L"/r d:\\Composite-Scanner-Arm\\icegridnode-start.cmd", NULL, SW_SHOWMINIMIZED);
+    Result = (BOOL)ShellExecute(GetActiveWindow(), L"OPEN", L"cmd", cmndStr, NULL, SW_SHOWMINIMIZED);
+
+    if (Result)
+    {
+        IsRunning = TRUE;
+
+        //while (IsRunning)
+        //{
+        //    if (CheckCommandExecutionStatus())
+        //    {
+        //        break;
+        //    }
+        //}
+    }
+    else
+    {
+        retSize = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_ARGUMENT_ARRAY,
+            NULL,
+            GetLastError(),
+            LANG_NEUTRAL,
+            (LPTSTR)&pTemp,
+            0,
+            NULL);
+        MessageBox(NULL, pTemp, L"Error", MB_OK);
+    }
+
+    IsRunning = FALSE;
+    _endthreadex(0);
+}
 
 
 int main(int argc, char* argv[])
 {
+
+
+    BOOL IsRunning = FALSE;
+    QString pathCmd;
+    try {
+        Configuration::init(argc, argv);
+        pathCmd = Configuration::getConfigurationPathname("icegridnode-start.cmd");
+
+    }
+    catch (...) {
+        QMessageBox::critical(0, "Ошибка при получении каталога конфигурации", "Проверьте наличие файла \"icegridnode - start.cmd\" \r в каталоге конфигурации");
+    }
+
+    //std::string s;
+    //QString s;
+    //s = "d:\\Composite-Scanner-Arm\\icegridnode-start.cmd";
+    //HANDLE hThread = (HANDLE)_beginthread(ThreadFunc, 0, &s);
+    HANDLE hThread = (HANDLE)_beginthread(ThreadFunc, 0, &pathCmd);
+
+    //Result = (BOOL)ShellExecute(GetActiveWindow(), L"OPEN", L"cmd", L"d:\\Composite-Scanner-Arm\\icegridnode-start.cmd", NULL, SW_SHOWNORMAL);
+    //ShellExecute(0, L"open", L"cmd.exe", x, 0, SW_HIDE);
+    
+    QApplication app(argc, argv);
+
+    int timeToSleepInSecond (10);
+    //std::this_thread::sleep_for(std::chrono::seconds(timeToSleepInSecond));
+    QMutex mutex;
+    QWidget* progress;
+    progress = new QWidget();
+    progress->setWindowTitle("Запуск сервисных служб");
+    int pbMaximum = 100;
+    QProgressBar* pb;
+    pb = new QProgressBar();
+    pb->setRange(0, pbMaximum);
+    pb->setMinimumWidth(200);
+    pb->setAlignment(Qt::AlignCenter);
+    QPushButton* pdSkip = new QPushButton("&Пропустить");
+    QTimer* timer;
+    timer = new QTimer();
+    bool continueApp = false;
+    QObject::connect(timer, &QTimer::timeout, 
+        [pb, pdSkip, timer , progress, &continueApp, pbMaximum]() {
+            //if (pb->value() == 0) mutex.lock();
+                auto val = pb->value()+1;
+                pb->setValue(val);
+                if (pb->value() == pbMaximum) {
+                    continueApp = true;
+                    //mutex.unlock();
+                    timer->stop();
+                }    
+                else {
+                    timer->start();
+                }
+        });
+
+    QObject::connect(pdSkip, &QPushButton::clicked, [&continueApp, timer, progress]() {
+        continueApp = true;
+/*        timer->stop();
+        progress->close();*/ });
+
+    QHBoxLayout* phbL = new QHBoxLayout;
+    phbL->addWidget(pb);
+    phbL->addWidget(pdSkip);
+    progress->setLayout(phbL);
+
+    timer->start(std::chrono::milliseconds (timeToSleepInSecond * 1000 / pbMaximum));
+    progress->show();
+    while (!continueApp)
+    {
+        app.processEvents();
+    }
+    emit pdSkip->clicked();
+    progress->close();
   BackgroundTaskExecutor bte;
   boost::thread backgroundTasksThread(boost::ref(bte));
 
@@ -44,8 +173,6 @@ int main(int argc, char* argv[])
   qRegisterMetaType<RangeScanLine>("RangeScanLine");
   qRegisterMetaType<SourceScanLine>("SourceScanLine");
   uts::plotting::initialize();
-
-  QApplication app(argc, argv);
 
   std::unique_ptr<ObjectKeeper> objectKeeper(new ObjectKeeper);
   objectKeeper->start();

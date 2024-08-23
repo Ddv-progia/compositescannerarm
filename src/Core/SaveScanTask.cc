@@ -50,6 +50,7 @@ void SaveScanTask::operator() ()
     emit started(QString("Запись в файл\n%1").arg(pathname), 1);
 
     putVal<double>(db, "parameters.initialSkip", scan.parameters.initialSkip);
+    putVal<double>(db, "parameters.stepForSplitFrequencyRanges", scan.parameters.stepForSplitFrequencyRanges);
     putVal<double>(db, "parameters.peakMagnitudeLimit", scan.parameters.peakMagnitudeLimit);
     putVal<double>(db, "parameters.peakBackstep", scan.parameters.peakBackstep);
     putVal<double>(db, "parameters.peakForestep", scan.parameters.peakForestep);

@@ -780,7 +780,7 @@ void ScanDisplayWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdi
     lastOpenDir = QFileInfo(pathnames.back()).dir().path();
 }
 
-void ScanDisplayWindow::save(BackgroundTaskExecutor& taskExecutor)
+void ScanDisplayWindow::save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
   if (filename.isEmpty()) {
     saveAs(taskExecutor);
@@ -793,7 +793,7 @@ void ScanDisplayWindow::save(BackgroundTaskExecutor& taskExecutor)
   }
 }
 
-void ScanDisplayWindow::saveAs(BackgroundTaskExecutor& taskExecutor)
+void ScanDisplayWindow::saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
   auto fn = QFileDialog::getSaveFileName(this, "Сохранение скана", QString(), "Сканы (*.csp)");
   if (! fn.isEmpty()) {
@@ -1134,8 +1134,49 @@ void ScanDisplayWindow::updateRangeViewPoint()
 
   auto all = boost::multi_array<float, 2>::index_range();
 
+  int indexX;
+  int indexY;
+  try {
+      indexX = pointIndexes(currentViewPoint).x();
+      indexY = pointIndexes(currentViewPoint).y();
+  }
+  catch (uts::Exception& exc) {
+      auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+      if (msg) {
+          QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+      }
+      else {
+          QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+      }
+  }
+  catch (...) {
+          //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+        QString str = QString::fromUtf8("Ошибка при получении pointIndexes(currentViewPoint).    x() или y()\r\n");
+        QMessageBox::critical(this, "Ошибка", str+QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+  }
+  QString qStringValue = "";
+  try {
+      if ((!range->view.empty()) && (!range->view[indexX].empty())) {
+          auto value = range->view[indexX][indexY];
+          qStringValue = QString::number(value, 'f', 3);
+      }
+  }
+  catch (uts::Exception& exc) {
+      auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+      if (msg) {
+          QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+      }
+      else {
+          QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+      }
+  }
+  catch (...) {
+      //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+      QString str = QString::fromUtf8("Ошибка при получении range->view[indexX][indexY]\r\n");
+      QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+  }
 
-  valueLabel->setText(QString::number(range->view[pointIndexes(currentViewPoint).x()][pointIndexes(currentViewPoint).y()], 'f', 3));
+  valueLabel->setText(qStringValue);
 
   rowCurve->setData(new MultiArraySliceSeriesData(range->view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
                     range->finalCoordinate));
