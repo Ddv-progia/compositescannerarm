@@ -210,6 +210,7 @@ add_executable(CompositeScanner #WIN32
   Gui/ProcessingParametersDialog.cc
   Gui/ProcessingParametersDialog.hh
   Gui/Saveable.hh
+  Gui/Loadable.cpp
   Gui/Loadable.hh
   Gui/ScanControlDialog.cc
   Gui/ScanControlDialog.hh
