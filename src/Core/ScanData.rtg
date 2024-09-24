@@ -156,6 +156,8 @@ struct HeadAndScanCollectorParameters is
   peakForestepSound:  Double_Precision_Real = {0.0}
   currentNumArea:  Unsigned_Integer = {1}
   firstStepShift: Double_Precision_Real = {0.0}
+  needPackInSquare: Boolean = {true}
+  needPackInLine: Boolean = {false}
 end
 
 
@@ -186,6 +188,7 @@ struct ProcessingParameters is
 
   headAndScanCollectorParameters: HeadAndScanCollectorParameters
   stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
+
 end
 
 
@@ -201,14 +204,6 @@ struct SourceScanLine is
 end
 
 struct SourceScanChunk is
---  samples : Std::Vector(Single_Precision_Real)
---  sampleRate :  Unsigned_Integer
---  startCoordinate :  Double_Precision_Real
---  finalCoordinate :  Double_Precision_Real
---  lineCoordinate :  Double_Precision_Real
---  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
---  timestampStart : Unsigned_Long_Long_Integer = { 0 }
---  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
   timestamp           : Unsigned_Long_Long_Integer = { 0 }
   timestampFromSound  : Unsigned_Long_Long_Integer = { 0 }
   startpositionOfChunk: Unsigned_Long_Long_Integer = { 0 }
@@ -405,5 +400,8 @@ struct ScanArm is
 	shiftY                              :   Single_Precision_Real                           = {0.0}
 	shiftZ                              :   Single_Precision_Real                           = {0.0}
 	shiftIsCorrect                      :   Boolean                                         = {false}
+--	sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Default_Construct_Missing_Members_Attribute
+    sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Transient_Member
 end
+
 

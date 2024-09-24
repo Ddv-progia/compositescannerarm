@@ -692,6 +692,13 @@ void ProcessingParametersDialog::fillWidgets()
   ui.spinBoxHeadsSampleRate->setValue(this->params.headAndScanCollectorParameters.headsSampleRate);
   ui.spinBoxSoundsSampleRate->setValue(this->params.headAndScanCollectorParameters.soundsSampleRate);
   ui.spinBoxMaxRecordingTime->setValue(this->params.headAndScanCollectorParameters.maximumTimeMinutes);
+
+  if (this->params.headAndScanCollectorParameters.needPackInSquare) {
+      ui.rbPackInSquare->setChecked(true);
+  }
+  if (this->params.headAndScanCollectorParameters.needPackInLine) {
+      ui.rbPackInLine->setChecked(true);
+  }
 }
 
 void ProcessingParametersDialog::updateParameters()
@@ -715,7 +722,11 @@ void ProcessingParametersDialog::updateParameters()
   params.headAndScanCollectorParameters.headsSampleRate    = ui.spinBoxHeadsSampleRate->value();
   params.headAndScanCollectorParameters.soundsSampleRate   = ui.spinBoxSoundsSampleRate->value();
   params.headAndScanCollectorParameters.maximumTimeMinutes = ui.spinBoxMaxRecordingTime->value();
-  
+  bool Sbool = ui.rbPackInSquare->isChecked();
+  bool Lbool = ui.rbPackInLine->isChecked();;
+      params.headAndScanCollectorParameters.needPackInSquare = Sbool;
+      params.headAndScanCollectorParameters.needPackInLine = Lbool;
+
   params.columnModelOrder = ui.columnModelOrderBox->value();
 
   params.defectRendering.red.startValue = ui.redStartBox->value();
@@ -752,6 +763,7 @@ void ProcessingParametersDialog::updateParameters()
   //CV_LINK_RUNS=5
 
   params.defectSearching.edgesApproximationType = ui.approximationComboBox->currentIndex()+1;
+
 }
 
 void ProcessingParametersDialog::rangesAdd()

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/ProgressReportingTask.hh"
 #include "Core/ScanCollector.hh"
 #include "RTContext.h"
 
@@ -42,10 +43,12 @@ namespace realtime {
 		SoundDisplay *m_soundDisplay;
 		PeakDisplay* m_peakDisplay;
 		RTScanCollector() = delete;
+
 	public:
 		//std::shared_ptr<Scan> ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
-		void ScanArmToScan(std::shared_ptr<ScanArm> scanArm);
+		void ScanArmToScan(std::shared_ptr<ScanArm> scanArm, std::shared_ptr<Scan>& scanIn);
 		void SetShift(float x, float y, float z);
+		void operator()() {};
 
 		FieldWidget* m_field;
 		explicit RTScanCollector(RTContext& trCtxt, ProcessingParameters &parameters, ScanFactory& scanFactory);
@@ -62,10 +65,22 @@ namespace realtime {
 		Q_SLOT virtual void saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0) override;
 		Q_SLOT void load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea = 0)  override;
 		Q_SLOT void makeScanAndShow(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea = 0);
+		Q_SLOT void makeScanAndShowCuttered(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea = 0);
+		Q_SLOT void makeScanAndShowCutteredAbs(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea = 0);
+
 
 
 		//virtual void load(BackgroundTaskExecutor& taskExecutor) override;
 
 		virtual ~RTScanCollector();
+	protected:
+		//ProgressReportingTask
+		Q_SIGNAL void started(const QString& name, int stageCount);
+		Q_SIGNAL void stageStarted(const QString& name, int maximumValue);
+		Q_SIGNAL void stageProgressed();
+		Q_SIGNAL void finished();
+		Q_SIGNAL void terminated(const QString& errorMessage);
+		Q_SIGNAL void createdTask(ProgressReportingTask* newTask);
+		//end ProgressReportingTask
 	};
 }

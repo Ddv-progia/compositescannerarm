@@ -1022,10 +1022,10 @@
       <widget class="QWidget" name="formLayoutWidget">
        <property name="geometry">
         <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>338</width>
-         <height>434</height>
+         <x>10</x>
+         <y>10</y>
+         <width>363</width>
+         <height>568</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout_3">
@@ -1047,7 +1047,107 @@
         <property name="bottomMargin">
          <number>10</number>
         </property>
-        <item row="2" column="0">
+        <item row="0" column="0">
+         <widget class="QGroupBox" name="groupBox_6">
+          <property name="title">
+           <string>Параметры исследуемого поля</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_5">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_23">
+             <property name="text">
+              <string>Ширина</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="widthBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+             <property name="value">
+              <number>200</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_25">
+             <property name="text">
+              <string>Высота</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="heightBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+             <property name="value">
+              <number>300</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QGroupBox" name="groupBoxSoundPackingForVisualize">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Компоновка звука для отображения</string>
+          </property>
+          <widget class="QRadioButton" name="rbPackInLine">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>20</y>
+             <width>101</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>В одну строку</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="rbPackInSquare">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>40</y>
+             <width>231</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>По размеру исследуемого поля</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="2">
          <widget class="QGroupBox" name="groupBox">
           <property name="title">
            <string>Пиковый детектор</string>
@@ -1127,56 +1227,7 @@
           </layout>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QGroupBox" name="groupBox_6">
-          <property name="title">
-           <string>Параметры исследуемого поля</string>
-          </property>
-          <layout class="QFormLayout" name="formLayout_5">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_23">
-             <property name="text">
-              <string>Ширина</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="widthBox">
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>10000</number>
-             </property>
-             <property name="value">
-              <number>200</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_25">
-             <property name="text">
-              <string>Высота</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="heightBox">
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>10000</number>
-             </property>
-             <property name="value">
-              <number>300</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="1" column="0">
+        <item row="1" column="0" colspan="2">
          <widget class="QGroupBox" name="groupBox_5">
           <property name="title">
            <string>Параметры записи звука и координат</string>
@@ -1242,8 +1293,32 @@
              </property>
             </widget>
            </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_26">
+             <property name="text">
+              <string>Длительность звукового пика</string>
+             </property>
+            </widget>
+           </item>
            <item row="3" column="1">
             <widget class="QDoubleSpinBox" name="peakForestepSoundBox">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="maximum">
+              <double>10000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_27">
+             <property name="text">
+              <string>Смещение неполного первого пика</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="firstStepShiftBox">
              <property name="decimals">
               <number>5</number>
              </property>
@@ -1272,30 +1347,6 @@
              </property>
              <property name="value">
               <number>1</number>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_26">
-             <property name="text">
-              <string>Длительность звукового пика</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_27">
-             <property name="text">
-              <string>Смещение неполного первого пика</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QDoubleSpinBox" name="firstStepShiftBox">
-             <property name="decimals">
-              <number>5</number>
-             </property>
-             <property name="maximum">
-              <double>10000.000000000000000</double>
              </property>
             </widget>
            </item>

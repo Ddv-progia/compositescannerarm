@@ -93,6 +93,8 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters, ScanFactory
 
     sourceScanChunks = std::make_shared<SourceScanChunks>();
     sourceScanChunks->chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
+    //m_scanArm->sourceScanChunks.chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
+    //sourceScanChunks = std::make_shared<SourceScanChunks>(m_scanArm->sourceScanChunks);
 
     m_soundDisplay->setScan(m_scanArm);
     m_peakDisplay->setScan(m_scanArm);
@@ -256,10 +258,19 @@ void realtime::RTScanCollector::saveAs(BackgroundTaskExecutor& taskExecutor, QMd
 }
 
 void realtime::RTScanCollector::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea) {
-    auto newPathname = QFileDialog::getOpenFileName(this, "Открыть скан", QString(), "скан (*.ask)");
-    if (!newPathname.isEmpty()) {
 
+    this->loadLastOpenDir();
+
+    auto newPathname = QFileDialog::getOpenFileName(this, "Открыть скан", lastOpenDir, "скан (*.ask)");
+    if (!newPathname.isEmpty()) {
         //Core::BinaryPersistentVariable<OriginalData > binaryScan{ newPathname.toStdString() };
+        lastOpenDir = QFileInfo(newPathname).dir().path();
+        //settings->setValue(QString::fromUtf8("lastOpenDir"), lastOpenDir);
+        this->saveLastOpenDir();
+        //emit started("Обработка скана", stagesNumber);
+        //case ScanProcessingStage::RawDataObtained:
+        //    emit stageStarted("Выравнивание строк - 1", scan->lines.size());
+
         Core::BinaryPersistentVariable<ScanArm > binaryScan{ newPathname.toStdString() };
         try {
             binaryScan.load();
@@ -338,28 +349,28 @@ void realtime::RTScanCollector::load(BackgroundTaskExecutor& taskExecutor, QMdiA
         //makeScanAndShow(ew->m_scanArm, taskExecutor, scanFactory, mdiArea);
     }
 
+
 }
 
 //std::shared_ptr<Scan> ScanCollector::ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
 void realtime::RTScanCollector::
-ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
+ScanArmToScan(std::shared_ptr<ScanArm> scanArm, std::shared_ptr<Scan> &scanIn)
 {
     //std::shared_ptr<Scan> scan;
-    m_scan = std::make_shared<Scan>();
-    m_scan->parameters.initialSkip =                  m_parameters.initialSkip;
-    m_scan->parameters.stepForSplitFrequencyRanges =  m_parameters.stepForSplitFrequencyRanges;
-    m_scan->parameters.peakMagnitudeLimit =           m_parameters.peakMagnitudeLimit;
-    m_scan->parameters.peakBackstep =                 m_parameters.peakBackstep;
-    m_scan->parameters.peakForestep =                 m_parameters.peakForestep;
-    m_scan->parameters.peakPauseCount =               m_parameters.peakPauseCount;
-    m_scan->parameters.headAndScanCollectorParameters.peakForestepSound            = m_parameters.headAndScanCollectorParameters.peakForestepSound;
-    m_scan->parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox = m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
-    m_scan->parameters.headAndScanCollectorParameters.currentNumArea =  m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
-    m_scan->parameters.headAndScanCollectorParameters.firstStepShift =  m_parameters.headAndScanCollectorParameters.firstStepShift;
+    scanIn = std::make_shared<Scan>();
+    scanIn->parameters.initialSkip =                  m_parameters.initialSkip;
+    scanIn->parameters.stepForSplitFrequencyRanges =  m_parameters.stepForSplitFrequencyRanges;
+    scanIn->parameters.peakMagnitudeLimit =           m_parameters.peakMagnitudeLimit;
+    scanIn->parameters.peakBackstep =                 m_parameters.peakBackstep;
+    scanIn->parameters.peakForestep =                 m_parameters.peakForestep;
+    scanIn->parameters.peakPauseCount =               m_parameters.peakPauseCount;
+    scanIn->parameters.headAndScanCollectorParameters.peakForestepSound            = m_parameters.headAndScanCollectorParameters.peakForestepSound;
+    scanIn->parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox = m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
+    scanIn->parameters.headAndScanCollectorParameters.currentNumArea =  m_parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
+    scanIn->parameters.headAndScanCollectorParameters.firstStepShift =  m_parameters.headAndScanCollectorParameters.firstStepShift;
     auto m_field_NumArea = m_field->getNumArea();
-    m_scan->parameters.headAndScanCollectorParameters.currentNumArea = m_field_NumArea;
+    scanIn->parameters.headAndScanCollectorParameters.currentNumArea = m_field_NumArea;
     m_parameters.headAndScanCollectorParameters.currentNumArea = m_field_NumArea;
-
     
     ::std::vector< ::FrequencyRange > ranges;
 
@@ -371,19 +382,19 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
     //    ranges.push_back(frequencyRange);
     //}
 
-    //m_scan->parameters.ranges = ranges;
-    if (m_parameters.ranges.size()>0) m_scan->parameters.ranges = m_parameters.ranges;
-    else m_scan->parameters.ranges = constructCommonRanges();
+    //scanIn->parameters.ranges = ranges;
+    if (m_parameters.ranges.size()>0) scanIn->parameters.ranges = m_parameters.ranges;
+    else scanIn->parameters.ranges = constructCommonRanges();
     
-    m_scan->parameters.extremumOfRanges =  m_parameters.extremumOfRanges;
+    scanIn->parameters.extremumOfRanges =  m_parameters.extremumOfRanges;
 
-    m_scan->parameters.specNormalization = m_parameters.specNormalization;
+    scanIn->parameters.specNormalization = m_parameters.specNormalization;
 
-    m_scan->parameters.colorStopsList = m_parameters.colorStopsList;
+    scanIn->parameters.colorStopsList = m_parameters.colorStopsList;
 
-    m_scan->parameters.defectClassification = m_parameters.defectClassification;
+    scanIn->parameters.defectClassification = m_parameters.defectClassification;
 
-    m_scan->parameters.defectPoints = m_parameters.defectPoints;
+    scanIn->parameters.defectPoints = m_parameters.defectPoints;
 
     //putVal<std::uint32_t>(db, "parameters.defectPoints.@size", scan.parameters.defectPoints.size());
     //for (std::size_t i = 0; i < scan.parameters.defectPoints.size(); i++) {
@@ -399,74 +410,68 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm)
     //    putVal<double>(db, (boost::format("parameters.defectPoints.@%1%.green.amplification") % i).str(), scan.parameters.defectPoints[i].green.amplification);
     //}
 
-    m_scan->parameters.columnModelOrder = 0;
+    scanIn->parameters.columnModelOrder = 0;
 
     auto rtPeaksSizeY = scanArm->rtPeaks.size();
     const auto& sound = scanArm->sound;
-    size_t maxPeakLenght = 0;
-    ::std::vector< ::std::vector<  size_t > > peaksLengt;
-    for (std::size_t i = 0; i < rtPeaksSizeY; i++) {
-        size_t lineLenght = 0;
-        ::std::vector< size_t  >  peaksLengtLine;
-        auto rtPeaksSizeX = scanArm->rtPeaks.at(i).size();
-        for (std::size_t j = 0; j < rtPeaksSizeX; j++) {
-            auto peaks = scanArm->rtPeaks.at(i).at(j);
-            unsigned int peaksLenght = 0;
-            for (auto peak : peaks) {
-                peaksLenght += peak.endIndex - peak.beginIndex;
+
+    //if (this->m_parameters.headAndScanCollectorParameters.needPackInSquare) {
+    if (scanArm->parameters.headAndScanCollectorParameters.needPackInSquare) {
+        // вместо разбивки на строки сделаем в одну строку
+        size_t maxPeakLenght = 0;
+        ::std::vector< ::std::vector<  size_t > > peaksLengt;
+        for (std::size_t i = 0; i < rtPeaksSizeY; i++) {
+            size_t lineLenght = 0;
+            ::std::vector< size_t  >  peaksLengtLine;
+            auto rtPeaksSizeX = scanArm->rtPeaks.at(i).size();
+            for (std::size_t j = 0; j < rtPeaksSizeX; j++) {
+                auto peaks = scanArm->rtPeaks.at(i).at(j);
+                unsigned int peaksLenght = 0;
+                for (auto peak : peaks) {
+                    peaksLenght += peak.endIndex - peak.beginIndex;
+                }
+                if (peaksLenght > maxPeakLenght) maxPeakLenght = peaksLenght;
+                peaksLengtLine.push_back(peaksLenght);
             }
-            if (peaksLenght > maxPeakLenght) maxPeakLenght = peaksLenght;
-            peaksLengtLine.push_back(peaksLenght);
+            peaksLengt.push_back(peaksLengtLine);
         }
-        peaksLengt.push_back(peaksLengtLine);
+        //***
+        for (std::size_t i = 0; i < rtPeaksSizeY; i += m_field_NumArea) {
+            SourceScanLine line;
+            auto rtPeaksSizeX = scanArm->rtPeaks.at(i).size();
+            line.startCoordinate = 0;
+            line.finalCoordinate = rtPeaksSizeX;
+            line.lineCoordinate = (rtPeaksSizeY-1)-i; //**********
+            line.finalLineCoordinate = i;
+            line.sampleRate = sound.sampleRate;
+            for (std::size_t j = 0; j < rtPeaksSizeX; j+= m_field_NumArea) {
+                auto peaks = scanArm->rtPeaks.at(i).at(j);
+                //const auto& lastPeak = peaks.back();
+                std::size_t insertedLength = 0;
+                for (auto peak : peaks) {
+                    line.samples.insert(line.samples.end(),
+                        sound.samples.begin() + peak.beginIndex,
+                        sound.samples.begin() + peak.endIndex);
+                }
+                auto insertMoreLength = maxPeakLenght - peaksLengt.at(i).at(j);
+                line.samples.insert(line.samples.end(), insertMoreLength, 0.0);
+            }
+            scanIn->lines.push_back(line);
+        }
+        // конец вместо разбивки на строки сделаем в одну строку
     }
-    //***
-    for (std::size_t i = 0; i < rtPeaksSizeY; i += m_field_NumArea) {
+    else if (scanArm->parameters.headAndScanCollectorParameters.needPackInLine) {
+        //вместо разбивки на строки делаем в одну строку:
         SourceScanLine line;
-        auto rtPeaksSizeX = scanArm->rtPeaks.at(i).size();
         line.startCoordinate = 0;
-        line.finalCoordinate = rtPeaksSizeX;
-        line.lineCoordinate = (rtPeaksSizeY-1)-i; //**********
-        line.finalLineCoordinate = i;
+        line.finalCoordinate = scanIn->parameters.headAndScanCollectorParameters.width * scanIn->parameters.headAndScanCollectorParameters.height;
+        line.lineCoordinate = 0; //**********
+        line.finalLineCoordinate = 0;
         line.sampleRate = sound.sampleRate;
-
-
-        for (std::size_t j = 0; j < rtPeaksSizeX; j+= m_field_NumArea) {
-            auto peaks = scanArm->rtPeaks.at(i).at(j);
-            //const auto& lastPeak = peaks.back();
-            std::size_t insertedLength = 0;
-            for (auto peak : peaks) {
-                line.samples.insert(line.samples.end(),
-                    sound.samples.begin() + peak.beginIndex,
-                    sound.samples.begin() + peak.endIndex);
-            }
-            auto insertMoreLength = maxPeakLenght - peaksLengt.at(i).at(j);
-            line.samples.insert(line.samples.end(), insertMoreLength, 0.0);
-
-        }
-        m_scan->lines.push_back(line);
+        line.samples.insert(line.samples.end(), sound.samples.begin(), sound.samples.end());
+        scanIn->lines.push_back(line);
+        //конец вместо разбивки на строки делаем в одну строку:
     }
-
-    //auto rtPeaksSizeY = scanArm->rtPeaks.size();
-
-    //auto linesSize = scanArm->lines.size();
-    //for (std::size_t i = 0; i < linesSize; i++) {
-    //    auto lineArm = scanArm->lines.at(i);
-    //    SourceScanLine line;
-    //    line.finalCoordinate = lineArm.finalCoordinate;
-    //    line.finalLineCoordinate= lineArm.finalCoordinate;
-    //    line.lineCoordinate= lineArm.lineCoordinate;
-    //    line.sampleRate= lineArm.sampleRate;
-    //    line.startCoordinate= lineArm.startCoordinate;
-    //    line.timestampEnd= lineArm.timestampEnd;
-    //    line.timestampStart= lineArm.timestampStart;
-    //    for (std::size_t j = 0; j < lineArm.samples.size(); j++) {
-    //        line.samples.push_back(lineArm.samples.at(j));
-    //    }
-    //    scan->lines.push_back(line);
-    //}
-
-    //return m_scan;
 }
 
 void realtime::RTScanCollector::SetShift(float x, float y, float z)
@@ -522,12 +527,13 @@ makeScanAndShow(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& task
     try {
         //std::shared_ptr<Scan> scan;
         //scan = ScanArmToScan(scanArmIn);
-        ScanArmToScan(scanArmIn);
+        ScanArmToScan(scanArmIn, m_scan);
         for (auto newLine: m_scan->lines) {
             scanFactory.addRangeScanLine(newLine);
         }
         //scanFactory.finishScan(QString("nameOfScan"));
         QString scanName = "nameOfScan";
+        if (scanArmIn->scanName != "") scanName = QString::fromUtf8( scanArmIn->scanName);
         scanFactory.finishScan(boost::optional<QString&>(scanName));
     }
     catch (...) {
@@ -541,6 +547,67 @@ makeScanAndShow(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& task
         //mdiArea->addSubWindow(sdw);
         //sdw->showMaximized();
         ////connect(sdw, SIGNAL(ScanDisplayWindow::refreshScan(std::shared_ptr<Scan>&)), &scanFactory, SLOT(ScanDisplayWindow::recalculateScan(std::shared_ptr<Scan>&)));
+}
+
+Q_SLOT void realtime::RTScanCollector::makeScanAndShowCuttered(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea)
+{
+    ::Sound  sound;
+    sound.sampleRate = scanArmIn->sound.sampleRate;
+    for (auto s: scanArmIn->sound.samples) {
+        if (s > scanArmIn->parameters.peakMagnitudeLimit) 
+            sound.samples.push_back(scanArmIn->parameters.peakMagnitudeLimit);
+        else
+            sound.samples.push_back(s);
+
+    }
+    scanArmIn->sound = sound;
+    scanArmIn->scanName = scanArmIn->scanName + " cutted";
+    makeScanAndShow(scanArmIn, taskExecutor, scanFactory, mdiArea);
+    return Q_SLOT void();
+}
+
+Q_SLOT void realtime::RTScanCollector::makeScanAndShowCutteredAbs(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory, QMdiArea* mdiArea)
+{
+    ::Sound  sound;
+    sound.sampleRate = scanArmIn->sound.sampleRate;
+    for (auto s: scanArmIn->sound.samples) {
+        if (std::abs(s) > scanArmIn->parameters.peakMagnitudeLimit) {
+            if (s < 0) {
+              sound.samples.push_back(-1.5*scanArmIn->parameters.peakMagnitudeLimit);
+
+            }
+            else {
+                sound.samples.push_back(scanArmIn->parameters.peakMagnitudeLimit);
+
+            }
+        }
+        else
+            sound.samples.push_back(s);
+    }
+    scanArmIn->sound = sound;
+    scanArmIn->scanName = scanArmIn->scanName + " cutted Abs";
+    makeScanAndShow(scanArmIn, taskExecutor, scanFactory, mdiArea);
+    return Q_SLOT void();
+    //std::shared_ptr<::Sound  >sound = std::make_shared<::Sound>();
+    //sound->sampleRate = scanArmIn->sound.sampleRate;
+    //for (auto s: scanArmIn->sound.samples) {
+    //    if (std::abs(s) > scanArmIn->parameters.peakMagnitudeLimit) {
+    //        if (s < 0) {
+    //          sound->samples.push_back(-1.5*scanArmIn->parameters.peakMagnitudeLimit);
+
+    //        }
+    //        else {
+    //            sound->samples.push_back(scanArmIn->parameters.peakMagnitudeLimit);
+
+    //        }
+    //    }
+    //    else
+    //        sound->samples.push_back(s);
+    //}
+    //scanArmIn->sound = *sound;
+    //scanArmIn->scanName = scanArmIn->scanName + " cutted Abs";
+    //makeScanAndShow(scanArmIn, taskExecutor, scanFactory, mdiArea);
+    //return Q_SLOT void();
 }
 
 realtime::RTScanCollector::
