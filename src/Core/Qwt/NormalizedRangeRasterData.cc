@@ -24,7 +24,7 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
       }
   }
   else {
-      m_intervals.at(Qt::YAxis) = QwtInterval(0.0,0.0);
+      m_intervals.at(Qt::YAxis) = QwtInterval(0.0,1.0);//  если получили одну строку, задаем ей ненулевую высоту для корректного определения площади дефекта
   }
   float minVal = std::numeric_limits<float>::max();
   float maxVal = -std::numeric_limits<float>::max();

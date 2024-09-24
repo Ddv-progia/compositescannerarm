@@ -22,6 +22,7 @@
 #include "Core/Devices.hh"
 #include "Core/LoadScanTask.hh"
 #include "Core/ScanIO.hh"
+#include "Core/ScanCollector.hh"
 #include "Core/QtScript/AudioDataCollector.hh"
 #include "Core/QtScript/Coil.hh"
 #include "Core/QtScript/Functions.hh"
@@ -394,11 +395,17 @@ void MainWindow::saveAs()
 
 void MainWindow::load()
 {
+    //QString  settingsFile = "SettingsForAutoScanWindow.ini";
+    //QSettings* settings = new QSettings(settingsFile, QSettings::IniFormat);
+    //if (lastOpenDir == "") {
+    //    lastOpenDir = settings->value(QString::fromUtf8("lastOpenDir"), "").toString();
+    //}
+
   auto currentWidget = getCurrentMdiWidget();
   if (auto ew = dynamic_cast<Loadable*>(currentWidget)) {
-      ew->lastOpenDir = lastOpenDir;
+      //ew->lastOpenDir = lastOpenDir;
       ew->scanFactory = &scanFactory;
-      ew->processingParameters = &processingParameters;
+      ew->processingParameters = *processingParameters;
       ew->load(taskExecutor, ui.mdiArea);
   }
 
@@ -642,6 +649,8 @@ void MainWindow::showScan(const std::shared_ptr<Scan>& scan)
 {
   auto sdw = new ScanDisplayWindow(scan);
   sdw->setAttribute(Qt::WA_DeleteOnClose, true);
+  sdw->scanFactory = &scanFactory;
+
   ui.mdiArea->addSubWindow(sdw);
   sdw->showMaximized();
   connect(sdw,SIGNAL(refreshScan(std::shared_ptr<Scan>&)),&scanFactory,SLOT(recalculateScan(std::shared_ptr<Scan>&)));
@@ -718,17 +727,36 @@ void MainWindow::exportWave()
 }
 void MainWindow::makeBScanAction()
 {
+    //try {
+    //    auto currentWidget = getCurrentMdiWidget();
+    //    if (auto ew = dynamic_cast<realtime::RTScanCollector*>(currentWidget)) {
+
+
+    //        ew->processingParameters = &processingParameters;
+    //        ew->makeScanAndShow(ew->m_scanArm, taskExecutor, scanFactory, ui.mdiArea);
+    //        //ew->setWindowTitle(QString::fromUtf8( ew->m_scanArm->scanName));
+    //    }
+    //}
+    //catch (...) {
+
+    //}
+
     try {
         auto currentWidget = getCurrentMdiWidget();
         if (auto ew = dynamic_cast<realtime::RTScanCollector*>(currentWidget)) {
-            ew->processingParameters = &processingParameters;
+
+
+            ew->processingParameters = *processingParameters;
             ew->makeScanAndShow(ew->m_scanArm, taskExecutor, scanFactory, ui.mdiArea);
+            //ew->setWindowTitle(QString::fromUtf8( ew->m_scanArm->scanName));
+            //ew->makeScanAndShowCuttered(ew->m_scanArm, taskExecutor, scanFactory, ui.mdiArea);
+            //ew->makeScanAndShowCutteredAbs(ew->m_scanArm, taskExecutor, scanFactory, ui.mdiArea);
+
         }
     }
     catch (...) {
 
     }
-
 
 }
 
@@ -747,6 +775,12 @@ void MainWindow::showCurrentParameterDialog()
 
     if (ppd.exec() == QDialog::Accepted) {
         sdw->applyParameters(ppd.getProcessingParameters(), scanFactory);
+    }
+  }
+  else if (auto sdw = dynamic_cast<ScanCollector*>(currentWidget)) {
+    ProcessingParametersDialog ppd(sdw->getProcessingParameters(), false);
+    if (ppd.exec() == QDialog::Accepted) {
+        sdw->applyParameters(ppd.getProcessingParameters()); 
     }
   }
 }

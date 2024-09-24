@@ -69,13 +69,13 @@ public:
 	ProcessingParameters getProcessingParameters() const;
 	void applyParameters(const ProcessingParameters& params, ScanFactory& factory);
 	Q_SIGNAL void refreshScan(std::shared_ptr<Scan>& scan);
+	ScanFactory* scanFactory;
 private:
 	QString filename;
 	std::shared_ptr<Scan> scan;
 	int commonRangeNum;
 	bool showCommonRange;
-	ScanFactory* scanFactory;
-	ProcessingParameters* processingParameters;
+	//ProcessingParameters* processingParameters;
 
 	QComboBox* kindBox;
 	QComboBox* plotBox;
@@ -175,7 +175,7 @@ private:
 
 	Q_SLOT void createDefectsMarker();
 	Q_SLOT void deleteDefectsMarker();
-
+	
 	Q_SLOT void togleWindowSize(bool isPressed);
 	Q_SLOT void setDefectsVisible(bool isVisible);
 	Q_SLOT void showUserRange();

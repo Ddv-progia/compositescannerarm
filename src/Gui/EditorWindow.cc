@@ -155,6 +155,7 @@ void EditorWindow::saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiAre
 
 void EditorWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
+    this->loadLastOpenDir();
     auto pathnames = QFileDialog::getOpenFileNames(this, "Открыть", lastOpenDir, "Все файлы сканера (*.js *.csp)");
     if (pathnames.isEmpty()) return;
 
@@ -169,8 +170,7 @@ void EditorWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
         }
         else if (normalizedSuffix == "csp") {
             try {
-                taskExecutor.enqueue(new LoadScanTask(pathname, *scanFactory, **processingParameters, false));
-
+                taskExecutor.enqueue(new LoadScanTask(pathname, *scanFactory, processingParameters, false));
             }
             catch (DbException& exc) {
                 QMessageBox::critical(this, "Ошибка", exc.what());
@@ -188,6 +188,7 @@ void EditorWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
     }
 
     lastOpenDir = QFileInfo(pathnames.back()).dir().path();
+    this->saveLastOpenDir();
 }
 
 void EditorWindow::saveToFile(const QString& newPathname)

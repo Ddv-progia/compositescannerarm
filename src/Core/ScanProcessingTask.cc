@@ -63,8 +63,83 @@ PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float p
                     line.lineCoordinate };
 }
 
+/// <summary>
+/// ищет координаты пика по timestamp'у
+/// заполняет peak найденными координатами
+/// </summary>
+/// <param name="indexInSound"></param>
+/// <param name="peak"></param>
+/// <returns>true, если координаты найдены</returns>
+bool getCoordinateOfPeak(size_t &indexInSound, size_t& curChunkIndex, Peak& peak, unsigned int soundSampleRate, ::std::vector< ::Position >* positions, std::shared_ptr<SourceScanChunks> scanArmChunks)
+{
+    bool notFoundCurChunkIndex = true;
+    unsigned long long int timestampForIndexInSound = 0;
+    while (curChunkIndex < scanArmChunks->chunks.size() && notFoundCurChunkIndex) {
+        auto currChunk = scanArmChunks->chunks.at(curChunkIndex);
+        if ((indexInSound >= currChunk.startpositionOfChunk) && (indexInSound < currChunk.endpositionOfChunk)) {
+            timestampForIndexInSound = currChunk.timestamp -
+                (unsigned long long int)((currChunk.endpositionOfChunk - indexInSound) * (1 / soundSampleRate));
+            notFoundCurChunkIndex = false;     // нашли, выход из цикла
+        }
+        else {
+            ++curChunkIndex;
+        }
+    }
+    if (notFoundCurChunkIndex) {
+        curChunkIndex--;
+        return false;
+    }
+
+    size_t curTrajectoryIndex = 0; // первый найденный индекс, по которому timestamp элемента в Trajectory больше,чем timestamp искомого пика
+    auto currSizeOfTrajectory = positions->size();
+    while (curTrajectoryIndex < currSizeOfTrajectory) {
+        auto curTrajectoryTimeStamp = positions->at(curTrajectoryIndex).timeStamp;
+        if (timestampForIndexInSound > curTrajectoryTimeStamp) {
+            ++curTrajectoryIndex;
+        }
+        else {
+            if (timestampForIndexInSound == curTrajectoryTimeStamp) {
+                peak.x = positions->at(curTrajectoryIndex).x;
+                peak.y = positions->at(curTrajectoryIndex).y;
+                peak.z = positions->at(curTrajectoryIndex).z;
+                //notFoundCurTrajectoryIndex = false;
+                return true;
+            }
+            else {
+                if (curTrajectoryIndex > 0) {
+                    auto trajectoryIndexPred = curTrajectoryIndex - 1;
+                    auto dst = (curTrajectoryTimeStamp - positions->at(trajectoryIndexPred).timeStamp);
+                    if (dst) {
+                        auto kt = (curTrajectoryTimeStamp - timestampForIndexInSound) / dst;
+                        auto dx = (positions->at(curTrajectoryIndex).x - positions->at(trajectoryIndexPred).x) * kt;
+                        auto dy = (positions->at(curTrajectoryIndex).y - positions->at(trajectoryIndexPred).y) * kt;
+                        auto dz = (positions->at(curTrajectoryIndex).z - positions->at(trajectoryIndexPred).z) * kt;
+                        peak.x = positions->at(curTrajectoryIndex).x - dx;
+                        peak.y = positions->at(curTrajectoryIndex).y - dy;
+                        peak.z = positions->at(curTrajectoryIndex).z - dz;
+                        //notFoundCurTrajectoryIndex = false;
+                        return true;
+                    }
+                    else ++curTrajectoryIndex;
+                }
+                else ++curTrajectoryIndex;
+            }
+        }
+    }
+    if (curTrajectoryIndex >= currSizeOfTrajectory) {
+        curTrajectoryIndex = currSizeOfTrajectory - 1;
+        if (curTrajectoryIndex < 0) curTrajectoryIndex = 0;
+    }
+    return false;
+}
+
 void ScanProcessingTask::normalizeDirection(PeaksLine& line)
 {
+    for (size_t i = 0; i < line.peaks.size(); i++) {
+        if (line.peaks.at(i).beginIndex > line.peaks.at(i).endIndex) {
+            line.peaks.erase(line.peaks.begin() + i);
+        }
+    }
   if (line.finalCoordinate < line.startCoordinate) {
     line = PeaksLine{ std::vector<Peak>(line.peaks.rbegin(), line.peaks.rend()),
                       line.finalCoordinate,
@@ -101,6 +176,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
+
 
     r.resize(bands.size());
     for (std::size_t i = 0; i < bands.size(); i++) {
@@ -160,8 +236,10 @@ std::tuple<std::size_t, std::size_t, std::size_t> ScanProcessingTask::getNormali
   ba::accumulator_set<std::size_t, ba::stats<ba::tag::mean>> stopIndexAcc;
 
   for (auto& line : scan.ranges) {
-    if (line.empty())
-      break;
+      if (line.empty()) {
+          //break;
+          continue;
+      }
     if ((! line.front().samples.empty())&&(line.front().sampleIndexes.front()< line.front().sampleIndexes.back())) {
       std::vector<std::size_t> lineDistances;
       boost::adjacent_difference(line.front().sampleIndexes, std::back_inserter(lineDistances));
@@ -240,61 +318,62 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accDiff;
 
   for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
-      if (rangeIndex >= ranges[lineIndex].size()) return;
+      if (rangeIndex < ranges[lineIndex].size()) {
+          for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
+              float maxPeak = 0.0;
+              float minPeak = 0.0;
+              float justPeak = 0.0; //*******
+              float diffPeak = 0.0; //*******
+              if (ranges[lineIndex][rangeIndex].samples.size() > 0) {
+                  if (scan->parameters.useSubRanges) {
+                      //*******
+                      //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                      std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                      diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
+                      //diffPeak = maxPeak - minPeak;
 
-      for (std::size_t peakIndex = 0; peakIndex < lineLength; peakIndex++) {
-          float maxPeak = 0.0;
-          float minPeak = 0.0;
-          float justPeak = 0.0; //*******
-          float diffPeak = 0.0; //*******
-          if (ranges[lineIndex][rangeIndex].samples.size() > 0) {
-              if (scan->parameters.useSubRanges) {
-                  //*******
-                  //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-                  std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-                  diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
-                  //diffPeak = maxPeak - minPeak;
 
+                      //******* Преобразуем среднее по заданию Сергея Ивановича begin
+                      int N = 0;
+                      for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
+                          N++;
+                      }
+                      justPeak = justPeak * std::sqrt(N);
+                      //******* Преобразуем среднее по заданию Сергея Ивановича end
 
-                  //******* Преобразуем среднее по заданию Сергея Ивановича begin
-                  int N = 0;
-                  for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
-                      N++;
+                      //diffPeak = justPeak - (maxPeak - minPeak - 1); //******* Преобразуем разницу 18/07/2024
+
+                      //minPeak = peaks.first;
+                      //maxPeak = peaks.second;
+                      //*******
                   }
-                  justPeak = justPeak * std::sqrt(N);
-                  //******* Преобразуем среднее по заданию Сергея Ивановича end
-
-                  //diffPeak = justPeak - (maxPeak - minPeak - 1); //******* Преобразуем разницу 18/07/2024
-
-                  //minPeak = peaks.first;
-                  //maxPeak = peaks.second;
-                  //*******
+                  else {
+                      maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
+                      minPeak = maxPeak;
+                      justPeak = maxPeak; //*******
+                      diffPeak = maxPeak; //*******
+                  }
+                  acc(justPeak); //******* 
+                  accDiff(diffPeak); //******* 
+                  if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
+                  if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
               }
-              else {
-                  maxPeak = getNormalizedPeakAt(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-                  minPeak = maxPeak;
-                  justPeak = maxPeak; //*******
-                  diffPeak = maxPeak; //*******
-              }
-              acc(justPeak); //******* 
-              accDiff(diffPeak); //******* 
-              if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
-              if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
-          }
               normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
               normalizedRange.minView[peakIndex][lineIndex] = minPeak;
               normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
               normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
               //normalizedRange.aver = justPeak; //*******
-          
+
+          }
       }
   }
   auto average = ba::mean(acc);
   normalizedRange.aver = average; //******* среднее по всем средним
-  //normalizedRange.diff = ba::mean(accDiff); //******* среднее по всем разницам
-  //normalizedRange.diff = ba::max(accDiff); //******* максимум по всем разницам
-  normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
-
+  ////normalizedRange.diff = ba::mean(accDiff); //******* среднее по всем разницам
+  ////normalizedRange.diff = ba::max(accDiff); //******* максимум по всем разницам
+  //normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
+  normalizedRange.diff = ba::mean(accDiff); //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
+  //normalizedRange.diff = (ba::mean(accDiff)*3)/ average; //*******  приведение к случаю, когда среднее равно трем (т.е. к цветовому диапазону)
   normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
   normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
   normalizedRange.finalCoordinate = ranges.front().front().finalCoordinate;
@@ -337,12 +416,12 @@ float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::si
         auto iidx = boost::lower_bound(line.sampleIndexes, idx);
 
         if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
-            auto idx = std::distance(line.sampleIndexes.begin(), iidx);
-            return line.samples[idx];
+            auto ijdx = std::distance(line.sampleIndexes.begin(), iidx);
+            return line.samples[ijdx];
         }
         else if (iidx != line.sampleIndexes.end()) {
-            auto idx = std::distance(line.sampleIndexes.begin(), iidx);
-            return line.samples[idx > 0 ? idx : 0];
+            auto ijdx = std::distance(line.sampleIndexes.begin(), iidx);
+            return line.samples[ijdx > 0 ? ijdx : 0];
         }
         else {
             return 0.0;
@@ -396,18 +475,23 @@ std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubrang
   float max=0.0;
   float aver=0.0;
 
-  if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
-    auto idx = std::distance(line.sampleIndexes.begin(), iidx);
-    max = getMaxSubrangePeak(line,idx);
-    min = getMinSubrangePeak(line,idx);
-    aver = getAverageSubrangePeak(line,idx);
-  } else if (iidx != line.sampleIndexes.end()) {
-    auto idx2 = std::distance(line.sampleIndexes.begin(), iidx);
-    max = getMaxSubrangePeak(line,idx2 > 0 ? idx2 : 0);
-    min = getMinSubrangePeak(line,idx2 > 0 ? idx2 : 0);
-    aver = getAverageSubrangePeak(line,idx2 > 0 ? idx2 : 0);
+  //if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
+  //  auto idx = std::distance(line.sampleIndexes.begin(), iidx);
+  //  max = getMaxSubrangePeak(line,idx);
+  //  min = getMinSubrangePeak(line,idx);
+  //  aver = getAverageSubrangePeak(line,idx);
+  //} else if (iidx != line.sampleIndexes.end()) {
+  //  auto idx2 = std::distance(line.sampleIndexes.begin(), iidx);
+  //  max = getMaxSubrangePeak(line,idx2 > 0 ? idx2 : 0);
+  //  min = getMinSubrangePeak(line,idx2 > 0 ? idx2 : 0);
+  //  aver = getAverageSubrangePeak(line,idx2 > 0 ? idx2 : 0);
+  //}
+  if (iidx != line.sampleIndexes.end()) {
+      auto idx2 = std::distance(line.sampleIndexes.begin(), iidx);
+      max = getMaxSubrangePeak(line, idx2 > 0 ? idx2 : 0);
+      min = getMinSubrangePeak(line, idx2 > 0 ? idx2 : 0);
+      aver = getAverageSubrangePeak(line, idx2 > 0 ? idx2 : 0);
   }
- 
   return std::make_tuple(min, max, aver);
   //return std::make_pair(min, max);
 }
@@ -419,7 +503,11 @@ Polynomial ScanProcessingTask::signleRangeModel(const std::vector<double>& colum
   std::vector<double> xs;
   std::vector<double> ys;
   for (std::size_t i = 0; i < column.size(); i++) {
-    if (! ((! (column[i] > -std::numeric_limits<double>::infinity())) && (! (column[i] < -std::numeric_limits<double>::infinity())))) {
+      bool a = (column[i] > -std::numeric_limits<double>::infinity());
+      bool b = (column[i] < -std::numeric_limits<double>::infinity());
+      bool c = (!a) && (!b);
+    if (!(c)) {
+    //if (! ((! (column[i] > -std::numeric_limits<double>::infinity())) && (! (column[i] < -std::numeric_limits<double>::infinity())))) {
       xs.push_back(lineCoordinates[i]);
       ys.push_back(column[i]);
     }
@@ -626,10 +714,13 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan)
     auto sigma = std::sqrt(ba::variance(acc));
     auto average = ba::mean(acc);
 
-    for(auto& line:scan.normalizedSpec)
-      for(auto& point : line[nRange].samples)
-          point = (point - average) / (3 * sigma);
-
+    for (auto& line : scan.normalizedSpec) {
+        if (line.size() > nRange) {
+            for (auto& point : line[nRange].samples)
+                if (point != 0)
+                    point = (point - average) / (3 * sigma);
+        }
+    }
     stageProgressed();
   }
 }
@@ -645,7 +736,8 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan,const std::vector<SpecNo
     for(auto& line:scan.normalizedSpec){
         if (line.size() > nRange) {
             for (auto& point : line[nRange].samples)
-                point = (point - average) / (3 * sigma);
+                if (point != 0)
+                    point = (point - average) / (3 * sigma);
         }
 	}
     stageProgressed();
@@ -709,23 +801,23 @@ void ScanProcessingTask::operator() ()
     emit stageStarted("Выравнивание строк - 1", scan->lines.size());
     scan->trimmedLines.clear();
 
-    //дополнение первой строки до размера следующей
-    if (scan->lines.size() > 1) {
-//*******
-      size_t j = 1;
-      if (scan->lines.size() > 2) {
-          j = 2;
-      }
-      auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
-      if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
-          scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
-        }
-      else {
-          scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
-      }
-//*******
-    }
-
+    //дополнение первой строки до размера следующей // TODO проверить, надо ли?
+//    if (scan->lines.size() > 1) {
+////*******
+//      size_t j = 1;
+//      if (scan->lines.size() > 2) {
+//          j = 2;
+//      }
+//      auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
+//      //if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
+//      if (scan->lines[0].samples.size() < scan->lines[j].samples.size()) {
+//          scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
+//        }
+//      else {
+//          scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
+//      }
+////*******
+//    }
     boost::transform(scan->lines,
                      std::back_inserter(scan->trimmedLines),
                      p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));
@@ -743,8 +835,17 @@ void ScanProcessingTask::operator() ()
                              static_cast<unsigned int>(params.peakPauseCount)));
                              //static_cast<float>(params.peakPauseCount)));
      scan->processingStage = ScanProcessingStage::PeaksDetected;
-  case ScanProcessingStage::PeaksDetected:
-    emit stageStarted("Нормализация направления сканирования", scan->lines.size());
+      //scan->processingStage = ScanProcessingStage::PeaksCoordinateFinding;  //***********1 надо сделать так, а пред. строку убрать
+  //case ScanProcessingStage::PeaksCoordinateFinding:   //***********1 надо сделать так
+  case ScanProcessingStage::PeaksDetected:  //***********1 new
+      emit stageStarted("Определение координат пиков", scan->peaks.size());  //***********1 new
+      //size_t indexInSound = 0;
+      //boost::for_each(scan->peaks, p::bind(::getCoordinateOfPeak, pa::_1));  //***********1 new
+      //bool getCoordinateOfPeak(size_t indexInSound, size_t & curChunkIndex, Peak & peak, unsigned int soundSampleRate, ::std::vector< ::Position >*positions, std::shared_ptr<SourceScanChunks> scanArmChunks)
+
+      //scan->processingStage = ScanProcessingStage::PeaksDetected;  //***********1 надо будет добавить
+  //case ScanProcessingStage::PeaksDetected:  //***********1 было так
+    emit stageStarted("Нормализация направления сканирования", scan->peaks.size());
     boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::normalizeDirection, this, pa::_1));
     scan->processingStage = ScanProcessingStage::DirectionNormalized;
   case ScanProcessingStage::DirectionNormalized:
@@ -762,16 +863,16 @@ void ScanProcessingTask::operator() ()
     }
 
     emit stageStarted("Поиск относительного уровня сигнала",scan->normalizedSpec.size());
-    //if (scan->parameters.specNormalization.size() < scan->spec.begin()->size())
-    //    findRelativeSignals(*scan);
-    //else
-    //    findRelativeSignals(*scan, scan->parameters.specNormalization);
-    if ((scan->spec.size()>0) && (scan->parameters.specNormalization.size() < scan->spec.at(0).size()))
-    {
+    if ((scan->spec.size() > 0) && (scan->parameters.specNormalization.size() < scan->spec.begin()->size()))
         findRelativeSignals(*scan);
-    }
     else
-      findRelativeSignals(*scan,scan->parameters.specNormalization);
+        findRelativeSignals(*scan, scan->parameters.specNormalization);
+    //if ((scan->spec.size()>0) && (scan->parameters.specNormalization.size() < scan->spec.at(0).size()))
+    //{
+    //    findRelativeSignals(*scan);
+    //}
+    //else
+    //  findRelativeSignals(*scan,scan->parameters.specNormalization);
   case ScanProcessingStage::FrequencyRangesSplited:
     emit stageStarted("Сглаживание строк",scan->normalizedSpec.size());
     smoothRanges(*scan);     //производится сглаживание по строкам с помощью весовой функции,далее работаем со сглаженными графиками

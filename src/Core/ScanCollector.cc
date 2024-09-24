@@ -14,6 +14,17 @@
 ScanCollector::ScanCollector(){ 
 }
 
+ProcessingParameters ScanCollector::getProcessingParameters() const
+{
+	if (m_scanArm.get() != nullptr)	return m_scanArm->parameters;
+	else return ProcessingParameters();
+}
+
+void ScanCollector::applyParameters(ProcessingParameters params)
+{
+	m_scanArm->parameters = params;
+}
+
 void ScanCollector::share() {
 	emit ready(m_scanArm);
 }

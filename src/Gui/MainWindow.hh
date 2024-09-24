@@ -36,8 +36,8 @@ protected:
 private:
 	Ui::MainWindow ui;
 	QTimer* updateTimer;
-	BackgroundTaskExecutor& taskExecutor;
-	ScanFactory& scanFactory;
+	BackgroundTaskExecutor &taskExecutor;
+	ScanFactory &scanFactory;
 	QJSEngine* scriptEngine;
 	ScriptExecutor* scriptExecutor;
 	QThread* scriptExecutorThread;

@@ -75,7 +75,7 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
   for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
     if (std::abs(*(srcBegin + i)) > peakLimit) {
         auto startPos = i - backstep;
-        //if (startPos < 0) startPos = 0;
+        if (startPos < 0) startPos = 0;
       peaks.push_back(Peak{ (unsigned int)std::max((unsigned int)0, static_cast<unsigned int>(startPos)), (unsigned int)(i + forestep) });
       //i += (forestep+ pauseCount);
       i += forestep + backstep;
@@ -91,6 +91,77 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
   //}
   return peaks;
 }
+
+/// <summary>
+/// ищет координаты пика по timestamp'у
+/// заполняет peak найденными координатами
+/// </summary>
+/// <param name="indexInSound"></param>
+/// <param name="peak"></param>
+/// <returns>true, если координаты найдены</returns>
+bool getCoordinateOfPeak(size_t indexInSound, size_t& curChunkIndex, Peak& peak, unsigned int soundSampleRate, ::std::vector< ::Position >* positions, std::shared_ptr<SourceScanChunks> scanArmChunks)
+{
+    bool notFoundCurChunkIndex = true;
+    unsigned long long int timestampForIndexInSound = 0;
+    while (curChunkIndex < scanArmChunks->chunks.size() && notFoundCurChunkIndex) {
+        auto currChunk = scanArmChunks->chunks.at(curChunkIndex);
+        if ((indexInSound >= currChunk.startpositionOfChunk) && (indexInSound < currChunk.endpositionOfChunk)) {
+            timestampForIndexInSound = currChunk.timestamp -
+                (unsigned long long int)((currChunk.endpositionOfChunk - indexInSound) * (1 / soundSampleRate));
+            notFoundCurChunkIndex = false;     // нашли, выход из цикла
+        }
+        else {
+            ++curChunkIndex;
+        }
+    }
+    if (notFoundCurChunkIndex) {
+        curChunkIndex--;
+        return false;
+    }
+
+    size_t curTrajectoryIndex = 0; // первый найденный индекс, по которому timestamp элемента в Trajectory больше,чем timestamp искомого пика
+    auto currSizeOfTrajectory = positions->size();
+    while (curTrajectoryIndex < currSizeOfTrajectory) {
+        auto curTrajectoryTimeStamp = positions->at(curTrajectoryIndex).timeStamp;
+        if (timestampForIndexInSound > curTrajectoryTimeStamp) {
+            ++curTrajectoryIndex;
+        }
+        else {
+            if (timestampForIndexInSound == curTrajectoryTimeStamp) {
+                peak.x = positions->at(curTrajectoryIndex).x;
+                peak.y = positions->at(curTrajectoryIndex).y;
+                peak.z = positions->at(curTrajectoryIndex).z;
+                //notFoundCurTrajectoryIndex = false;
+                return true;
+            }
+            else {
+                if (curTrajectoryIndex > 0) {
+                    auto trajectoryIndexPred = curTrajectoryIndex - 1;
+                    auto dst = (curTrajectoryTimeStamp - positions->at(trajectoryIndexPred).timeStamp);
+                    if (dst) {
+                        auto kt = (curTrajectoryTimeStamp - timestampForIndexInSound) / dst;
+                        auto dx = (positions->at(curTrajectoryIndex).x - positions->at(trajectoryIndexPred).x) * kt;
+                        auto dy = (positions->at(curTrajectoryIndex).y - positions->at(trajectoryIndexPred).y) * kt;
+                        auto dz = (positions->at(curTrajectoryIndex).z - positions->at(trajectoryIndexPred).z) * kt;
+                        peak.x = positions->at(curTrajectoryIndex).x - dx;
+                        peak.y = positions->at(curTrajectoryIndex).y - dy;
+                        peak.z = positions->at(curTrajectoryIndex).z - dz;
+                        //notFoundCurTrajectoryIndex = false;
+                        return true;
+                    }
+                    else ++curTrajectoryIndex;
+                }
+                else ++curTrajectoryIndex;
+            }
+        }
+    }
+    if (curTrajectoryIndex >= currSizeOfTrajectory) {
+        curTrajectoryIndex = currSizeOfTrajectory - 1;
+        if (curTrajectoryIndex < 0) curTrajectoryIndex = 0;
+    }
+    return false;
+}
+
 
 namespace {
 
@@ -211,7 +282,7 @@ std::vector<FrequencyRange> constructFrequencyRanges(int beginFreq, int endFreq,
   for(auto i = beginFreq;i<endFreq;i+=step){
       //*******
       auto start = i;
-      if (i == 0)
+      if (start == 0)
           start = 100; // не хотим использовать "нулевые" частоты при формировании видов.
     result.push_back(FrequencyRange{ (double)start, (double)i + step });
     //result.push_back(FrequencyRange{ (double)i, (double)i + step }); 
@@ -223,7 +294,7 @@ std::vector<FrequencyRange> constructFrequencyRanges(int beginFreq, int endFreq,
 std::vector<FrequencyRange> constructCommonRanges()
 {
   std::vector<FrequencyRange> result;
-  auto ranges = constructFrequencyRanges(100,12000,2000);
+  auto ranges = constructFrequencyRanges(0,12000,2000);
   result.insert(result.end(),ranges.begin(),ranges.end());
   ranges = constructFrequencyRanges(12000,30000,3000);
   result.insert(result.end(),ranges.begin(),ranges.end());

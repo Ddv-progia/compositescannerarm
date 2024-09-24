@@ -17,6 +17,7 @@
 #include <qwt_scale_div.h>
 #include <qwt_scale_engine.h>
 #include <qwt_painter.h>
+#include <QSettings>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
 #include <QtGui/QKeyEvent>
@@ -189,6 +190,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   scanPlot = new QwtPlot;
   scanPlot->enableAxis(QwtPlot::yLeft, false);
   scanPlot->enableAxis(QwtPlot::xBottom, false);
+  //scanPlot->plotLayout()->setCanvasMargin(-1);
   scanPlot->plotLayout()->setCanvasMargin(-1);
   scanPlot->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
   scanPlot->axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating, true);
@@ -378,7 +380,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   commandScrollArea = new QScrollArea;
   commandScrollArea->setFrameStyle(1);
   commandScrollArea->setLayout(commandLayout);
-  commandScrollArea->setWidgetResizable(false);
+  commandScrollArea->setWidgetResizable(true);
   //commandScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   widgetLayout->addWidget(commandScrollArea, 0, 0);
   //widgetLayout->addLayout(commandLayout, 0, 0);
@@ -762,6 +764,7 @@ LineEncoding ScanDisplayWindow::requestLineEncoding()
 
 void ScanDisplayWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
 {
+    this->loadLastOpenDir();
     auto pathnames = QFileDialog::getOpenFileNames(this, "Открыть", lastOpenDir, "Все файлы сканера (*.js *.csp)");
     if (pathnames.isEmpty()) return;
 
@@ -776,8 +779,7 @@ void ScanDisplayWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdi
         }
         else if (normalizedSuffix == "csp") {
             try {
-                taskExecutor.enqueue(new LoadScanTask(pathname, *scanFactory, *processingParameters, false));
-
+                taskExecutor.enqueue(new LoadScanTask(pathname, *scanFactory, processingParameters, false));
             }
             catch (DbException& exc) {
                 QMessageBox::critical(this, "Ошибка", exc.what());
@@ -795,6 +797,8 @@ void ScanDisplayWindow::load(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdi
     }
 
     lastOpenDir = QFileInfo(pathnames.back()).dir().path();
+    //settings->setValue(QString::fromUtf8("lastOpenDir"), lastOpenDir);
+    this->saveLastOpenDir();
 }
 
 void ScanDisplayWindow::save(BackgroundTaskExecutor& taskExecutor, QMdiArea* mdiArea)
@@ -904,7 +908,6 @@ void ScanDisplayWindow::updateRangesPlot()
     spec->setColorMap(new FixedColorMap(scan->parameters.colorStopsList));
   else
     spec->setColorMap(new StandardColorMap);
-
   spec->attach(scanPlot);
 
   QwtColorMap* colorMap;
@@ -1049,6 +1052,7 @@ void ScanDisplayWindow::updateDefectPointsPlot()
   if (idx < 0) return;
 
   auto item = new DefectPointsItem(scan->renderedDefectPoints[idx]);
+
   item->attach(scanPlot);
 }
 
@@ -1071,26 +1075,26 @@ void ScanDisplayWindow::updatePlot()
   case 0:
     updateRangesPlot();
     scanRightColorScale->show();
-    xScanMarker->setLinePen(Qt::black, 0, Qt::DashLine);
-    yScanMarker->setLinePen(Qt::black, 0, Qt::DashLine);
+    xScanMarker->setLinePen(Qt::black, 1, Qt::DashLine);
+    yScanMarker->setLinePen(Qt::black, 1, Qt::DashLine);
     break;
   case 1:
     updateResidualsPlot();
     scanRightColorScale->show();
-    xScanMarker->setLinePen(Qt::black, 0, Qt::DashLine);
-    yScanMarker->setLinePen(Qt::black, 0, Qt::DashLine);
+    xScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
+    yScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
     break;
   case 2:
     updateDefectPointsPlot();
     scanRightColorScale->hide();
-    xScanMarker->setLinePen(Qt::white, 0, Qt::DashLine);
-    yScanMarker->setLinePen(Qt::white, 0, Qt::DashLine);
+    xScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
+    yScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
     break;
   case 3:
     updateFixedColorDefectPointsPlot();
     scanRightColorScale->hide();
-    xScanMarker->setLinePen(Qt::white, 0, Qt::DashLine);
-    yScanMarker->setLinePen(Qt::white, 0, Qt::DashLine);
+    xScanMarker->setLinePen(Qt::yellow, 1, Qt::DashLine);
+    yScanMarker->setLinePen(Qt::yellow, 1, Qt::DashLine);
     break;
   }
 
@@ -1197,9 +1201,15 @@ void ScanDisplayWindow::updateRangeViewPoint()
 
   rowCurve->setData(new MultiArraySliceSeriesData(range->view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
                     range->finalCoordinate));
-  columnCurve->setData(new MultiArraySliceVerticalSeriesData(range->view[boost::indices[pointIndexes(currentViewPoint).x()][all]],
-                       range->lineCoordinates));
+  try {
 
+      columnCurve->setData(new MultiArraySliceVerticalSeriesData(range->view[boost::indices[pointIndexes(currentViewPoint).x()][all]],
+          range->lineCoordinates));
+  }
+  catch (...) {
+      QString str = QString::fromUtf8("Ошибка при columnCurve->setData\r\n");
+      QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+  }
   averageColumnCurve->setData(new DoubleVectorVerticalSeriesData(scan->averageColumns[idx], range->lineCoordinates));
   if (scan->parameters.columnModelOrder > 0) {
     averageColumnPolynomialCurve->setData(new VerticalPolinomialSeriesData(scan->averageColumnPolyniomials[idx].coefficients,
@@ -1337,6 +1347,8 @@ void ScanDisplayWindow::showPlots()
                          "Спектрограмма по ударам (амплитуда)...");
   auto phaseAction = std::make_shared<PeakSpectrogramAction>(new FftToPhaseAngleWithTrend, scan->parameters,
                      "Спектрограмма по ударам (фаза)...");
+  auto phaseActionNoTrend = std::make_shared<PeakSpectrogramAction>(new FftToPhaseAngle, scan->parameters,
+                     "Спектрограмма по ударам NoTrend (фаза)...");
 
   plotView->addPlotItemAction(magnitudeAction);
 #ifndef USE_TREND_VERSION
@@ -1345,6 +1357,7 @@ void ScanDisplayWindow::showPlots()
 #else
   plotView->addPlotItemAction(phaseAction);
 #endif
+  plotView->addPlotItemAction(phaseActionNoTrend);
 
   plotView->setWindowFlags(Qt::Window);
   plotView->setAttribute(Qt::WA_DeleteOnClose);

@@ -20,7 +20,9 @@ public:
 	std::shared_ptr<ScanArm> m_scanArm;
 	std::shared_ptr<Scan> m_scan;
 	ScanCollector();
-  std::shared_ptr <SourceScanChunks> sourceScanChunks;
+	ProcessingParameters getProcessingParameters() const;
+	std::shared_ptr <SourceScanChunks> sourceScanChunks;
+	void applyParameters(ProcessingParameters params);
   
   Q_SLOT virtual void start() = 0;
   Q_SLOT virtual void pause() = 0;

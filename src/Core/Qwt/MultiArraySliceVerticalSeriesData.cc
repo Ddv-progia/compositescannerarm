@@ -29,15 +29,18 @@ size_t MultiArraySliceVerticalSeriesData::size() const
 QPointF MultiArraySliceVerticalSeriesData::sample(size_t i) const
 {
     if ((!line.empty()) && (!lineCoordinates.empty())) {
-        if ((line.num_elements()>0)&&(line.size()>0)&&(lineCoordinates.size() > 0)) {
+        if ((line.num_elements() > 0) && (line.size() > i) && (lineCoordinates.size() > i)) {
+            return QPointF(line[i], lineCoordinates[i]);
+            //if(line.begin()!= line.end())        return QPointF(line[i], lineCoordinates[i]);
+            //return QPointF();
             
-                return QPointF(line[i], lineCoordinates[i]);
             //if (line[i]) {
 
             //}
         }
 
     }
+    return QPointF();
 
     //    return QPointF(line[i], lineCoordinates[i]);
     ////if ((!line.empty())&&(!lineCoordinates.empty())) {

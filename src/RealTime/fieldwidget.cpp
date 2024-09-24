@@ -99,6 +99,10 @@ float FieldWidget::getPositionY()
 /// <returns>true, если координаты найдены</returns>
 bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 {
+	auto bindex = peak.beginIndex;
+	auto eindex = peak.endIndex;
+	auto dist = eindex - bindex;
+
 	bool notFoundCurChunkIndex = true;
 	unsigned long long int timestampForIndexInSound = 0;
 	//std::cout << "getCoordinateOfPeak while started !!! m_scanArmChunks->chunks.size() = " << m_scanArmChunks->chunks.size() << std::endl;
@@ -111,7 +115,9 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 				                       (unsigned long long int)((currChunk.endpositionOfChunk - indexInSound) * (1 / soundSampleRate));
 			notFoundCurChunkIndex = false;     // нашли, выход из цикла
 		}
-		++m_curChunkIndex;
+		else {
+			++m_curChunkIndex;
+		}
 	}
 	if (notFoundCurChunkIndex) {
 		m_curChunkIndex--;
@@ -125,7 +131,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 	//bool notFoundCurTrajectoryIndex = true;
 	//size_t indCoord = 0;
 	//for (; m_curTrajectoryIndex< dataCoord.size()) {
-
+	
 	auto currSizeOfTrajectory = m_scanArm->trajectory.pos.size();
 	//std::cout << "m_curTrajectoryIndex while started !!!!!!" << m_curTrajectoryIndex << std::endl;
 	//std::cout << "currSizeOfTrajectory  = " << currSizeOfTrajectory << std::endl;
@@ -149,7 +155,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 					auto trajectoryIndexPred = m_curTrajectoryIndex - 1;
 					auto dst = (curTrajectoryTimeStamp - m_scanArm->trajectory.pos.at(trajectoryIndexPred).timeStamp);
 					if (dst) {
-						auto kt = (curTrajectoryTimeStamp - timestampForIndexInSound) / (curTrajectoryTimeStamp - m_scanArm->trajectory.pos.at(trajectoryIndexPred).timeStamp);
+						auto kt = (curTrajectoryTimeStamp - timestampForIndexInSound) / dst;
 						auto dx = (m_scanArm->trajectory.pos.at(m_curTrajectoryIndex).x - m_scanArm->trajectory.pos.at(trajectoryIndexPred).x) * kt;
 						auto dy = (m_scanArm->trajectory.pos.at(m_curTrajectoryIndex).y - m_scanArm->trajectory.pos.at(trajectoryIndexPred).y) * kt;
 						auto dz = (m_scanArm->trajectory.pos.at(m_curTrajectoryIndex).z - m_scanArm->trajectory.pos.at(trajectoryIndexPred).z) * kt;
@@ -283,27 +289,16 @@ timeout() {
 
 void FieldWidget::
 findPeak() {
-	//std::srand((unsigned int)time(0));
 	try {
 		//if (!m_scanArm || m_scanArm->trajectory.pos.empty())
 		if (!m_scanArm )
 			return;
-
-		//const auto& parameters = m_scanArm->parameters;
-		//uint backStep = m_scanArm->sound.sampleRate * parameters.peakBackstep;
-		//uint foreStep = m_scanArm->sound.sampleRate * parameters.peakForestep;
-		//uint pause = m_scanArm->sound.sampleRate * parameters.peakPauseCount;
-		//auto& data = m_scanArm->sound.samples;
-		//auto& dataCoord = m_scanArm->trajectory.pos;
-		//double comparator = m_scanArm->parameters.peakMagnitudeLimit;
 		
-		//int size = data->size();
 		int size = m_scanArm->sound.samples.size();
 		if (foreStep == 0) {
 				BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException()
 					<< uts::ErrInfo_Description((boost::format("Длительность пика слишком мала: %1% ") % foreStep ).str()));
 			}
-
 		//for (; m_currentSampleIndex != m_scanArm->sound.samples.end(); ++m_currentSampleIndex) {
 		//	if (abs(*m_currentSampleIndex) > comparator) {
 		if (m_numArea == 0)
@@ -320,7 +315,8 @@ findPeak() {
 
 				bool rez = getCoordinateOfPeak(m_curIndex,peak);
 				if (!rez) {
-					return;
+					//return;
+					continue;
 				}
 				else {
 					x = (int)m_numArea * std::floor(peak.x/ m_numArea);
@@ -329,9 +325,8 @@ findPeak() {
 					//int koeff = 2 * (int)m_numArea + 1;
 					//x = (x / koeff)* koeff + (int)m_numArea;
 					//y = (y / koeff)* koeff + (int)m_numArea;
-					
-
 					uint indBegin = m_curIndex - backStep;
+					//indBegin = (uint)std::max((uint)0, static_cast<uint>(indBegin))
 					if (indBegin < 0) {
 						m_curIndex += (size_t)(m_firstStepShift);
 						continue;
