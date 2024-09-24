@@ -249,7 +249,8 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, DefectsVie
   for(auto & contour : contourList)
     addDefect(contour);
 
-  filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
+  //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
+  filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
 }
 
 PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* parent): scan(scan), QObject(parent)

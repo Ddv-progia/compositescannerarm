@@ -52,7 +52,13 @@ QImage DefectPointsItem::renderImage(const QwtScaleMap& xMap, const QwtScaleMap&
       auto iy = std::distance(defects.lineCoordinates.begin(), yiter);
 
       if (sx >= 0 && iy >= 0 && sx < defects.view.shape()[0] && iy < defects.view.shape()[1]) {
-          imageData[imageIndex] = (0xFF << 24) & (defects.view[sx][iy].red << 16) & (defects.view[sx][iy].green << 8) & defects.view[sx][iy].blue;
+          boost::detail::multi_array::multi_array_base::index iindex = sx;
+          boost::detail::multi_array::multi_array_base::index jindex = iy;
+          auto r = defects.view[iindex][jindex].red;
+          auto g = defects.view[iindex][jindex].green;
+          auto b = defects.view[iindex][jindex].blue;
+          //imageData[imageIndex] = (0xFF << 24) & (defects.view[sx][iy].red << 16) & (defects.view[sx][iy].green << 8) & defects.view[sx][iy].blue;
+          imageData[imageIndex] = (0xFF << 24) | (r << 16) | (g << 8) | b;
       } else {
         imageData[imageIndex] = 0xFF000000;
       }
