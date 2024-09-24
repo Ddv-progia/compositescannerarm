@@ -81,7 +81,8 @@ namespace {
 
   int rawChannelValue(float x, const DefectChannel& defect)
   {
-    if (x > defect.limit && defect.limit > 0) {
+    //if (x > defect.limit && defect.limit > 0) {
+    if (x > defect.limit ) {
       return x * defect.amplification;
     } else {
       return 0;
