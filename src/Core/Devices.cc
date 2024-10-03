@@ -50,23 +50,53 @@ uts::devtalk::AudioDataCollectorFactoryPrx audioDataCollectorFactory;
 
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 {
-    //RTReceiverI *rese = new RTReceiverI(comm, "AudioDataCollector");
-    audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
-    auto adcs = audioDataCollectorFactory->getNames();
-    if (adcs.empty())
-        throw std::exception("Устройств записи звука не найдено");
-    else {
-        auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
-        if (name == adcs.end()) {
-            QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
-            for (auto value : adcs)
-                devices += QString::fromStdString(value) + "\n";
-            QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
-                QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
-            name = adcs.begin();
-        }
-        audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
+    try {
+
+
+        //RTReceiverI *rese = new RTReceiverI(comm, "AudioDataCollector");
+        audioDataCollectorFactory = getObject<uts::devtalk::AudioDataCollectorFactoryPrx>(comm, "Factory/AudioDataCollector");
+        //auto adcs = audioDataCollectorFactory->getNames();
     }
+    catch (uts::devtalk::CommunicationException& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука ",
+            QString("попытка обращения к Factory/AudioDataCollector закончилась неудачно:\r\n" ) + QString::fromUtf8(exc.reason.c_str()));
+    }
+    catch (Ice::Exception& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука ",
+            QString("попытка обращения к Factory/AudioDataCollector закончилась неудачно:\r\n") + QString::fromUtf8(exc.what()));
+    }
+    catch (std::exception& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука ",
+            QString("попытка обращения к Factory/AudioDataCollector закончилась неудачно:\r\n") + QString::fromUtf8(exc.what()));
+    }
+
+    try {
+        auto adcs = audioDataCollectorFactory->getNames();
+        if (adcs.empty())
+            throw std::exception("Устройств записи звука не найдено");
+        else {
+            auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
+            if (name == adcs.end()) {
+                QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
+                for (auto value : adcs)
+                    devices += QString::fromStdString(value) + "\n";
+                QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
+                    QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
+                name = adcs.begin();
+            }
+            audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
+        }
+    }
+    catch (uts::devtalk::CommunicationException& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука ", QString::fromUtf8(exc.reason.c_str()) + QString("          "));
+    }
+    catch (Ice::Exception& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука", QString::fromUtf8(exc.what()) + QString("          "));
+    }
+    catch (std::exception& exc) {
+        QMessageBox::critical(0, "Ошибка при поиске устройств записи звука", QString::fromUtf8(exc.what()) + QString("          "));
+    }
+
     uts::devtalk::utscp::UnitestAPLSystemFactoryPrx aplMultiDeviceFactory;
     uts::devtalk::utscp::UnitestAPLCoilFactoryPrx   coilFactory;
     uts::devtalk::utscp::UnitestAPLHeadFactoryPrx   headFactory;
