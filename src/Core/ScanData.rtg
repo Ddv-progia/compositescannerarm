@@ -31,6 +31,7 @@ enum ScanProcessingStage is
 	LinesAligned,
 	RangesNormalized,
 	ModelSubstracted,
+	PeaksCoordinateFinded,
 	RtRawDataObtained,
 	RtPeaksDetected,
 	RtLinesTrimmed,
@@ -154,7 +155,7 @@ struct HeadAndScanCollectorParameters is
   height :  Unsigned_Integer = { 200 }
   countOfPeakToCatchForAreaBox: Unsigned_Integer = {1}
   peakForestepSound:  Double_Precision_Real = {0.0}
-  currentNumArea:  Unsigned_Integer = {1}
+  currentNumArea:  Unsigned_Integer = {1}  -- шаг разбиения на клетки. фактически deltaX = currentNumArea и deltaY = currentNumArea 
   firstStepShift: Double_Precision_Real = {0.0}
   needPackInSquare: Boolean = {true}
   needPackInLine: Boolean = {false}
@@ -175,7 +176,7 @@ struct ProcessingParameters is
   defectPoints : Std::Vector(DefectKindView)
   columnModelOrder :  Unsigned_Integer
   smoothingPointsCount : Unsigned_Integer
-  shouldNormalize : Boolean
+  shouldNormalize : Boolean 
   useSubRanges : Boolean
   specNormalization :Std::Vector(SpecNormalizationParams)
 
@@ -189,6 +190,7 @@ struct ProcessingParameters is
   headAndScanCollectorParameters: HeadAndScanCollectorParameters
   stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
 
+  shouldRelate : Boolean  = {true} 
 end
 
 
@@ -337,38 +339,6 @@ struct Sound is
 	sampleRate  : Unsigned_Integer
 end
 
-struct Scan is 
-  lines : Std::Vector(SourceScanLine)
-  parameters :  ProcessingParameters
-
-  trimmedLines : Std::Vector(SourceScanLineSlice)
-  peaks : Std::Vector(PeaksLine)
-  ranges : Std::Vector(Std::Vector(RangeScanLine))
-  commonRanges : Std::Vector(Std::Vector(RangeScanLine))
-
-  spec : Std::Vector(Std::Vector(RangeScanLine))
-  normalizedSpec : Std::Vector(Std::Vector(RangeScanLine))
-       
-  normalizedRanges : Std::Vector(NormalizedRange)
-  commonNormalizedRanges : Std::Vector(NormalizedRange)
-  averageColumns : Std::Vector(Std::Vector(Double_Precision_Real))
-  averageColumnPolyniomials : Std::Vector(Polynomial)
-  rangesResiduals : Std::Vector(NormalizedRange)
-  rawDefectPoints : Std::Vector(DefectsView)
-  renderedDefectPoints : Std::Vector(DefectsView)
-  renderedDefectPointsFixedColor : Std::Vector(DefectsView)
-  processingStage : ScanProcessingStage
-  currentRange :  Unsigned_Integer
-  scanName :  Std::String
-end
-
-struct OriginalData is
-	sound			:	Sound
-	trajectory		:	Trajectory
-	peaks			:	Std::Vector(Std::Vector(Std::List(Peak)))
-	parameters		:	ProcessingParameters
-end
-
 struct ScanArm is 
 	--original							:	OriginalData
 	sound								:	Sound
@@ -376,32 +346,64 @@ struct ScanArm is
 	rtPeaks								:	Std::Vector(Std::Vector(Std::List(Peak)))
 	parameters							:	ProcessingParameters
 	
-	lines								:	Std::Vector(SourceScanLine)                     with UCL::Reflection::Binding::Transient_Member
-	trimmedLines 						:	Std::Vector(SourceScanLineSlice)                with UCL::Reflection::Binding::Transient_Member
-	peaks 								:	Std::Vector(PeaksLine)                          with UCL::Reflection::Binding::Transient_Member
-	ranges 								:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
-	commonRanges 						:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
-
-	spec 								:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
-	normalizedSpec 						:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
-
-	normalizedRanges 					:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
-	commonNormalizedRanges 				:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
-	averageColumns 						:	Std::Vector(Std::Vector(Double_Precision_Real)) with UCL::Reflection::Binding::Transient_Member
-	averageColumnPolyniomials 			:	Std::Vector(Polynomial)                         with UCL::Reflection::Binding::Transient_Member
-	rangesResiduals 					:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
-	rawDefectPoints 					:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
-	renderedDefectPoints 				:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
-	renderedDefectPointsFixedColor 		:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
+--	lines								:	Std::Vector(SourceScanLine)                     with UCL::Reflection::Binding::Transient_Member
+--	trimmedLines 						:	Std::Vector(SourceScanLineSlice)                with UCL::Reflection::Binding::Transient_Member
+--	peaks 								:	Std::Vector(PeaksLine)                          with UCL::Reflection::Binding::Transient_Member
+--	ranges 								:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
+--	commonRanges 						:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
+--	spec 								:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
+--	normalizedSpec 						:	Std::Vector(Std::Vector(RangeScanLine))         with UCL::Reflection::Binding::Transient_Member
+--	normalizedRanges 					:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
+--	commonNormalizedRanges 				:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
+--	averageColumns 						:	Std::Vector(Std::Vector(Double_Precision_Real)) with UCL::Reflection::Binding::Transient_Member
+--	averageColumnPolyniomials 			:	Std::Vector(Polynomial)                         with UCL::Reflection::Binding::Transient_Member
+--	rangesResiduals 					:	Std::Vector(NormalizedRange)                    with UCL::Reflection::Binding::Transient_Member
+--	rawDefectPoints 					:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
+--	renderedDefectPoints 				:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
+--	renderedDefectPointsFixedColor 		:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
 	processingStage 					:	ScanProcessingStage                             with UCL::Reflection::Binding::Transient_Member
-	currentRange 						:	Unsigned_Integer                                with UCL::Reflection::Binding::Transient_Member
+--	currentRange 						:	Unsigned_Integer                                with UCL::Reflection::Binding::Transient_Member
 	scanName 							:	Std::String                                     with UCL::Reflection::Binding::Transient_Member
-	shiftX                              :   Single_Precision_Real                           = {0.0}
-	shiftY                              :   Single_Precision_Real                           = {0.0}
-	shiftZ                              :   Single_Precision_Real                           = {0.0}
-	shiftIsCorrect                      :   Boolean                                         = {false}
+	shiftX                              :   Single_Precision_Real               = {0.0}
+	shiftY                              :   Single_Precision_Real               = {0.0}
+	shiftZ                              :   Single_Precision_Real               = {0.0}
+	shiftIsCorrect                      :   Boolean                             = {false}
 --	sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Default_Construct_Missing_Members_Attribute
     sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Transient_Member
+    isScanArmReady                      :   Boolean                             = {false}  with UCL::Reflection::Binding::Transient_Member
 end
+
+struct Scan is 
+  lines                          : Std::Vector(SourceScanLine)
+  parameters                     :  ProcessingParameters
+
+  trimmedLines                   : Std::Vector(SourceScanLineSlice)
+  peaks                          : Std::Vector(PeaksLine)
+  ranges                         : Std::Vector(Std::Vector(RangeScanLine))
+  commonRanges                   : Std::Vector(Std::Vector(RangeScanLine))
+				                 
+  spec                           : Std::Vector(Std::Vector(RangeScanLine))
+  normalizedSpec                 : Std::Vector(Std::Vector(RangeScanLine))
+       
+  normalizedRanges               : Std::Vector(NormalizedRange)
+  commonNormalizedRanges         : Std::Vector(NormalizedRange)
+  averageColumns                 : Std::Vector(Std::Vector(Double_Precision_Real))
+  averageColumnPolyniomials      : Std::Vector(Polynomial)
+  rangesResiduals                : Std::Vector(NormalizedRange)
+  rawDefectPoints                : Std::Vector(DefectsView)
+  renderedDefectPoints           : Std::Vector(DefectsView)
+  renderedDefectPointsFixedColor : Std::Vector(DefectsView)
+  processingStage                : ScanProcessingStage
+  currentRange                   : Unsigned_Integer
+  scanName                       : Std::String
+  scanArm                        : ScanArm                                with UCL::Reflection::Binding::Transient_Member
+end
+
+--struct OriginalData is
+--	sound			:	Sound
+--	trajectory		:	Trajectory
+--	peaks			:	Std::Vector(Std::Vector(Std::List(Peak)))
+--	parameters		:	ProcessingParameters
+--end
 
 

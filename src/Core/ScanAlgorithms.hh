@@ -19,7 +19,7 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
     //unsigned int peakPauseCountSeconds=20);
     double peakPauseCountSeconds=20);
 
-bool getCoordinateOfPeak(size_t &indexInSound, size_t &curChunkIndex, Peak& peak, unsigned int soundSampleRate, ::std::vector< ::Position >* positions, std::shared_ptr<SourceScanChunks> scanArmChunks);
+bool getCoordinateOfPeak(size_t &indexInSound, size_t &curChunkIndex, Peak& peak, unsigned int soundSampleRate, std::shared_ptr<::std::vector< ::Position > > positions, std::shared_ptr<::std::vector< ::SourceScanChunk>> scanArmChunks);
 
 std::vector<std::vector<float>>
 splitFrequencyRanges(std::vector<float>::const_iterator srcBegin, 

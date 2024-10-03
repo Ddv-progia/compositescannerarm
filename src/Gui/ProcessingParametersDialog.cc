@@ -649,6 +649,7 @@ void ProcessingParametersDialog::fillWidgets()
   ui.columnModelOrderBox->setValue(params.columnModelOrder);
   ui.smoothingPointsCountBox->setValue(params.smoothingPointsCount);
   ui.normalizeCheckBox->setChecked(params.shouldNormalize);
+  ui.relateCheckBox->setChecked(params.shouldRelate);
   ui.useSubRangesCheckBox->setChecked(params.useSubRanges);
 
   ui.redStartBox->setValue(params.defectRendering.red.startValue);
@@ -708,6 +709,7 @@ void ProcessingParametersDialog::updateParameters()
   params.stepForSplitFrequencyRanges = ui.stepForSplitFrequencyRangesSpinBox->value();
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
+  params.shouldRelate = ui.relateCheckBox->isChecked();
   params.useSubRanges = ui.useSubRangesCheckBox->isChecked();
   params.peakMagnitudeLimit = ui.peakMagnitudeLimitBox->value();
   params.peakBackstep = ui.peakBackstepBox->value();

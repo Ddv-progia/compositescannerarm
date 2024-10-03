@@ -27,25 +27,49 @@ void ScanFactory::addRangeScanLine(const SourceScanLine& newLine)
   rangeScanLines.push_back(newLine);
 }
 
+void ScanFactory::finishScan(std::shared_ptr<Scan>& scan, boost::optional<QString&> name)
+{
+	std::lock_guard<std::mutex> lock(rangeScanLinesMutex);
+	try {
+		scan->processingStage = ScanProcessingStage::RawDataObtained;
+		if (!name) {
+			scan->scanName = "New scan";
+			saveToTempDirectory(rangeScanLines);
+		}
+		else
+			scan->scanName = name->toStdString();
+		auto task = new ScanProcessingTask(rangeScanLines, processingParameters, scan);
+		connect(task, SIGNAL(newScanReady(const std::shared_ptr<Scan>&)), this, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), Qt::DirectConnection);
+		taskExecutor.enqueue(task);
+	}
+	catch (...) {
+		throw std::exception("Error while finishing scan");
+	}
+
+}
+
 void ScanFactory::finishScan(boost::optional<QString &> name)
 {
-  std::lock_guard<std::mutex> lock(rangeScanLinesMutex);
+	auto scan = std::make_shared<Scan>();
+	finishScan(scan, name);
 
-  try{
-	  auto scan = std::make_shared<Scan>();
-	  scan->processingStage = ScanProcessingStage::RawDataObtained;
-    if(!name){
-	    scan->scanName = "New scan";
-      saveToTempDirectory(rangeScanLines);
-    } else
-      scan->scanName = name->toStdString();
-	  auto task = new ScanProcessingTask(rangeScanLines, processingParameters,scan);
-	  connect(task, SIGNAL(newScanReady(const std::shared_ptr<Scan>&)), this, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), Qt::DirectConnection);
-	  taskExecutor.enqueue(task);
-  }
-  catch(...) {
-	  throw std::exception("Error while finishing scan");
-  }
+  //std::lock_guard<std::mutex> lock(rangeScanLinesMutex);
+
+  //try{
+	 // auto scan = std::make_shared<Scan>();
+	 // scan->processingStage = ScanProcessingStage::RawDataObtained;
+  //  if(!name){
+	 //   scan->scanName = "New scan";
+  //    saveToTempDirectory(rangeScanLines);
+  //  } else
+  //    scan->scanName = name->toStdString();
+	 // auto task = new ScanProcessingTask(rangeScanLines, processingParameters,scan);
+	 // connect(task, SIGNAL(newScanReady(const std::shared_ptr<Scan>&)), this, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), Qt::DirectConnection);
+	 // taskExecutor.enqueue(task);
+  //}
+  //catch(...) {
+	 // throw std::exception("Error while finishing scan");
+  //}
 }
 
 void ScanFactory::recalculateScan(std::shared_ptr<Scan>& scan)

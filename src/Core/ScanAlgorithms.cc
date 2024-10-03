@@ -99,12 +99,12 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
 /// <param name="indexInSound"></param>
 /// <param name="peak"></param>
 /// <returns>true, если координаты найдены</returns>
-bool getCoordinateOfPeak(size_t indexInSound, size_t& curChunkIndex, Peak& peak, unsigned int soundSampleRate, ::std::vector< ::Position >* positions, std::shared_ptr<SourceScanChunks> scanArmChunks)
+bool getCoordinateOfPeak(size_t& indexInSound, size_t& curChunkIndex, Peak& peak, unsigned int soundSampleRate, std::shared_ptr<::std::vector< ::Position >> positions, std::shared_ptr< ::std::vector< ::SourceScanChunk>> scanArmChunks)
 {
     bool notFoundCurChunkIndex = true;
     unsigned long long int timestampForIndexInSound = 0;
-    while (curChunkIndex < scanArmChunks->chunks.size() && notFoundCurChunkIndex) {
-        auto currChunk = scanArmChunks->chunks.at(curChunkIndex);
+    while (curChunkIndex < scanArmChunks->size() && notFoundCurChunkIndex) {
+        auto currChunk = scanArmChunks->at(curChunkIndex);
         if ((indexInSound >= currChunk.startpositionOfChunk) && (indexInSound < currChunk.endpositionOfChunk)) {
             timestampForIndexInSound = currChunk.timestamp -
                 (unsigned long long int)((currChunk.endpositionOfChunk - indexInSound) * (1 / soundSampleRate));
@@ -118,7 +118,6 @@ bool getCoordinateOfPeak(size_t indexInSound, size_t& curChunkIndex, Peak& peak,
         curChunkIndex--;
         return false;
     }
-
     size_t curTrajectoryIndex = 0; // первый найденный индекс, по которому timestamp элемента в Trajectory больше,чем timestamp искомого пика
     auto currSizeOfTrajectory = positions->size();
     while (curTrajectoryIndex < currSizeOfTrajectory) {

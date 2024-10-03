@@ -91,10 +91,8 @@ RTScanCollector(RTContext& trCtxt, ProcessingParameters& parameters, ScanFactory
     m_scanArm->trajectory.pos.reserve(m_scanArm->trajectory.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
     resizeRtPeaks(m_parameters.headAndScanCollectorParameters.width, m_parameters.headAndScanCollectorParameters.height);
 
-    sourceScanChunks = std::make_shared<SourceScanChunks>();
-    sourceScanChunks->chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
-    //m_scanArm->sourceScanChunks.chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
-    //sourceScanChunks = std::make_shared<SourceScanChunks>(m_scanArm->sourceScanChunks);
+    m_scanArm->sourceScanChunks.chunks.reserve(0.5 * m_scanArm->sound.sampleRate * SEC_PER_MINUTE * m_parameters.headAndScanCollectorParameters.maximumTimeMinutes);
+    sourceScanChunks = std::make_shared<SourceScanChunks>(m_scanArm->sourceScanChunks);
 
     m_soundDisplay->setScan(m_scanArm);
     m_peakDisplay->setScan(m_scanArm);
@@ -472,6 +470,8 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm, std::shared_ptr<Scan> &scanIn)
         scanIn->lines.push_back(line);
         //конец вместо разбивки на строки делаем в одну строку:
     }
+    scanIn->scanArm = *scanArm.get();
+    scanIn->scanArm.isScanArmReady = true;
 }
 
 void realtime::RTScanCollector::SetShift(float x, float y, float z)
@@ -534,7 +534,7 @@ makeScanAndShow(std::shared_ptr<ScanArm> scanArmIn, BackgroundTaskExecutor& task
         //scanFactory.finishScan(QString("nameOfScan"));
         QString scanName = "nameOfScan";
         if (scanArmIn->scanName != "") scanName = QString::fromUtf8( scanArmIn->scanName);
-        scanFactory.finishScan(boost::optional<QString&>(scanName));
+        scanFactory.finishScan(m_scan, boost::optional<QString&>(scanName));
     }
     catch (...) {
         QMessageBox::critical(this, "Ошибка!", QString("Ошибка во время преобразования скана."),1,2);

@@ -23,6 +23,7 @@ public:
 	Q_SLOT void startNewScan(const ProcessingParameters& newProcessingParameters);
 	Q_SLOT void addRangeScanLine(const SourceScanLine& newLine);
 	Q_SLOT void finishScan(boost::optional<QString &> name = boost::optional<QString &>());
+	Q_SLOT void finishScan(std::shared_ptr<Scan>& scan, boost::optional<QString &> name = boost::optional<QString &>());
 	Q_SLOT void finishScan(std::shared_ptr<ScanArm> scan);
 	Q_SLOT void recalculateScan(std::shared_ptr<Scan>& scan);
 	Q_SLOT void recalculateScan(std::shared_ptr<ScanArm>& scan);

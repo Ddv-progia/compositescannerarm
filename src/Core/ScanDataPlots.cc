@@ -101,8 +101,10 @@ getPoints()
   xs->SetName("X");
   ys->SetName("Y");
 
+  auto multiplex = (line.finalCoordinate - line.startCoordinate) / double(line.sourceLineSize) ;
   for (auto i = 0u; i < size; i++){
-    xs->InsertNextValue((line.finalCoordinate - line.startCoordinate) * double(line.sampleIndexes[i]) / double(line.sourceLineSize) + line.startCoordinate);
+    //xs->InsertNextValue((line.finalCoordinate - line.startCoordinate) * double(line.sampleIndexes[i]) / double(line.sourceLineSize) + line.startCoordinate);
+    xs->InsertNextValue(multiplex * double(line.sampleIndexes[i]) + line.startCoordinate);
     ys->InsertNextValue(line.samples[i]);
   }
 

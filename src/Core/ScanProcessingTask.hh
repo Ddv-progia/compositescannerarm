@@ -21,6 +21,7 @@ class ScanProcessingTask : public ProgressReportingTask
   std::shared_ptr<Scan> scan;
 public:
   ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan);
+  //ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan, std::shared_ptr<ScanArm>& newScanArm);
   virtual void operator() () override;
 
 protected:
@@ -30,7 +31,8 @@ private:
   SourceScanLineSlice trimLine(const SourceScanLine& line, double initialSkip);
   //PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount = 30);
   PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, double pauseCount = 30.0);
-  
+  bool getCoordinateOfPeaks(PeaksLine& line);
+  void formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vector<PeaksLine>& peaks, unsigned int height, unsigned int width, unsigned int multyplex);
   RangeScanLine findAverageLine(std::vector<RangeScanLine>& rangedLines,FrequencyRange range);
 
   void normalizeDirection(PeaksLine& line);

@@ -536,7 +536,7 @@ QPoint ScanDisplayWindow::specIndex(QPoint& viewPoint, std::size_t nRange)
 }
 
 void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::vector<std::vector<RangeScanLine>>& spec)
-{
+{//***//***//
   namespace ba = boost::accumulators;
   if(beginPoint == endPoint)
     return;
@@ -563,9 +563,18 @@ void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::v
 
     for(auto row = begin.y(); row <= end.y(); row++) {
         if ((spec.size()>row)&&(spec[row].size()>nRange)) {
-            if (end.x() >= spec[row][nRange].samples.size() || end.y() >= spec.size()) 
+            //if (end.x() >= spec[row][nRange].samples.size() || end.y() >= spec.size()) 
+            //{
+            //    end.setX(spec[row][nRange].samples.size() - 1);
+            //    end.setY(spec.size() - 1);
+            //}
+
+            if (end.x() >= spec[row][nRange].samples.size()) 
             {
                 end.setX(spec[row][nRange].samples.size() - 1);
+            }
+            if (end.y() >= spec.size()) 
+            {
                 end.setY(spec.size() - 1);
             }
 
@@ -1378,14 +1387,17 @@ ProcessingParameters ScanDisplayWindow::getProcessingParameters() const
 
 void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, ScanFactory& factory)
 {
-  if(params.smoothingPointsCount != scan->parameters.smoothingPointsCount)
-    scan->processingStage = ScanProcessingStage::PeaksDetected;
-  else if(params.shouldNormalize != scan->parameters.shouldNormalize)
-    scan->processingStage = ScanProcessingStage::DirectionNormalized;
-  else if(params.defectRendering.fixedColorScale != scan->parameters.defectRendering.fixedColorScale)
-    scan->processingStage = ScanProcessingStage::LinesAligned;
-  else
-    scan->processingStage = ScanProcessingStage::RawDataObtained;
+  // new start commented
+  //if(params.smoothingPointsCount != scan->parameters.smoothingPointsCount)
+  //  scan->processingStage = ScanProcessingStage::PeaksDetected;
+  //else if(params.shouldNormalize != scan->parameters.shouldNormalize)
+  //  scan->processingStage = ScanProcessingStage::DirectionNormalized;
+  //else if(params.defectRendering.fixedColorScale != scan->parameters.defectRendering.fixedColorScale)
+  //  scan->processingStage = ScanProcessingStage::LinesAligned;
+  //else
+  //  scan->processingStage = ScanProcessingStage::RawDataObtained;
+  // new end commented
+  scan->processingStage = ScanProcessingStage::RawDataObtained; // new вместо commented
   factory.startNewScan(params);
   for (auto const & l : scan->lines) factory.addRangeScanLine(l);
   refreshWindow();
