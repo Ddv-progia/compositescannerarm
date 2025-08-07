@@ -20,6 +20,7 @@ namespace script {
     Q_SIGNAL void taskStarted(int stepCount);
     Q_SIGNAL void taskProgressed();
     Q_SIGNAL void taskFinished();
+    Q_SIGNAL void taskFinishedGoPlot();
   };
 
 }

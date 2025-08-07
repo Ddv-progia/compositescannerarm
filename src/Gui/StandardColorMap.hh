@@ -50,6 +50,9 @@ public:
 
   QRgb rgb(const QwtInterval &interval, double value) const
   {
+      if (isnan(value)) {
+          value = 0;
+      }
     return linearMap->rgb(globalInterval,value);
   }
   unsigned char colorIndex (const QwtInterval &interval, double value) const

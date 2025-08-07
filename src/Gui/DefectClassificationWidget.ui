@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Классификатор дефектов</string>
+   <string>Классификатор неоднородностей</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>

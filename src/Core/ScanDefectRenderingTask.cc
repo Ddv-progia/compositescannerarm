@@ -170,6 +170,7 @@ DefectsView renderDefectPointsWithFixedColor(const DefectKindView& kind,
   result.startCoordinate = ranges.front().startCoordinate;
   result.finalCoordinate = ranges.front().finalCoordinate;
   result.lineCoordinates = ranges.front().lineCoordinates;
+  result.finalLineCoordinates = ranges.front().finalLineCoordinates;
 
   for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
     for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {

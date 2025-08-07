@@ -13,6 +13,11 @@
 #include <QtCore/QXmlStreamReader>
 #include <QtCore/QMutex>
 //#include <QtCore/QTextCodec>
+
+#include <QSurfaceFormat>
+
+#include <QVTKOpenGLNativeWidget.h>
+
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 #include <UCL/PlotView/Init.hh>
@@ -109,7 +114,9 @@ int main(int argc, char* argv[])
 
     //Result = (BOOL)ShellExecute(GetActiveWindow(), L"OPEN", L"cmd", L"d:\\Composite-Scanner-Arm\\icegridnode-start.cmd", NULL, SW_SHOWNORMAL);
     //ShellExecute(0, L"open", L"cmd.exe", x, 0, SW_HIDE);
-    
+
+    QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
+
     QApplication app(argc, argv);
 
     int timeToSleepInSecond (10);

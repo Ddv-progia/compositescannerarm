@@ -107,6 +107,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 	unsigned long long int timestampForIndexInSound = 0;
 	//std::cout << "getCoordinateOfPeak while started !!! m_scanArmChunks->chunks.size() = " << m_scanArmChunks->chunks.size() << std::endl;
 	//return false;
+	auto curChunkIndexStore = m_curChunkIndex;
 	while (m_curChunkIndex < m_scanArmChunks->chunks.size() && notFoundCurChunkIndex) {
 		//std::cout << "m_curChunkIndex = " << m_curChunkIndex << std::endl;
 		auto currChunk = m_scanArmChunks->chunks.at(m_curChunkIndex);
@@ -120,7 +121,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 		}
 	}
 	if (notFoundCurChunkIndex) {
-		m_curChunkIndex--;
+		curChunkIndexStore = m_curChunkIndex;
 		return false;
 	}
 
@@ -308,7 +309,7 @@ findPeak() {
 		}
 		for (; m_curIndex < size; ++m_curIndex) {
 			if (abs(m_scanArm->sound.samples.at(m_curIndex)) > comparator) {
-				::Peak peak;
+				::Peak peak{0,0};
 				int x;
 				int y;
 				int z;

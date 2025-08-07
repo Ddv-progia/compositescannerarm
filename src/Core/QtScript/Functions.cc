@@ -6,6 +6,7 @@
 #include <boost/thread/thread.hpp>
 
 #include "Core/QtScript/Functions.hh"
+#include <QtWidgets/QMessageBox>
 
 //QScriptValue script::sleep(QScriptContext* ctx, QScriptEngine* engine)
 //{
@@ -38,5 +39,20 @@ Q_INVOKABLE QJSValue script::FunctionalObject::sleep(int val)
 Q_INVOKABLE QJSValue script::FunctionalObject::pause(int val)
 {
 	boost::this_thread::sleep_for(boost::chrono::seconds(val));
+	return Q_INVOKABLE QJSValue();
+}
+
+Q_INVOKABLE QJSValue script::FunctionalObject::alert(QString str)
+{
+	pause(1);
+	//QMessageBox::information(nullptr, QString::fromStdString(""), str);
+	QMessageBox mb;
+	mb.setWindowTitle("");
+	mb.setText(str);
+	//mb.setDetailedText(QString::fromStdString(boost::diagnostic_information(e)));
+	mb.setDetailedText(str);
+	mb.exec();
+	pause(1);
+	//TODO  зависает после исполнения.
 	return Q_INVOKABLE QJSValue();
 }

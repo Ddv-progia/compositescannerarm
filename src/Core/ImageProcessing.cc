@@ -72,6 +72,16 @@ namespace improc
       }
     };
 
+    class SelectByLargerAbsArea: public DefectSelectionRule
+    {
+      double limit;
+    public:
+        SelectByLargerAbsArea(double limit): limit(limit) {}
+      virtual bool operator()(const Defect& defect) override {
+        return (std::abs(defect.area) >= limit) ? true : false;
+      }
+    };
+
     class SelectByLargerArea: public DefectSelectionRule
     {
       double limit;
@@ -189,13 +199,40 @@ void PlotDefectsModel::addDefect(const std::vector<cv::Point>& cvContour)
   geometry::model::polygon<geometry::model::d2::point_xy<float> > poly;
 
   auto averageY=std::abs((scan->lines.back().lineCoordinate-scan->lines.front().lineCoordinate)/scan->lines.size());
-
+  auto yBottom = std::min_element(scan->renderedDefectPointsFixedColor.begin()->lineCoordinates.begin(), scan->renderedDefectPointsFixedColor.begin()->lineCoordinates.end());
   //пересчёт в метрическую систему, считаем координаты центром точки
   for(auto & point : cvContour) {
-	double nextY = (point.y+1)!=scan->lines.size() ? scan->lines[point.y+1].lineCoordinate : scan->lines[point.y].lineCoordinate+averageY;
-	float y = (scan->lines[point.y].lineCoordinate + nextY)/2;
-	float xStep = (scan->renderedDefectPointsFixedColor.front().finalCoordinate - scan->renderedDefectPointsFixedColor.front().startCoordinate ) / scan->normalizedRanges.begin()->view.size();
-	float x = xStep*point.x - scan->renderedDefectPointsFixedColor.front().startCoordinate ;
+	////double nextY = (point.y+1)!=scan->lines.size() ? scan->lines[point.y+1].lineCoordinate : scan->lines[point.y].lineCoordinate+averageY;
+	//double nextY = (point.y+1)!=scan->lines.size() ? scan->lines[point.y+1].lineCoordinate : scan->lines[point.y].lineCoordinate;
+	//float y = (scan->lines[point.y].lineCoordinate + nextY)/2;
+    // 
+      //float y = 0;
+      //float startCoordinateY = scan->lines[point.y].lineCoordinate;
+      //float finalCoordinateY = scan->lines[point.y].finalLineCoordinate;
+      //float DY = (finalCoordinateY - startCoordinateY);
+      //float yStep = DY / scan->renderedDefectPointsFixedColor.begin()->view.size();
+      //if (point.y == 0) {
+      //    //y = startCoordinateY + (yStep * point.x);
+      //    y = finalCoordinateY + (yStep * point.x);
+      //}
+      //else if ((point.y+1)==scan->lines.size()) {
+      //    y = finalCoordinateY; 
+      //}
+      //else {
+      //    y = startCoordinateY + (yStep * point.x)+ (scan->lines[point.y+1].lineCoordinate - scan->lines[point.y].lineCoordinate);
+      //}
+
+    float y = (scan->lines[point.y].lineCoordinate);
+    if (y <= *yBottom) y = *yBottom +1;
+    
+ //   if ((point.y == 0)&&(scan->lines.size()>1)) y = (scan->lines[point.y].lineCoordinate + scan->lines[point.y+1].lineCoordinate) / 10;
+ //   if ((scan->lines.size() > 1)&&(point.y > (scan->lines.size()-1))) y = scan->lines[point.y].lineCoordinate -(scan->lines[point.y].lineCoordinate / 10) ;
+	////float xStep = (scan->renderedDefectPointsFixedColor.front().finalCoordinate - scan->renderedDefectPointsFixedColor.front().startCoordinate ) / scan->normalizedRanges.begin()->view.size();
+ //   //float x = xStep*point.x - scan->renderedDefectPointsFixedColor.front().startCoordinate ;
+    float startCoordinate = scan->renderedDefectPointsFixedColor.front().startCoordinate;
+    float finalCoordinate = scan->renderedDefectPointsFixedColor.front().finalCoordinate;
+	float xStep = (finalCoordinate - startCoordinate) / scan->renderedDefectPointsFixedColor.begin()->view.size();
+    float x = startCoordinate + xStep*point.x;
 
     contour.push_back(QPointF(x, y));
     geometry::append(poly, boost::geometry::model::d2::point_xy<double>(x, y));
@@ -204,7 +241,8 @@ void PlotDefectsModel::addDefect(const std::vector<cv::Point>& cvContour)
   contour.push_back(contour.front());
   geometry::append(poly, boost::geometry::model::d2::point_xy<double>(contour.front().x(), contour.front().y()));
 
-  area = std::abs(geometry::area(poly));
+  //area = std::abs(geometry::area(poly));
+  area = (geometry::area(poly));
   geometry::centroid(poly,center);
 
   double left = contour.front().x();
@@ -214,11 +252,13 @@ void PlotDefectsModel::addDefect(const std::vector<cv::Point>& cvContour)
   for(auto& point : contour){
 	  left = point.x()<left ? point.x() : left; 
 	  right = point.x()>right ? point.x() : right; 
-	  top = point.y()>top ? point.y() : top; 
-	  bottom = point.y()<bottom ? point.y() : bottom; 
+	  top = point.y()>top ? top: point.y();
+	  //top = point.y()>top ? point.y() : top; 
+	  bottom = point.y()<bottom ? bottom : point.y() ;
+	  //bottom = point.y()<bottom ? point.y() : bottom; 
   }
-
-  defects.push_back(Defect(contour, area, std::abs(top - bottom), std::abs(right - left),QPointF(center.x(),center.y())));
+  auto defectus = Defect(contour, area, std::abs(top - bottom), std::abs(right - left), QPointF(center.x(), center.y()));
+  defects.push_back(defectus);
 }
 
 PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, DefectsView& defectView, QObject* parent): scan(scan), QObject(parent)
@@ -232,9 +272,12 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, DefectsVie
       auto pixelImpl = defectView.view[j/3][i];
       auto pixel = qRgb(pixelImpl.red, pixelImpl.green, pixelImpl.blue);
       if(pixelImpl.red != 255 | pixelImpl.green != 255 | pixelImpl.blue != 255){
-		line[j] = 255;
-		line[j+1] = 255;
-		line[j+2] = 255;
+		line[j] = pixelImpl.red;
+		line[j+1] = pixelImpl.green;
+		line[j+2] = pixelImpl.blue;
+		//line[j] = 255;
+		//line[j+1] = 255;
+		//line[j+2] = 255;
 	  }else{
         line[j] = 0;
 		line[j+1] = 0;
@@ -248,9 +291,8 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, DefectsVie
   defects.clear();
   for(auto & contour : contourList)
     addDefect(contour);
-
-  //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
-  filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
+  //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
+  filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerAbsArea(scan->parameters.defectSearching.minDefectArea));
 }
 
 PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* parent): scan(scan), QObject(parent)
@@ -262,14 +304,6 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
         auto sizeB = scan->normalizedRanges.begin()->view.size();
         cv::Mat defectImage(static_cast<int>(sizeA),
             static_cast<int>(sizeB), CV_8UC3);
-        //for (auto i = 0; i < scan->normalizedRanges.front().view.begin()->size(); i++) {
-        //    unsigned char* const line(defectImage.ptr<unsigned char>(i));
-        //    for (auto j = 0; j < 3 * scan->normalizedRanges.front().view.size(); j += 3) {
-        //        line[j] = 0;
-        //        line[j + 1] = 0;
-        //        line[j + 2] = 0;
-        //    }
-        //}
         for (auto i = 0; i < sizeA; i++) {
             unsigned char* const line(defectImage.ptr<unsigned char>(i));
             for (auto j = 0; j < 3 * sizeB; j += 3) {
@@ -286,25 +320,37 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
                 unsigned char* const line(defectImage.ptr<unsigned char>(i));
                 for (auto j = 0; j < 3 * defectView.view.size(); j += 3) {
                     auto value = defectView.view[j / 3][i];
+                    bool gotDefect = false;
+                    //if (scan->parameters.defectSearching.isDefectInside) {
+                    //    if (value <= defectRange.maximumValue && value >= defectRange.minimumValue) {
+                    //        line[j] = 255;
+                    //        line[j + 1] = 255;
+                    //        line[j + 2] = 255;
+                    //    }
+                    //    else {
+                    //        continue;
+                    //    }
+                    //}
+                    //else {
+                    //    if (value >= defectRange.maximumValue || value <= defectRange.minimumValue) {
+                    //        line[j] = 255;
+                    //        line[j + 1] = 255;
+                    //        line[j + 2] = 255;
+                    //    }
+                    //    else {
+                    //        continue;
+                    //    }
+                    //}
                     if (scan->parameters.defectSearching.isDefectInside) {
-                        if (value <= defectRange.maximumValue && value >= defectRange.minimumValue) {
-                            line[j] = 255;
-                            line[j + 1] = 255;
-                            line[j + 2] = 255;
-                        }
-                        else {
-                            continue;
-                        }
+                        gotDefect = (value <= defectRange.maximumValue && value >= defectRange.minimumValue);
                     }
                     else {
-                        if (value >= defectRange.maximumValue || value <= defectRange.minimumValue) {
-                            line[j] = 255;
-                            line[j + 1] = 255;
-                            line[j + 2] = 255;
-                        }
-                        else {
-                            continue;
-                        }
+                        gotDefect = (value >= defectRange.maximumValue || value <= defectRange.minimumValue);
+                    }
+                    if (gotDefect) {
+                        line[j] = 255;
+                        line[j + 1] = 255;
+                        line[j + 2] = 255;
                     }
                 }
             }
@@ -314,8 +360,9 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
         defects.clear();
         for (auto& contour : contourList)
             addDefect(contour);
-        filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
-        //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
+        filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerAbsArea(scan->parameters.defectSearching.minDefectArea));
+        //filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(scan->parameters.defectSearching.minDefectArea));
+        ////filteredDefects = selectDefectsByRule(defects, new improc::rules::SelectByLargerArea(10.0));
     }
 }
 

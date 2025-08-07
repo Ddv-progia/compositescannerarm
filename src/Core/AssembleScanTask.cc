@@ -132,6 +132,10 @@ void AssembleScanTask::operator()()
                     rawLine.lineCoordinate = line.lineCoordinate;
                     rawLine.sampleRate = line.sampleRate;
                     rawLine.startCoordinate = line.startCoordinate;
+                    rawLine.finalLineCoordinate = line.finalLineCoordinate;
+                    rawLine.startCoordinateZ = line.startCoordinateZ;
+                    rawLine.finalCoordinateZ = line.finalCoordinateZ;
+
 
                     scanFactory.addRangeScanLine(rawLine);
 

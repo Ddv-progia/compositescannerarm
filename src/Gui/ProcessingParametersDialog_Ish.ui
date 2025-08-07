@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>734</width>
-    <height>880</height>
+    <width>688</width>
+    <height>825</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>3</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -25,130 +25,119 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <layout class="QFormLayout" name="formLayout_7">
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_24">
-             <property name="text">
-              <string>Шаг дискретизации спектра</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="stepForSplitFrequencyRangesSpinBox">
-             <property name="minimum">
-              <number>100</number>
-             </property>
-             <property name="maximum">
-              <number>10000</number>
-             </property>
-             <property name="singleStep">
-              <number>100</number>
-             </property>
-             <property name="value">
-              <number>1000</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Порядок модели столбцов</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="columnModelOrderBox"/>
-           </item>
-           <item row="0" column="1">
-            <widget class="QDoubleSpinBox" name="initialSkipBox">
-             <property name="decimals">
-              <number>6</number>
-             </property>
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>100.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.100000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Отступ от начала</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>Число сглаживающих точек</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QSpinBox" name="smoothingPointsCountBox">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="inputMethodHints">
-              <set>Qt::ImhFormattedNumbersOnly</set>
-             </property>
-             <property name="wrapping">
-              <bool>false</bool>
-             </property>
-             <property name="readOnly">
-              <bool>false</bool>
-             </property>
-             <property name="accelerated">
-              <bool>false</bool>
-             </property>
-             <property name="keyboardTracking">
-              <bool>true</bool>
-             </property>
-             <property name="singleStep">
-              <number>2</number>
-             </property>
-             <property name="value">
-              <number>1</number>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QCheckBox" name="normalizeCheckBox">
-             <property name="text">
-              <string>Нормализовывать сигнал</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QCheckBox" name="relateCheckBox">
-             <property name="text">
-              <string>Вычислять относительный сигнал</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QCheckBox" name="useSubRangesCheckBox">
-             <property name="text">
-              <string>Исследовать поддиапазоны</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
+        <layout class="QFormLayout" name="formLayout_2">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::ExpandingFieldsGrow</enum>
+         </property>
          <item row="0" column="1">
-          <widget class="QCheckBox" name="smoothingCheckBox">
-           <property name="text">
-            <string>учитывать веса сглаживающих  точек</string>
+          <widget class="QDoubleSpinBox" name="initialSkipBox">
+           <property name="decimals">
+            <number>6</number>
            </property>
-           <property name="checked">
+           <property name="minimum">
+            <double>0.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Порядок модели столбцов</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="columnModelOrderBox"/>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>Число сглаживающих точек</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="smoothingPointsCountBox">
+           <property name="enabled">
             <bool>true</bool>
+           </property>
+           <property name="inputMethodHints">
+            <set>Qt::ImhFormattedNumbersOnly</set>
+           </property>
+           <property name="wrapping">
+            <bool>false</bool>
+           </property>
+           <property name="readOnly">
+            <bool>false</bool>
+           </property>
+           <property name="accelerated">
+            <bool>false</bool>
+           </property>
+           <property name="keyboardTracking">
+            <bool>true</bool>
+           </property>
+           <property name="singleStep">
+            <number>2</number>
+           </property>
+           <property name="value">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QCheckBox" name="normalizeCheckBox">
+           <property name="text">
+            <string>Нормализовывать сигнал</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QCheckBox" name="useSubRangesCheckBox">
+           <property name="text">
+            <string>Исследовать поддиапазоны</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Отступ от начала</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_24">
+           <property name="text">
+            <string>Шаг дискретизации спектра</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="stepForSplitFrequencyRangesSpinBox">
+           <property name="minimum">
+            <number>100</number>
+           </property>
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+           <property name="singleStep">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>1000</number>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QCheckBox" name="relateCheckBox">
+           <property name="text">
+            <string>Вычислять относительный сигнал</string>
            </property>
           </widget>
          </item>
@@ -682,407 +671,240 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_11">
        <item>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="0" column="0">
-          <widget class="QGroupBox" name="groupBox_4">
-           <property name="title">
-            <string>Морфологический анализ</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_9">
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="title">
+          <string>Морфологический анализ</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="unionCheckBox">
+              <property name="text">
+               <string>Объединение </string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="separationCheckBox">
+              <property name="text">
+               <string>Разъединение</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="unionKernelButton">
+              <property name="text">
+               <string>Ядро</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="separationKernelButton">
+              <property name="text">
+               <string>Ядро</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="blurCheckBox">
+              <property name="text">
+               <string>Сглаживание</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <item>
+               <widget class="QLineEdit" name="blurHEdit">
+                <property name="text">
+                 <string>3</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_19">
+                <property name="text">
+                 <string>x</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="blurWEdit">
+                <property name="text">
+                 <string>3</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="2" rowspan="2">
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>400</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
-             <layout class="QGridLayout" name="gridLayout_5">
-              <item row="0" column="3">
-               <layout class="QVBoxLayout" name="verticalLayout_7"/>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <item>
+               <widget class="QLabel" name="label_18">
+                <property name="text">
+                 <string>Алгоритм апроксимации края неоднородности</string>
+                </property>
+               </widget>
               </item>
-              <item row="0" column="0">
-               <layout class="QGridLayout" name="gridLayout_4">
-                <item row="0" column="0">
-                 <widget class="QCheckBox" name="blurCheckBox">
-                  <property name="text">
-                   <string>Сглаживание</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0" colspan="2">
-                 <layout class="QVBoxLayout" name="verticalLayout_8" stretch="0,0,0">
-                  <item>
-                   <widget class="QLabel" name="label_18">
-                    <property name="text">
-                     <string>Алгоритм апроксимации края неоднородности</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QComboBox" name="approximationComboBox">
-                    <property name="currentIndex">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <property name="text">
-                      <string>CHAIN_APPROX_NONE</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>CHAIN_APPROX_SIMPLE</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>CHAIN_APPROX_TC89_L1</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>CHAIN_APPROX_TC89_KCOS</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>LINK_RUNS</string>
-                     </property>
-                    </item>
-                   </widget>
-                  </item>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_5">
-                    <item>
-                     <widget class="QLabel" name="minAreaOfDefectLabel">
-                      <property name="text">
-                       <string>Минимальная площадь неоднородности: </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QDoubleSpinBox" name="minAreaOfDefectDblSpinBox">
-                      <property name="minimumSize">
-                       <size>
-                        <width>70</width>
-                        <height>0</height>
-                       </size>
-                      </property>
-                      <property name="minimum">
-                       <double>0.000000000000000</double>
-                      </property>
-                      <property name="maximum">
-                       <double>9999.989999999999782</double>
-                      </property>
-                      <property name="singleStep">
-                       <double>1.000000000000000</double>
-                      </property>
-                      <property name="value">
-                       <double>10.000000000000000</double>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_5">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QCheckBox" name="unionCheckBox">
-                  <property name="text">
-                   <string>Объединение </string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QCheckBox" name="separationCheckBox">
-                  <property name="text">
-                   <string>Разъединение</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QPushButton" name="separationKernelButton">
-                  <property name="text">
-                   <string>Ядро</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <layout class="QHBoxLayout" name="horizontalLayout_10">
-                  <item>
-                   <widget class="QLineEdit" name="blurHEdit">
-                    <property name="text">
-                     <string>3</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="label_19">
-                    <property name="text">
-                     <string>x</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLineEdit" name="blurWEdit">
-                    <property name="text">
-                     <string>3</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QPushButton" name="unionKernelButton">
-                  <property name="text">
-                   <string>Ядро</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="1" column="0">
-               <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QComboBox" name="approximationComboBox">
+                <property name="currentIndex">
+                 <number>0</number>
+                </property>
                 <item>
-                 <widget class="QLabel" name="label_17">
-                  <property name="text">
-                   <string>Интерпретация неоднородности:</string>
-                  </property>
-                 </widget>
+                 <property name="text">
+                  <string>CHAIN_APPROX_NONE</string>
+                 </property>
                 </item>
                 <item>
-                 <widget class="QComboBox" name="defectInterpretationComboBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <item>
-                   <property name="text">
-                    <string>Неоднородность ВНЕ диапазона.</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Неоднородность внутри диапазона.</string>
-                   </property>
-                  </item>
-                 </widget>
+                 <property name="text">
+                  <string>CHAIN_APPROX_SIMPLE</string>
+                 </property>
                 </item>
-               </layout>
+                <item>
+                 <property name="text">
+                  <string>CHAIN_APPROX_TC89_L1</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>CHAIN_APPROX_TC89_KCOS</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>LINK_RUNS</string>
+                 </property>
+                </item>
+               </widget>
               </item>
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8"/>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6"/>
+             <spacer name="horizontalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QGroupBox" name="groupBox_7">
-           <property name="title">
-            <string>Параметры работы с маркером</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_10">
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
-             <layout class="QGridLayout" name="gridLayout_8">
-              <item row="0" column="2">
-               <layout class="QVBoxLayout" name="verticalLayout_13">
-                <item>
-                 <layout class="QGridLayout" name="gridLayout_7">
-                  <property name="sizeConstraint">
-                   <enum>QLayout::SetNoConstraint</enum>
-                  </property>
-                  <item row="4" column="2">
-                   <layout class="QHBoxLayout" name="horizontalLayout_16">
-                    <item>
-                     <widget class="QLabel" name="label_40">
-                      <property name="text">
-                       <string>Ускорение</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QDoubleSpinBox" name="markerAccelerationDblSpinBox">
-                      <property name="maximum">
-                       <double>500.000000000000000</double>
-                      </property>
-                      <property name="value">
-                       <double>40.000000000000000</double>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item row="2" column="2">
-                   <layout class="QHBoxLayout" name="horizontalLayout_13">
-                    <item>
-                     <widget class="QLabel" name="label_39">
-                      <property name="text">
-                       <string>dy = </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QDoubleSpinBox" name="markerDYDblSpinBox">
-                      <property name="minimum">
-                       <double>-90000.000000000000000</double>
-                      </property>
-                      <property name="maximum">
-                       <double>90000.000000000000000</double>
-                      </property>
-                      <property name="value">
-                       <double>60.000000000000000</double>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item row="4" column="1">
-                   <spacer name="horizontalSpacer_6">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>40</width>
-                      <height>20</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item row="4" column="0">
-                   <layout class="QHBoxLayout" name="horizontalLayout_12">
-                    <item>
-                     <widget class="QLabel" name="label_36">
-                      <property name="text">
-                       <string>Скорость</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_10">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QDoubleSpinBox" name="markerVelocityDblSpinBox">
-                      <property name="decimals">
-                       <number>2</number>
-                      </property>
-                      <property name="maximum">
-                       <double>500.000000000000000</double>
-                      </property>
-                      <property name="value">
-                       <double>20.000000000000000</double>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item row="1" column="0" colspan="3">
-                   <widget class="QLabel" name="label_30">
-                    <property name="text">
-                     <string>     Смещение относительно ударника:</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="5" column="1">
-                   <spacer name="verticalSpacer_5">
-                    <property name="orientation">
-                     <enum>Qt::Vertical</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>20</width>
-                      <height>40</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                  <item row="2" column="0">
-                   <layout class="QHBoxLayout" name="horizontalLayout_7">
-                    <item>
-                     <widget class="QLabel" name="label_29">
-                      <property name="text">
-                       <string>dx = </string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_4">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>40</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <widget class="QDoubleSpinBox" name="markerDXDblSpinBox">
-                      <property name="decimals">
-                       <number>2</number>
-                      </property>
-                      <property name="minimum">
-                       <double>-90000.000000000000000</double>
-                      </property>
-                      <property name="maximum">
-                       <double>90000.000000000000000</double>
-                      </property>
-                      <property name="value">
-                       <double>40.000000000000000</double>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item row="3" column="0" colspan="3">
-                   <widget class="QLabel" name="label_28">
-                    <property name="text">
-                     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;Параметры движения:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
+             <widget class="QLabel" name="minAreaOfDefectLabel">
+              <property name="text">
+               <string>Минимальная площадь неоднородности: </string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="minAreaOfDefectDblSpinBox">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>9999.989999999999782</double>
+              </property>
+              <property name="singleStep">
+               <double>1.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>Интерпретация неоднородности:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="defectInterpretationComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <item>
+               <property name="text">
+                <string>Неоднородность ВНЕ диапазона.</string>
+               </property>
               </item>
-             </layout>
+              <item>
+               <property name="text">
+                <string>Неоднородность внутри диапазона.</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
-          </widget>
-         </item>
-        </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_9">

@@ -19,6 +19,8 @@ class ScanProcessingTask : public ProgressReportingTask
   std::vector<SourceScanLine> rawLines;
   ProcessingParameters params;
   std::shared_ptr<Scan> scan;
+  bool rearranged = false;
+
 public:
   ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan);
   //ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan, std::shared_ptr<ScanArm>& newScanArm);
@@ -30,13 +32,16 @@ protected:
 private:
   SourceScanLineSlice trimLine(const SourceScanLine& line, double initialSkip);
   //PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount = 30);
-  PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, double pauseCount = 30.0);
-  bool getCoordinateOfPeaks(PeaksLine& line);
+  PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn = 30.0);
+  //bool getCoordinateOfPeaks(PeaksLine& line);
+  bool getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int needSave = 1);
   void formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vector<PeaksLine>& peaks, unsigned int height, unsigned int width, unsigned int multyplex);
   RangeScanLine findAverageLine(std::vector<RangeScanLine>& rangedLines,FrequencyRange range);
 
   void normalizeDirection(PeaksLine& line);
   std::vector<RangeScanLine> splitFrequencyRanges(const SourceScanLineSlice& line, const std::vector<Peak>& peaks);
+  void rearrangeSpec(std::shared_ptr<Scan>& scan, double Xmin, double Xmax, double Ymin, double Ymax, double dX, double dY);
+  void reArarngePeak(std::shared_ptr<Scan> scan);
 
   void alignLines(std::vector<PeaksLine>& peaks,std::vector<std::vector<RangeScanLine>>& ranges);
   void smoothRanges(Scan& scan);
@@ -51,6 +56,7 @@ private:
                       std::size_t stopIndex,
                       ::Extremum extremumOfRangesIn);
   float getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx);
+  bool getPeakWithCoordAt(const RangeScanLine& line, std::size_t idx, Peak &peak);
   float getMaxSubrangePeak(const RangeScanLine& line,std::size_t idx);
   float getMinSubrangePeak(const RangeScanLine& line,std::size_t idx);
   float getAverageSubrangePeak(const RangeScanLine& line,std::size_t idx);
@@ -59,6 +65,7 @@ private:
   void selectRangesFromSpec(Scan& scan);
   void findRelativeSignals(Scan& scan);
   void findRelativeSignals(Scan& scan,const std::vector<SpecNormalizationParams>& params);
+  void restartProcessingTask(Scan& scan,const std::vector<SpecNormalizationParams>& params);
   void normalizeSpectrogram(std::vector<std::vector<RangeScanLine>>& spec);
   Polynomial signleRangeModel(const std::vector<double>& lineView, 
                               const std::vector<double>& lineCoordinates, 

@@ -18,6 +18,7 @@ namespace script {
 
 		Q_INVOKABLE QJSValue sleep(int val);
 		Q_INVOKABLE QJSValue pause(int val);
+		Q_INVOKABLE QJSValue alert(QString str);
 	};
 
  // //QScriptValue sleep(QScriptContext* ctx, QScriptEngine* engine);

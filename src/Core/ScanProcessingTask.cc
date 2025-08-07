@@ -6,6 +6,8 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/weighted_mean.hpp>
+#include <boost/accumulators/statistics/weighted_sum.hpp>
 #include <boost/phoenix/bind.hpp>
 #include <boost/phoenix/core.hpp>
 #include <boost/phoenix/operator.hpp>
@@ -22,6 +24,7 @@
 #include <boost/range/numeric.hpp>
 #include <UCL/Iteration/Variadic/Transform.hh>
 #include <UCL/RegressionAnalysis/LeastSquares.hh>
+#include <UCL/SignalProcessing/Difference.hh>
 
 #include "Core/ScanAlgorithms.hh"
 #include "Core/ScanDefectRenderingTask.hh"
@@ -49,9 +52,15 @@ SourceScanLineSlice ScanProcessingTask::trimLine(const SourceScanLine& line, dou
   trimmedLine.finalCoordinate = line.finalCoordinate;
   trimmedLine.sampleRate = line.sampleRate;
   trimmedLine.lineCoordinate = line.lineCoordinate;
+  trimmedLine.finalLineCoordinate = line.finalLineCoordinate;
+  trimmedLine.timestampStart= line.timestampStart;
+  trimmedLine.timestampEnd= line.timestampEnd;
+  trimmedLine.startCoordinateZ= line.startCoordinateZ;
+  trimmedLine.finalCoordinateZ= line.finalCoordinateZ;
 
   std::size_t offset = static_cast<std::size_t>(std::floor(initialSkip * line.sampleRate + 0.5));
-  trimmedLine.samplesBegin = line.samples.begin() + offset;
+  //trimmedLine.samplesBegin = line.samples.begin() + offset;
+  trimmedLine.samplesBegin = line.samples.begin();
   trimmedLine.samplesEnd = line.samples.end();
 
   emit stageProgressed();
@@ -59,12 +68,34 @@ SourceScanLineSlice ScanProcessingTask::trimLine(const SourceScanLine& line, dou
 }
 
 //PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount)
-PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, double pauseCount)
+PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn)
 {
-  return PeaksLine{ ::findPeaks(line.samplesBegin, line.samplesEnd, line.sampleRate, peakLimit, backstep, forestep, pauseCount),
+    const auto backstep = static_cast<std::size_t>(std::floor(backstepIn * line.sampleRate + 0.5));
+    const auto forestep = static_cast<std::size_t>(std::floor(forestepIn * line.sampleRate + 0.5));
+    const auto pauseCount = static_cast<std::size_t>(std::floor(pauseCountIn * line.sampleRate + 0.5));
+
+    auto pl =  PeaksLine{ ::findPeaks(line.samplesBegin, line.samplesEnd, line.sampleRate, peakLimitIn, backstep, forestep, pauseCount),
                     line.startCoordinate,
                     line.finalCoordinate,
-                    line.lineCoordinate };
+                    line.lineCoordinate,
+                    line.finalLineCoordinate,
+                    line.timestampStart,
+                    line.timestampEnd,
+                    line.startCoordinateZ,
+                    line.finalCoordinateZ,
+
+    };
+    return pl;
+  //return PeaksLine{ ::findPeaks(line.samplesBegin, line.samplesEnd, line.sampleRate, peakLimitIn, backstep, forestep, pauseCount),
+  //                  line.startCoordinate,
+  //                  line.finalCoordinate,
+  //                  line.lineCoordinate,
+  //                  line.finalLineCoordinate };
+  ////return PeaksLine{ ::findPeaks(line.samplesBegin, line.samplesEnd, line.sampleRate, peakLimit, backstep, forestep, pauseCount),
+  ////                  line.startCoordinate,
+  ////                  line.finalCoordinate,
+  ////                  line.lineCoordinate,
+  ////                  line.finalLineCoordinate };
 }
 
 /// <summary>
@@ -74,85 +105,195 @@ PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float p
 /// <param name="indexInSound"></param>
 /// <param name="peak"></param>
 /// <returns>true, если координаты найдены</returns>
-bool ScanProcessingTask::getCoordinateOfPeaks(PeaksLine& line)
+//bool ScanProcessingTask::getCoordinateOfPeaks(PeaksLine& line)
+bool ScanProcessingTask::getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int needSave)
 {
-    if ((scan->scanArm.isScanArmReady) && (scan->scanArm.trajectory.pos.size() > 0) && (scan->scanArm.sourceScanChunks.chunks.size() > 0)) {
+    if (scan->scanArm.isScanArmReady) {
+        if (scan->scanArm.trajectory.pos.size() > 0) {
+            bool isAllCoordinatesObtained = true;
 
-        auto soundSampleRate = scan->parameters.headAndScanCollectorParameters.soundsSampleRate;
-        auto trajectorySampleRate = scan->scanArm.trajectory.sampleRate;
-        auto positions = std::make_shared<::std::vector< ::Position >>(scan->scanArm.trajectory.pos);
-        auto scanArmChunks = std::make_shared<::std::vector< ::SourceScanChunk >>(scan->scanArm.sourceScanChunks.chunks);
-        size_t indexInSound = 0;
-        size_t curChunkIndex = 0;
-        bool isAllCoordinatesObtained = true;
-        for (auto peak : line.peaks) {
-            unsigned long long int timestampForIndexInSound = 0;
-            bool isCoordinatesObtained = getCoordinateOfPeak(indexInSound, curChunkIndex, peak, soundSampleRate, positions, scanArmChunks);
-            isAllCoordinatesObtained = isAllCoordinatesObtained && isCoordinatesObtained;
-        }
-        return isAllCoordinatesObtained;
-    }
-    else if ((scan->scanArm.isScanArmReady) && (scan->scanArm.rtPeaks.size() > 0) && (scan->parameters.headAndScanCollectorParameters.needPackInLine)){
-        ::std::vector< ::std::vector< ::std::list< ::Peak > > > rtPeaks;
-        ::std::list< ::Peak > peakListSorted;
-        for ( auto line :scan->scanArm.rtPeaks)
-        {
-            for (auto column : line)
-            {
-                for (auto peak : column)
-                {
-                    peakListSorted.push_back(peak);
-                }
-            }
-        }
-        peakListSorted.sort([](::Peak a, ::Peak b) {return a.beginIndex < b.beginIndex; });
-
-        int i = 0;
-        for (auto &line : scan->peaks)
-        {
-            int j = 0;
-            auto peakFound = ++peakListSorted.begin();
-            int p = 1;
-            std::cout << "line.size = " << line.peaks.size();
-            for (auto &peak : line.peaks)
-            {
-                std::cout << "i="<<i<<"j = "<<j<<" ";
-                for (; peakFound != peakListSorted.end(); peakFound++)
-                {
-                    std::cout << "p=" << p++;
-                    if (peakFound->beginIndex > peak.beginIndex) { // не работает, т.к. в scan->peaks в каждой линии своя нумерация
-                        auto peakFoundPred = peakFound ;
-                        peakFoundPred--;
-                        peak.x = peakFoundPred->x;
-                        peak.y = peakFoundPred->y;
-                        peak.z = peakFoundPred->z;
-                        break;
+            if (scan->scanArm.sourceScanChunks.chunks.size() > 0) {
+                //TODO проверить! indexInSound не меняется в getCoordinateOfPeak()
+                auto soundSampleRate = scan->parameters.headAndScanCollectorParameters.soundsSampleRate;
+                auto trajectorySampleRate = scan->scanArm.trajectory.sampleRate;
+                auto positions = std::make_shared<::std::vector< ::Position >>(scan->scanArm.trajectory.pos);
+                auto scanArmChunks = std::make_shared<::std::vector< ::SourceScanChunk >>(scan->scanArm.sourceScanChunks.chunks);
+                size_t indexInSound = 0;
+                size_t curChunkIndex = 0;
+                for (auto line : scan->peaks) {
+                    for (auto peak : line.peaks) {
+                        unsigned long long int timestampForIndexInSound = 0;
+                        indexInSound = peak.beginIndex;
+                        bool isCoordinatesObtained = getCoordinateOfPeak(indexInSound, curChunkIndex, peak, soundSampleRate, positions, scanArmChunks);
+                        isAllCoordinatesObtained = isAllCoordinatesObtained && isCoordinatesObtained;
                     }
-
                 }
-                if (peakFound == peakListSorted.end()) break;
-                j++;
+                return isAllCoordinatesObtained;
             }
-            i++;
+            else {
+                      
+                // пики собраны в линию , по N штук на клетку.
+                // где N = scan->parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox
+                //
+                auto peaksCountPerCell = scan->parameters.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox;
+                for (size_t lineNum = 0; lineNum < scan->peaks.size(); lineNum++) {
+                    auto line = scan->peaks.at(lineNum);
+                    auto peaksCount = line.peaks.size();
+                    if (peaksCount > 0) {
+                        auto startCoordinate = line.startCoordinate;
+                        auto finalCoordinate = line.finalCoordinate;
+                        auto yStart = line.lineCoordinate;
+                        auto yFinal = line.finalLineCoordinate;
+                        auto zStart = line.startCoordinateZ;
+                        auto zFinal = line.finalCoordinateZ;
+                        if (yFinal == 0) {
+                            yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
+                            line.finalLineCoordinate = yStart;
+                        }
+                        double xSize = (finalCoordinate - startCoordinate);
+                        double ySize = (yFinal - yStart);
+                        double zSize = (zFinal - zStart);
+                        double countPerCell = peaksCount / peaksCountPerCell;
+                        double multiplexX = xSize / countPerCell;
+                        double multiplexY = ySize / countPerCell;
+                        double multiplexZ = zSize / countPerCell;
+                        int j = 0;
+                        for (auto& peak : line.peaks) {
+                            auto x = startCoordinate + multiplexX * std::floor(j/ peaksCountPerCell);
+                            auto y = yStart + multiplexY * j;
+                            auto z = zStart + multiplexZ * j;
+                            scan->peaks.at(lineNum).peaks.at(j).x = x;
+                            scan->peaks.at(lineNum).peaks.at(j).y = y;
+                            scan->peaks.at(lineNum).peaks.at(j).z = z;
+                            j++;
+                        }
+                    }
+                    else {
+                        isAllCoordinatesObtained = false;
+                    }
+                }
+                //isAllCoordinatesObtained = isAllCoordinatesObtained && isCoordinatesObtained;
+                return isAllCoordinatesObtained;
+
+            }
         }
+        else 
+            if ((scan->scanArm.rtPeaks.size() > 0) && (scan->parameters.headAndScanCollectorParameters.needPackInLine)) 
+            {
+                ::std::vector< ::std::vector< ::std::list< ::Peak > > > rtPeaks;
+                //::std::list< ::Peak > peakListSorted;
+                ::std::list< ::Peak > peakListSorted;
+                for (auto line : scan->scanArm.rtPeaks)
+                {
+                    for (auto column : line)
+                    {
+                        for (auto peak : column)
+                        {
+                            peakListSorted.push_back(peak);
+                        }
+                    }
+                }
+                peakListSorted.sort([](::Peak a, ::Peak b) {return a.beginIndex < b.beginIndex; });
+                std::vector<unsigned int> peaksIndexesSorted;
+                boost::transform(peakListSorted, std::back_inserter(peaksIndexesSorted), std::mem_fn(&Peak::beginIndex));
 
-        
-        //    //vector<int>::iterator lower, upper;
-        //lower = lower_bound(peakListSorted.begin(), peakListSorted.end(), peak);
-        //upper = upper_bound(v.begin(), v.end(), 6);
+                int i = 0;
+                for (auto& line : scan->peaks)
+                {
+                    int j = 0;
+                    //auto peakFound = ++peakListSorted.begin();
+                    //auto peakFoundPred = peakListSorted.begin();
+                    int p = 1;
+                    //std::cout << "line.size = " << line.peaks.size();
+                    for (auto& peak : line.peaks)
+                    {
+                        auto iidx = boost::lower_bound(peaksIndexesSorted, peak.beginIndex);
 
-        //auto realPeaks = peaks
-        //    | adp::filtered([](const PeaksLine& l) { return !l.peaks.empty(); })
-        //    | adp::transformed([](const PeaksLine& l) { return l.peaks; })
-        //    ;
+                        if (iidx != peaksIndexesSorted.end())
+                        {
+                            auto ijdx = std::distance(peaksIndexesSorted.begin(), iidx);
+                            auto idx2 = ijdx > 0 ? ijdx : 0;
+                            auto peakLocal = *boost::next(peakListSorted.begin(), idx2);
+                            peak.x = peakLocal.x;
+                            peak.y = peakLocal.y;
+                            peak.z = peakLocal.z;
+                            //scan->peaks.at(i).peaks.at(j).x = x;
+                            //scan->peaks.at(i).peaks.at(j).y = y;
+                            //scan->peaks.at(i).peaks.at(j).z = 0.0;
 
-            //struct
-        //{
-        //    bool operator()(int a, int b) const { return a < b; }
-        //}
-        //customLess;
-        //std::sort(peakList.begin(), peakList.end(), customLess);
+                        }
+                        j++;
+                    }
+                    i++;
+                }
+
+
+                //    //vector<int>::iterator lower, upper;
+                //lower = lower_bound(peakListSorted.begin(), peakListSorted.end(), peak);
+                //upper = upper_bound(v.begin(), v.end(), 6);
+
+                //auto realPeaks = peaks
+                //    | adp::filtered([](const PeaksLine& l) { return !l.peaks.empty(); })
+                //    | adp::transformed([](const PeaksLine& l) { return l.peaks; })
+                //    ;
+
+                    //struct
+                //{
+                //    bool operator()(int a, int b) const { return a < b; }
+                //}
+                //customLess;
+                //std::sort(peakList.begin(), peakList.end(), customLess);
+            }
     }
+    else {
+        std::size_t i = 0;
+        for (auto line : scan->peaks) {
+            auto peaksCount = line.peaks.size();
+            if (peaksCount > 0) {
+                auto startCoordinate = line.startCoordinate;
+                auto finalCoordinate = line.finalCoordinate;
+                auto yStart = line.lineCoordinate;
+                auto yFinal = line.finalLineCoordinate;
+                auto zStart = line.startCoordinateZ;
+                auto zFinal = line.finalCoordinateZ;
+                if ((yFinal == 0) && (yStart != 0)) {
+                    yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
+                    line.finalLineCoordinate = yStart;
+                }
+                double xSize = (finalCoordinate - startCoordinate);
+                double ySize = (yFinal - yStart);
+                double zSize = (zFinal - zStart);
+                //double multiplex = (finalCoordinate - startCoordinate) / peaksCount;
+                auto endIndexIt = line.peaks.back().endIndex;
+                auto beginIndexIt = line.peaks.front().beginIndex;
+                //int allIndexCount = line.peaks.back().endIndex - line.peaks.front().beginIndex;
+                int allIndexCount = endIndexIt - beginIndexIt;
+                if (allIndexCount > 0) {
+
+                    double multiplexX = xSize / allIndexCount;
+                    double multiplexY = ySize / allIndexCount;
+                    double multiplexZ = zSize / allIndexCount;
+                    std::size_t j = 0;
+                    for (auto& peak : line.peaks) {
+                        //int peakIndex = (peak.endIndex + peak.beginIndex) / 2 - line.peaks.front().beginIndex;
+                        int peakIndex = (peak.endIndex + peak.beginIndex) / 2;
+                        ////peak.x = startCoordinate + multiplexX * peakIndex;
+                        ////peak.y = yStart + multiplexY * peakIndex;
+                        //scan->peaks.at(i).peaks.at(j).x = startCoordinate + multiplexX * peakIndex;
+                        //scan->peaks.at(i).peaks.at(j).y = yStart + multiplexY * peakIndex;
+                        scan->peaks.at(i).peaks.at(j).x = startCoordinate + multiplexX * (peakIndex - beginIndexIt);
+                        scan->peaks.at(i).peaks.at(j).y = yStart + multiplexY * (peakIndex - beginIndexIt);
+                        scan->peaks.at(i).peaks.at(j).z = zStart + multiplexZ * (peakIndex - beginIndexIt);;
+                        j++;
+                    }
+                    i++;
+                    //return true;
+                }
+            }
+            //else return false;
+        }
+    }
+    return true;
 }
 
 void ScanProcessingTask::formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vector<PeaksLine>& peaks, unsigned int height, unsigned int width, unsigned int multyplex)
@@ -174,19 +315,36 @@ void ScanProcessingTask::formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vec
 
 void ScanProcessingTask::normalizeDirection(PeaksLine& line)
 {
-  for (size_t i = 0; i < line.peaks.size(); i++) {
-      if (line.peaks.at(i).beginIndex > line.peaks.at(i).endIndex) {
-            line.peaks.erase(line.peaks.begin() + i);
-      }
-  }
-  if (line.finalCoordinate < line.startCoordinate) {
-    line = PeaksLine{ std::vector<Peak>(line.peaks.rbegin(), line.peaks.rend()),
-                      line.finalCoordinate,
-                      line.startCoordinate,
-                      line.lineCoordinate };
-  }
+    // Инвертируем строки с обратным ходом
+    if (line.finalCoordinate < line.startCoordinate) {
+        //std::reverse(&arr[x + 1], &arr[y]);
+        std::reverse(line.peaks.begin(), line.peaks.end());
 
-  emit stageProgressed();
+        auto tempValue = line.finalCoordinate;
+        line.finalCoordinate = line.startCoordinate;
+        line.startCoordinate = tempValue;
+       
+        auto tempStampValue = line.timestampEnd;
+        line.timestampEnd = line.timestampStart;
+        line.timestampStart = tempStampValue;
+
+        emit stageProgressed();
+    }
+
+    return;
+
+  //for (size_t i = 0; i < line.peaks.size(); i++) {
+  //    if ((line.finalCoordinate > line.startCoordinate) &&(line.peaks.at(i).beginIndex > line.peaks.at(i).endIndex)) {
+  //          line.peaks.erase(line.peaks.begin() + i);
+  //    }
+  //}
+  //if (line.finalCoordinate < line.startCoordinate) {
+  //  line = PeaksLine{ std::vector<Peak>(line.peaks.rbegin(), line.peaks.rend()),
+  //                    line.finalCoordinate,
+  //                    line.startCoordinate,
+  //                    line.lineCoordinate };
+  //}
+  //emit stageProgressed();
 }
 
 std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const SourceScanLineSlice& line, const std::vector<Peak>& peaks)
@@ -195,7 +353,6 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
 
   if ((line.samplesBegin != line.samplesEnd) && ! peaks.empty()) {
     //auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, params.ranges,params.shouldNormalize);
-
     //находим полный спектр с дискретизацией 250 Гц
 
     std::vector<FrequencyRange> ranges;
@@ -208,14 +365,13 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
         step = 1000;
         params.stepForSplitFrequencyRanges = step;
     }
-    unsigned int maxFrequency = line.sampleRate / 2 - step;
+    unsigned int maxFrequency = std::max(unsigned int(0), line.sampleRate / 2 - step);
 
     //for(auto startFrequency = 0;startFrequency<=47000;startFrequency+=step)
-    for(auto startFrequency = 0; startFrequency<= maxFrequency; startFrequency+=step)
+    for(auto startFrequency = step; startFrequency<= maxFrequency; startFrequency+=step)
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
-
 
     r.resize(bands.size());
     for (std::size_t i = 0; i < bands.size(); i++) {
@@ -224,14 +380,310 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
       r[i].finalCoordinate = line.finalCoordinate;
       r[i].samples = std::move(bands[i]);
       boost::transform(peaks, std::back_inserter(r[i].sampleIndexes), std::mem_fn(&Peak::beginIndex));
+      boost::transform(peaks, std::back_inserter(r[i].peaks), [](Peak p) {return p; });
+      
+
       r[i].range = ranges[i];
       r[i].sourceLineSize = std::distance(line.samplesBegin, line.samplesEnd);
       r[i].lineCoordinate = line.lineCoordinate;
+      r[i].finalLineCoordinate = line.finalLineCoordinate;
+      r[i].startCoordinateZ = line.startCoordinateZ;
+      r[i].finalCoordinateZ = line.finalCoordinateZ;
     }
   }
 
   emit stageProgressed();
-  return std::move(r);
+  //return std::move(r);
+  return r;
+}
+
+void ScanProcessingTask::rearrangeSpec(std::shared_ptr<Scan>& scan, double Xmin, double Xmax, double Ymin, double Ymax, double dX, double dY)
+{
+    boost::multi_array<float, 3Ui64> counOfPeakInCell;
+
+    std::size_t lineCount = 0;
+    if (dY != 0) {
+        lineCount  = floor(0.5 + params.headAndScanCollectorParameters.height / std::abs(dY));
+    }
+    std::size_t rangeCount = scan->spec.begin()->size();
+    //std::size_t peakCount = 1 + floor(0.5+params.headAndScanCollectorParameters.width / numArea);
+    std::size_t peakCount = 0;
+    if (dX != 0) {
+        peakCount = floor(0.5 + params.headAndScanCollectorParameters.width / dX);
+    }
+    //auto be = boost::extents[lineCount][peakCount];
+    auto be = boost::extents[lineCount][rangeCount][peakCount];
+    counOfPeakInCell.resize(be);         //*******
+
+
+    auto oldFormedSpec = scan->spec;
+    emit stageProgressed();
+
+    for (auto line : scan->spec) {
+        line.clear();
+    }
+    scan->spec.clear();
+
+    emit stageProgressed();
+    /////////////*************************               // формируем новую структуру scan->spec
+    //std::vector<FrequencyRange> ranges;
+    ba::accumulator_set<unsigned int, ba::stats<ba::tag::mean>> meanLineSizeAcc;
+    unsigned int meanLineSize;
+
+    for (std::size_t i = 0; i < oldFormedSpec.size(); i++) {
+        for (std::size_t j = 0; j < oldFormedSpec[i].size(); j++) {
+            meanLineSizeAcc(oldFormedSpec[i][j].sourceLineSize);
+        }
+    }
+    meanLineSize = ba::mean(meanLineSizeAcc);
+
+    for (std::size_t i = 0; i < lineCount; i++) {
+        std::vector<RangeScanLine> r;
+        for (std::size_t j = 0; j < rangeCount; j++) {
+            RangeScanLine scanLine;
+            scanLine.samples.resize(peakCount);
+            scanLine.sampleIndexes.resize(peakCount);
+            scanLine.peaks.resize(peakCount);
+            //scanLine.samples.resize(oldFormedSpec[0][0].samples.size());
+            //scanLine.sampleRate = oldFormedSpec[0][0].sampleRate;
+            scanLine.sampleRate = params.headAndScanCollectorParameters.soundsSampleRate;
+            scanLine.startCoordinate = Xmin;
+            scanLine.finalCoordinate = Xmax;
+            scanLine.sourceLineSize = meanLineSize;
+            scanLine.lineCoordinate = double(Ymin + i * dY);
+            //scanLine.finalLineCoordinate = double(Ymax + i * dY);
+            scanLine.finalLineCoordinate = scanLine.lineCoordinate;
+            scanLine.range = oldFormedSpec[0][j].range;
+            r.push_back(scanLine);
+            emit stageProgressed();
+        }
+        scan->spec.push_back(r);
+    }
+
+    for (std::size_t i = 0; i < oldFormedSpec.size(); i++) {
+        for (std::size_t j = 0; j < rangeCount; j++) {
+            for (std::size_t s = 0; s < oldFormedSpec[i][j].samples.size(); s++) {
+                auto sample = oldFormedSpec[i][j].samples[s];
+                auto sampleIndex = oldFormedSpec[i][j].sampleIndexes[s];
+                auto peak = oldFormedSpec[i][j].peaks[s];
+                int x = int((peak.x - Xmin + dX / 10.0) / dX);
+                int y = int((peak.y - Ymin + dY / 10.0) / dY);
+                if (((x >= 0) && (x < peakCount)) && ((y >= 0) && (y < lineCount))) {
+                    counOfPeakInCell[y][j][x] += 1;
+                    //size_t z = size_t(peak.z/numArea);
+                    if (scan->spec[y][j].samples.size() <= x) {
+                        scan->spec[y][j].samples.resize(x + 1);
+                        scan->spec[y][j].sampleIndexes.resize(x + 1);
+                        scan->spec[y][j].peaks.resize(x + 1);
+                    }
+                    scan->spec[y][j].samples.at(x) += sample;
+                    scan->spec[y][j].sampleIndexes.at(x) = sampleIndex;
+                    scan->spec[y][j].peaks.at(x) = peak;
+                }
+                emit stageProgressed();
+            }
+        }
+    }
+
+    for (std::size_t i = 0; i < lineCount; i++) {
+        for (std::size_t j = 0; j < rangeCount; j++) {
+            for (std::size_t s = 0; s < scan->spec[i][j].samples.size(); s++) {
+                auto divider = counOfPeakInCell[i][j][s];
+                divider = divider > 0.0 ? divider : 1.0;
+                scan->spec[i][j].samples[s] /= divider;
+                emit stageProgressed();
+            }
+        }
+    }
+}
+
+void ScanProcessingTask::reArarngePeak(std::shared_ptr<Scan>  scan)
+{
+    //rearranged = true;
+
+    //this->operator()();
+    //emit stageProgressed();
+
+    return;
+
+    boost::multi_array<float, 3> counOfPeakInCell; // подсчитываем количество пиков в ячейке для усреднения
+    auto numArea = params.headAndScanCollectorParameters.currentNumArea;
+    //bool isScanArmReadyAndNeedPackInLine = scan->scanArm.isScanArmReady && scan->parameters.headAndScanCollectorParameters.needPackInLine && (numArea > 0);
+    bool isScanArmReadyAndNeedPackInLine = scan->scanArm.isScanArmReady && scan->parameters.headAndScanCollectorParameters.needPackInLine;
+    if (numArea == 0) numArea = 1;
+    if (isScanArmReadyAndNeedPackInLine ) {
+        double Xmin = 0.0;
+        double Ymin = 0.0;
+        double Xmax = params.headAndScanCollectorParameters.width;
+        double Ymax = params.headAndScanCollectorParameters.height;
+
+        rearrangeSpec(scan, Xmin, Xmax, Ymin, Ymax, numArea, numArea);
+        return;
+
+        std::size_t lineCount = params.headAndScanCollectorParameters.height / numArea;
+        std::size_t rangeCount = scan->spec.begin()->size();
+        std::size_t peakCount = params.headAndScanCollectorParameters.width / numArea;
+        auto be = boost::extents[lineCount][rangeCount][peakCount];
+        counOfPeakInCell.resize(be);         //*******
+
+        auto oldFormedSpec = scan->spec;
+        emit stageProgressed();
+
+        for (auto line : scan->spec) {
+            line.clear();
+        }
+        scan->spec.clear();
+
+        emit stageProgressed();
+        /////////////*************************               // формируем новую структуру scan->spec
+        //std::vector<FrequencyRange> ranges;
+
+        for (std::size_t i = 0; i < lineCount; i++) {
+            std::vector<RangeScanLine> r;
+            for (std::size_t j = 0; j < rangeCount; j++) {
+                RangeScanLine scanLine;
+                scanLine.samples.resize(peakCount);
+                scanLine.sampleIndexes.resize(peakCount);
+                scanLine.peaks.resize(peakCount);
+                scanLine.sampleRate = oldFormedSpec[0][0].sampleRate;
+                scanLine.startCoordinate = 0.0;
+                scanLine.finalCoordinate = peakCount * numArea;
+                scanLine.sourceLineSize = peakCount * numArea;
+                //scanLine.sourceLineSize = (std::abs((int)oldFormedSpec[0][0].peaks[0].endIndex - (int)oldFormedSpec[0][0].peaks[0].beginIndex))* peakCount;
+                scanLine.lineCoordinate = double(i * numArea);
+                scanLine.finalLineCoordinate = double(i * numArea);
+                scanLine.range = oldFormedSpec[0][j].range;
+                r.push_back(scanLine);
+                emit stageProgressed();
+            }
+            scan->spec.push_back(r);
+        }
+        //r[i].samples = std::move(bands[i]);
+        //boost::transform(peaks, std::back_inserter(r[i].sampleIndexes), std::mem_fn(&Peak::beginIndex));
+        //boost::transform(peaks, std::back_inserter(r[i].peaks), [](Peak p) {return p; });
+
+        for (std::size_t i = 0; i < oldFormedSpec.size(); i++) {
+            for (std::size_t j = 0; j < rangeCount; j++) {
+                for (std::size_t s = 0; s < oldFormedSpec[i][j].samples.size(); s++) {
+                    auto sample = oldFormedSpec[i][j].samples[s];
+                    auto sampleIndex = oldFormedSpec[i][j].sampleIndexes[s];
+                    auto peak = oldFormedSpec[i][j].peaks[s];
+                    int x = int(peak.x / numArea);
+                    int y = int(peak.y / numArea);
+                    if (((x >= 0) && (x < peakCount)) && ((y >=0) && (y < lineCount))) {
+                        counOfPeakInCell[y][j][x] += 1;
+                        //size_t z = size_t(peak.z/numArea);
+                        scan->spec[y][j].samples.at(x) += sample;
+                        scan->spec[y][j].sampleIndexes.at(x) = sampleIndex;
+                        scan->spec[y][j].peaks.at(x) = peak;
+                    }
+                    emit stageProgressed();
+                }
+            }
+        }
+
+        for (std::size_t i = 0; i < lineCount; i++) {
+            for (std::size_t j = 0; j < rangeCount; j++) {
+                for (std::size_t s = 0; s < scan->spec[i][j].samples.size(); s++) {
+                    auto divider = counOfPeakInCell[i][j][s];
+                    divider = divider > 0 ? divider : 1;
+                    scan->spec[i][j].samples[s] /= divider;
+                    //scan->spec[i][j].samples.at(s) = divider;
+                    emit stageProgressed();
+                }
+            }
+        }
+
+        /////////////*************************               // конец формируем новую структуру scan->spec
+
+    }
+    else if (!scan->scanArm.isScanArmReady) { 
+        //return;
+        ba::accumulator_set<double, ba::stats<ba::tag::min, ba::tag::max>> XPeakAcc;
+        ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::min, ba::tag::max>> YPeakAcc;
+        ba::accumulator_set<double, ba::stats<ba::tag::mean>> distanceAcc;
+        ba::accumulator_set<double, ba::stats<ba::tag::mean>> peakWidthAcc;
+        ba::accumulator_set<int, ba::stats<ba::tag::mean>> lineSizeInIndexes;
+        std::vector<double> Ypeak;
+        double Ymin = 0.0;
+        double Xmin = 0.0;
+        double Ymax = 0.0;
+        double Xmax = 0.0;
+
+        for (auto& line : scan->peaks) {
+            ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::min, ba::tag::max>> YPeakLineAcc;
+            ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::min, ba::tag::max>> XPeakLineAcc;
+            //ba::accumulator_set<double, ba::stats<ba::tag::mean>> peakWidthLineAcc;
+            double peaksCount = (double) line.peaks.size();
+            double deltaX = (line.finalCoordinate - line.startCoordinate) / peaksCount;
+            peakWidthAcc(deltaX);
+            int counter = 0;
+            for (auto& peak : line.peaks) {
+                double x = line.startCoordinate + deltaX * counter++;
+                peak.x = x;
+                double y = line.lineCoordinate;
+                peak.y = y;
+                XPeakLineAcc(peak.x);
+                YPeakLineAcc(peak.y);
+                double peakWidthLocal = 0.0;
+                if (peak.endIndex > peak.beginIndex) {
+                    peakWidthLocal = (double)(peak.endIndex - peak.beginIndex);
+                }
+                else {
+                    peakWidthLocal = (double)(peak.beginIndex - peak.endIndex );
+                }
+            //    peakWidthAcc(peakWidthLocal);
+            }
+            int sizeInIndexes = 0;
+            if (line.peaks.back().endIndex > line.peaks.front().beginIndex) {
+                sizeInIndexes = (int)(line.peaks.back().endIndex - line.peaks.front().beginIndex);
+            }
+            else {
+                sizeInIndexes = (int)(line.peaks.front().beginIndex - line.peaks.back().endIndex);
+            }
+            
+            lineSizeInIndexes(sizeInIndexes);
+            YPeakAcc(ba::min(YPeakLineAcc));
+            YPeakAcc(ba::max(YPeakLineAcc));
+            XPeakAcc(ba::min(XPeakLineAcc));
+            XPeakAcc(ba::max(XPeakLineAcc));
+//            peakWidthAcc((ba::max(XPeakLineAcc) - ba::min(XPeakLineAcc))/ line.peaks.size());
+            Ypeak.push_back(ba::mean(YPeakLineAcc));
+        }
+        auto lineDistances = uts::dsp::difference(Ypeak);
+        for (const auto& elem : lineDistances) distanceAcc(elem);
+        auto dY = ba::mean(distanceAcc);
+        auto meanLineSize = ba::mean(lineSizeInIndexes);
+
+
+        Ymin = ba::min(YPeakAcc);
+        Ymax = ba::max(YPeakAcc);
+        Xmin = ba::min(XPeakAcc);
+        Xmax = ba::max(XPeakAcc);
+
+        double dX = ba::mean(peakWidthAcc);
+
+        params.headAndScanCollectorParameters.height = floor((Ymax - Ymin) + 0.5);
+        params.headAndScanCollectorParameters.width  = floor((Xmax - Xmin) + 0.5);
+        params.headAndScanCollectorParameters.currentNumArea = floor(std::abs(dY+0.5));
+        params.headAndScanCollectorParameters.deltaX = dX;
+        params.headAndScanCollectorParameters.deltaY= dY;
+
+        scan->parameters.headAndScanCollectorParameters.currentNumArea = params.headAndScanCollectorParameters.currentNumArea;
+        scan->parameters.headAndScanCollectorParameters.height = params.headAndScanCollectorParameters.height;
+        scan->parameters.headAndScanCollectorParameters.width = params.headAndScanCollectorParameters.width;
+        scan->parameters.headAndScanCollectorParameters.deltaX = params.headAndScanCollectorParameters.deltaX;
+        scan->parameters.headAndScanCollectorParameters.deltaY = params.headAndScanCollectorParameters.deltaY;
+
+        numArea = params.headAndScanCollectorParameters.currentNumArea;
+        if (numArea == 0) numArea = 1;
+
+        rearrangeSpec(scan, Xmin, Xmax, Ymin, Ymax, dX, dY);
+
+        /////////////*************************               // конец формируем новую структуру scan->spec
+
+    }
+
 }
 
 void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<std::vector<RangeScanLine>>& ranges)
@@ -256,13 +708,19 @@ void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<st
     for (const auto& fp : forwardPeaks) forwardAcc(fp.front().beginIndex);
     for (const auto& bp : backwardPeaks) backwardAcc(bp.front().beginIndex);
 
-    auto distance = ba::mean(backwardAcc) + ba::mean(forwardAcc);
+    auto meanBa = ba::mean(backwardAcc);
+    auto meanFo = ba::mean(forwardAcc);
+    auto distance = (meanBa + meanFo);
+    //auto distance = ba::mean(backwardAcc) + ba::mean(forwardAcc);
 
     for (auto& line : ranges) {
-      if (! line.empty() && (line.front().sampleIndexes.front() > line.front().sampleIndexes.back()))
+      if (! line.empty() && (!line.front().sampleIndexes.empty()))
         for (auto& range : line)
-          for (auto& si : range.sampleIndexes)
-            si = distance - si;
+            if (range.sampleIndexes.front() > range.sampleIndexes.back()) {
+                for (auto& si : range.sampleIndexes)
+                    //si = std::abs(distance - si);
+                    si = (distance - si);
+            }
       emit stageProgressed();
     }
   }
@@ -282,7 +740,9 @@ std::tuple<std::size_t, std::size_t, std::size_t> ScanProcessingTask::getNormali
     if ((! line.front().samples.empty())&&(line.front().sampleIndexes.front()< line.front().sampleIndexes.back())) {
       std::vector<std::size_t> lineDistances;
       boost::adjacent_difference(line.front().sampleIndexes, std::back_inserter(lineDistances));
-      distanceAcc(*boost::min_element(lineDistances));
+      lineDistances.erase(lineDistances.begin());
+      auto minelem = *boost::min_element(lineDistances);
+      distanceAcc(minelem);
       startIndexAcc(line.front().sampleIndexes.front());
       stopIndexAcc(line.front().sampleIndexes.back());
     }
@@ -339,9 +799,11 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
                                         std::size_t stopIndex,
                                         ::Extremum extremumOfRangesIn)
 {
+  
   auto lineLength = (stopIndex - startIndex) / step;
   auto linesCount = ranges.size();
   auto be = boost::extents[lineLength][linesCount];
+
   normalizedRange.maxView.resize(be);
   normalizedRange.minView.resize(be);
   normalizedRange.view.resize(be);
@@ -368,9 +830,8 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
                       //*******
                       //auto peaks = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
                       std::tie(minPeak, maxPeak, justPeak) = getNormalizedPeakFromSubranges(ranges[lineIndex][rangeIndex], startIndex + peakIndex * step);
-                      diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
-                      //diffPeak = maxPeak - minPeak;
-
+                      //diffPeak = maxPeak - minPeak - 1; //******* Преобразуем разницу по заданию Сергея Ивановича begin
+                      diffPeak = maxPeak - minPeak;
 
                       //******* Преобразуем среднее по заданию Сергея Ивановича begin
                       int N = 0;
@@ -420,9 +881,10 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.endIndex = stopIndex;
   normalizedRange.step = step;
   normalizedRange.extremum = extremumOfRangesIn;
-  
-
   normalizedRange.lineCoordinates.resize(linesCount);
+  normalizedRange.finalLineCoordinates.resize(linesCount);
+  //normalizedRange.finalLineCoordinate = ranges.front().front().finalLineCoordinate;
+  
   if (linesCount > 0) {
     //if (ranges[0][rangeIndex].lineCoordinate < 0) {
     //  normalizedRange.lineCoordinates[0] = 0;
@@ -430,13 +892,34 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
     //  normalizedRange.lineCoordinates[0] = ranges[0][rangeIndex].lineCoordinate;
     //}
 
-    for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) //{
+      double minlico = ranges.front().front().lineCoordinate;
+      double maxlico = ranges.front().front().lineCoordinate;
+      double minCoord = normalizedRange.startCoordinate;
+      double maxCoord = normalizedRange.finalCoordinate;
+      double minlicoLocal;
+      double maxlicoLocal;
+      double minСoordLocal;
+      double maxСoordLocal;
+    for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
      // if (ranges[lineIndex][rangeIndex].lineCoordinate < 0) {
      //   normalizedRange.lineCoordinates[lineIndex] = normalizedRange.lineCoordinates[lineIndex - 1] + 1;
      // } else {
-        normalizedRange.lineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].lineCoordinate;
+        minlicoLocal = ranges[lineIndex][rangeIndex].lineCoordinate;
+        maxlicoLocal = ranges[lineIndex][rangeIndex].finalLineCoordinate;
+        minСoordLocal = ranges[lineIndex][rangeIndex].startCoordinate;
+        maxСoordLocal = ranges[lineIndex][rangeIndex].finalCoordinate;
+        normalizedRange.lineCoordinates[lineIndex] = minlicoLocal;
+        normalizedRange.finalLineCoordinates[lineIndex] = maxlicoLocal;
+        minlico = std::min({ minlico, minlicoLocal, maxlicoLocal });
+        maxlico = std::max({ maxlico, minlicoLocal, maxlicoLocal });
+        minCoord = std::min({ minCoord , minСoordLocal, maxСoordLocal });
+        maxCoord = std::max({ maxCoord , minСoordLocal, maxСoordLocal });
      // }
-    //}
+    }
+    normalizedRange.lineCoordinate = minlico;
+    normalizedRange.finalLineCoordinate = maxlico;
+    normalizedRange.startCoordinate = minCoord;
+    normalizedRange.finalCoordinate = maxCoord;
   }
   if (normalizedRange.extremum == ::Extremum::Max) {
       normalizedRange.view = normalizedRange.maxView;
@@ -454,22 +937,37 @@ float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::si
     if ((line.sampleIndexes.size() > 0) && (line.samples.size()>0)) {
         auto iidx = boost::lower_bound(line.sampleIndexes, idx);
 
+        if (iidx != line.sampleIndexes.end()) {
+            auto ijdx = std::distance(line.sampleIndexes.begin(), iidx);
+            if (ijdx > 0) return line.samples[ijdx];
+        }
+
+    }
+    return 0.0;
+}
+
+bool ScanProcessingTask::getPeakWithCoordAt(const RangeScanLine& line, std::size_t idx, Peak& peak)
+{
+    bool rezult = false;
+    auto sizeOfPeaks = line.peaks.size();
+    if ((line.sampleIndexes.size() > 0) && (sizeOfPeaks > 0) && (idx < sizeOfPeaks)) {
+        auto iidx = boost::lower_bound(line.sampleIndexes, idx);
         if ((iidx != line.sampleIndexes.end()) && (*iidx == idx)) {
             auto ijdx = std::distance(line.sampleIndexes.begin(), iidx);
-            return line.samples[ijdx];
+            peak = line.peaks[ijdx];
+                //rezult = new Peak(line.peaks[ijdx]);
+                rezult = true;
+
         }
         else if (iidx != line.sampleIndexes.end()) {
             auto ijdx = std::distance(line.sampleIndexes.begin(), iidx);
-            return line.samples[ijdx > 0 ? ijdx : 0];
+            peak = line.peaks[ijdx > 0 ? ijdx : 0];
+            //rezult = new Peak(line.peaks[ijdx > 0 ? ijdx : 0]);
+            rezult = true;
         }
-        else {
-            return 0.0;
-        }
-    }
-    else {
-        return 0.0;
-    }
 
+    }
+    return rezult;
 }
 
 float ScanProcessingTask::getAverageSubrangePeak(const RangeScanLine& line, std::size_t idx)
@@ -480,7 +978,9 @@ float ScanProcessingTask::getAverageSubrangePeak(const RangeScanLine& line, std:
 
   float result = line.subBegin->samples[idx];
   for(auto iter = line.subBegin; iter< line.subEnd; iter++){
-      acc(iter->samples[idx]);
+      if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx]))) {
+          acc(iter->samples[idx]);
+      }
   }
   result = ba::mean(acc);
   return result;
@@ -490,7 +990,7 @@ float ScanProcessingTask::getMaxSubrangePeak(const RangeScanLine& line,std::size
 {
   float result = line.subBegin->samples[idx];
   for(auto iter = line.subBegin; iter< line.subEnd; iter++){
-    if(iter->samples[idx]>result)
+    if((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx]>result))
       result = iter->samples[idx];
   }
   return result;
@@ -500,7 +1000,7 @@ float ScanProcessingTask::getMinSubrangePeak(const RangeScanLine& line,std::size
 {
   float result = line.subBegin->samples[idx];
   for(auto iter = line.subBegin; iter< line.subEnd; iter++){
-    if(iter->samples[idx]<result)
+    if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx]<result))
       result = iter->samples[idx];
   }
   return result;
@@ -527,9 +1027,13 @@ std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubrang
   //}
   if (iidx != line.sampleIndexes.end()) {
       auto idx2 = std::distance(line.sampleIndexes.begin(), iidx);
-      max = getMaxSubrangePeak(line, idx2 > 0 ? idx2 : 0);
-      min = getMinSubrangePeak(line, idx2 > 0 ? idx2 : 0);
-      aver = getAverageSubrangePeak(line, idx2 > 0 ? idx2 : 0);
+      auto idx3 = idx2 > 0 ? idx2 : 0;
+      max = getMaxSubrangePeak(line, idx3);
+      min = getMinSubrangePeak(line, idx3);
+      aver = getAverageSubrangePeak(line, idx3);
+      //max = getMaxSubrangePeak(line, idx2 > 0 ? idx2 : 0);
+      //min = getMinSubrangePeak(line, idx2 > 0 ? idx2 : 0);
+      //aver = getAverageSubrangePeak(line, idx2 > 0 ? idx2 : 0);
   }
   return std::make_tuple(min, max, aver);
   //return std::make_pair(min, max);
@@ -567,7 +1071,7 @@ std::vector<Polynomial> ScanProcessingTask::rangeColumnModels(const std::vector<
   return r;
 }
 
-std::vector<std::vector<double>> ScanProcessingTask::averageColumns(Scan& scan)
+std::vector<std::vector<double>> ScanProcessingTask::averageColumns(Scan& scan) //вычисление среднего значения для расширенного графика
 {
   typedef boost::multi_array<float, 2>::index_range idxrng;
 
@@ -609,7 +1113,6 @@ void ScanProcessingTask::subtractColumnModels(Scan& scan, const std::vector<Poly
           evalPoly(models[rangeIndex], j);
       }
     }
-
     scan.rangesResiduals[rangeIndex].sampleRate = scan.normalizedRanges[rangeIndex].sampleRate;
     scan.rangesResiduals[rangeIndex].startCoordinate = scan.normalizedRanges[rangeIndex].startCoordinate;
     scan.rangesResiduals[rangeIndex].finalCoordinate = scan.normalizedRanges[rangeIndex].finalCoordinate;
@@ -620,46 +1123,122 @@ void ScanProcessingTask::subtractColumnModels(Scan& scan, const std::vector<Poly
 
 void ScanProcessingTask::smoothRanges(Scan& scan)
 {
-  int pointsCount = scan.parameters.smoothingPointsCount/2+1;
+  //int pointsCount = scan.parameters.smoothingPointsCount/2+1;
+  int pointsCount = scan.parameters.smoothingPointsCount;
   if(pointsCount<2)
     return;
-
-  for(auto& line : scan.normalizedSpec){
-    for(auto& range : line){
-      auto point = range.samples.begin();
-      std::vector<float> result;
-
-      if(range.samples.size()>=pointsCount){
-        for(;point<range.samples.end();point++){
-      ba::accumulator_set<float,ba::stats<ba::tag::mean>> Acc;
-      for(int nP = pointsCount ; nP>0; nP--){
-            Acc(*point);                        //центральная точка имеет наибольший вклад
-            auto begin = point;
-            auto end = point;
-
-            for(signed int i = 1;i<nP;i++){	//вклад остальных точек зависит от удаленности от центральной
-              if(begin>range.samples.begin()){   //проверка на выход точек за заданный диапазон
-                --begin;
-                Acc(*begin);
-              }
-              else if(begin!=point && begin == range.samples.begin())
-                Acc(*begin);
-
-              if(end<range.samples.end()-1){
-                ++end;
-                Acc(*end);
-              }
-              else if(end!=point && (end == range.samples.end()-1))
-                Acc(*end);
-        }
-      }
-          result.push_back(ba::mean(Acc));
-        }
-        range.samples = result;
-      }
-    }
-    emit stageProgressed();
+  std::vector<double> koeff;
+  for (int nP = 0; nP < pointsCount; nP++) {
+      double k = pointsCount - nP;
+      koeff.push_back(k*k);
   }
+
+  double sum = 0;
+  auto koef = koeff.begin();
+  sum += *koef;
+  koef++;
+  for (; koef < koeff.end(); koef++) {
+      sum += 2 * (*koef);
+  }
+  double scaleForKoef = 1 / sum;
+
+  
+  for (auto koef = koeff.begin(); koef < koeff.end(); koef++) {
+      *koef = (*koef)* scaleForKoef;
+  }
+  
+  for (auto& line : scan.normalizedSpec) {
+      for (auto& range : line) {
+          auto point = range.samples.begin();
+          int indx = 0;
+          std::vector<float> result;
+          for (; point < range.samples.end(); point++, indx++) {
+              ba::accumulator_set<float, ba::stats<ba::tag::mean>> Acc;
+              ba::accumulator_set<float, ba::stats<ba::tag::weighted_mean>, double> AccW;
+              Acc(*point);
+              AccW(*point, ba::weight = koeff[0]);
+              for (int samplesIndx = 1; samplesIndx < pointsCount; samplesIndx++) {
+                  if ((indx - samplesIndx) > 0) {
+                      Acc(*(point - samplesIndx));
+                      AccW(*(point - samplesIndx), ba::weight = koeff[(samplesIndx)]);
+                  }
+                  if ((indx + samplesIndx) < range.samples.size()) {
+                      Acc(*(point + samplesIndx));
+                      AccW(*(point + samplesIndx), ba::weight = koeff[(samplesIndx)]);
+                  }
+
+              }
+              if (scan.parameters.smoothingPointsWeigted) {
+                  auto re = ba::weighted_mean(AccW);
+                  result.push_back(re);
+              }
+              else {
+                  auto re = ba::mean(Acc);
+                  result.push_back(re);
+              }
+          }
+          range.samples = result;
+      }
+      emit stageProgressed();
+  }
+
+  //for(auto& line : scan.normalizedSpec){
+  //  for(auto& range : line){
+  //    auto point = range.samples.begin();
+  //    std::vector<float> result;
+  //    if (range.samples.size() >= pointsCount) {
+  //        for (; point < range.samples.end(); point++) {
+  //            ba::accumulator_set<float, ba::stats<ba::tag::mean>> Acc;
+  //            ba::accumulator_set<float, ba::stats<ba::tag::weighted_mean>, int> AccW;
+
+  //            for (int nP = pointsCount; nP > 0; nP--) {
+  //                Acc(*point);                        //центральная точка имеет наибольший вклад
+  //                //AccW(*point, ba::weight = 2);                        //центральная точка имеет наибольший вклад
+  //                AccW(*point, ba::weight = pointsCount);                        //центральная точка имеет наибольший вклад
+  //                auto begin = point;
+  //                auto end = point;
+
+  //                for (signed int i = 1; i < nP; i++) {	//вклад остальных точек зависит от удаленности от центральной
+  //                    if (begin >= range.samples.begin()) {   //проверка на выход точек за заданный диапазон
+  //                        //if((begin != point) && (begin>=range.samples.begin())){   //проверка на выход точек за заданный диапазон
+  //                        --begin;
+  //                        Acc(*begin);
+  //                        AccW(*begin, ba::weight = nP - i);
+  //                        //AccW(*begin, ba::weight = 1);
+  //                    }
+  //                    else if (begin != point && begin == range.samples.begin()) {
+  //                        Acc(*begin);
+  //                        AccW(*begin, ba::weight = nP - i);
+  //                        //AccW(*begin, ba::weight = 1);
+  //                    }
+  //                    if (end <= (range.samples.end() - 1)) {
+  //                        //if((end != point)&&(end<=(range.samples.end()-1))){
+  //                        ++end;
+  //                        Acc(*end);
+  //                        AccW(*end, ba::weight = nP - i);
+  //                        //AccW(*end, ba::weight = 1);
+  //                    }
+  //                    else if (end != point && (end == range.samples.end() - 1)) {
+  //                        Acc(*end);
+  //                        AccW(*end, ba::weight = nP - i);
+  //                        //AccW(*end, ba::weight = 1);
+  //                    }
+  //                }
+  //            }
+  //            //std::cout << " ba::mean(Acc) = " <<ba::mean(Acc) << "ba::weighted_mean(AccW) = " << ba::weighted_mean(AccW) << "\r\n";
+  //            if (scan.parameters.smoothingPointsWeigted) {
+
+  //                result.push_back(ba::weighted_mean(AccW));
+  //            }
+  //            else {
+  //                result.push_back(ba::mean(Acc));
+  //            }
+  //        }
+  //        range.samples = result;
+  //    }
+  //  }
+  //  emit stageProgressed();
+  //}
 }
 
 RangeScanLine ScanProcessingTask::findAverageLine(std::vector<RangeScanLine>& rangedLines,FrequencyRange range)
@@ -744,11 +1323,17 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan)
 { 
   auto nRanges = scan.normalizedSpec.begin()->size();
   std::vector<SpecNormalizationParams> params;
+  params.resize(nRanges);
   for (int nRange = 0; nRange < nRanges; nRange++) {
       ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::sum, ba::tag::variance>> acc;
       for (auto& line : scan.normalizedSpec)
           for (auto& point : line[nRange].samples)
-              acc(point);
+              if (point != 0) 
+                  acc(point);
+      //SpecNormalizationParams specNormalizationParams;
+      //specNormalizationParams.sigma = std::sqrt(ba::variance(acc));
+      //specNormalizationParams.average = ba::mean(acc);
+      //params.push_back(specNormalizationParams);
       params[nRange].sigma = std::sqrt(ba::variance(acc));
       params[nRange].average = ba::mean(acc);
       findRelativeSignals(scan, params);
@@ -780,37 +1365,51 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan)
   //}
 }
 
-void ScanProcessingTask::findRelativeSignals(Scan& scan,const std::vector<SpecNormalizationParams>& params)
+void ScanProcessingTask::findRelativeSignals(Scan& scan, const std::vector<SpecNormalizationParams>& params)
 {
-  auto nRanges = scan.normalizedSpec.begin()->size();
-  for (int nRange = 0; nRange < nRanges; nRange++) {
-      auto sigma = params[nRange].sigma;
-      auto average = params[nRange].average;
+    int nRanges = 0;
+    if (scan.normalizedSpec.size() != 0) {
+        nRanges = scan.normalizedSpec.begin()->size();
+    }
+    else
+    {
+        BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Description("Ошибка в findRelativeSignals: нулевой размер normalizedSpec"));
+    }
 
-      for (auto& line : scan.normalizedSpec) {
-          if (line.size() > nRange) {
-              for (auto& point : line[nRange].samples)
-                  if (point != 0)
-                      point = (point - average) / (3 * sigma);
-          }
-      }
-      stageProgressed();
-  }
-  //auto nRanges = scan.spec.begin()->size();
-  //scan.normalizedSpec = scan.spec;
-  //for(int nRange = 0;nRange<nRanges;nRange++){
-  //  auto sigma = params[nRange].sigma;
-  //  auto average = params[nRange].average;
+    for (int nRange = 0; nRange < nRanges; nRange++) {
+        auto sigma = params[nRange].sigma;
+        auto average = params[nRange].average;
+        if (sigma != 0) {
+            for (auto& line : scan.normalizedSpec) {
+                if (line.size() > nRange) {
+                    for (auto& point : line[nRange].samples)
+                        if (point != 0)
+                            point = (point - average) / (3 * sigma);
+                }
+            }
+        }
+        stageProgressed();
+    }
+    //auto nRanges = scan.spec.begin()->size();
+    //scan.normalizedSpec = scan.spec;
+    //for(int nRange = 0;nRange<nRanges;nRange++){
+    //  auto sigma = params[nRange].sigma;
+    //  auto average = params[nRange].average;
 
-  //  for(auto& line:scan.normalizedSpec){
-  //      if (line.size() > nRange) {
-  //          for (auto& point : line[nRange].samples)
-  //              if (point != 0)
-  //                  point = (point - average) / (3 * sigma);
-  //      }
-  //  }
-  //  stageProgressed();
-  //}
+    //  for(auto& line:scan.normalizedSpec){
+    //      if (line.size() > nRange) {
+    //          for (auto& point : line[nRange].samples)
+    //              if (point != 0)
+    //                  point = (point - average) / (3 * sigma);
+    //      }
+    //  }
+    //  stageProgressed();
+    //}
+}
+
+void ScanProcessingTask::restartProcessingTask(Scan& scan, const std::vector<SpecNormalizationParams>& params)
+{
+
 }
 
 void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanLine>>& spec)
@@ -837,29 +1436,37 @@ void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanL
             //auto a = ba::covariate2(normMean);
             auto normMeanMax = ba::max(normMean);
             auto normMeanMin = ba::min(normMean);
-            auto normMeanVar  = ba::variance(normMean)*3.0;
             auto sigma = std::sqrt(ba::variance(normMean));
+            //auto normMeanVar  = ba::variance(normMean)*3.0;
+            auto normMeanVar  = sigma*3.0;
 
             auto normSum = ba::sum(normMean);
             //sums[sampleNum] = normSum/ line.size();
             sums[sampleNum] = normSum;
 
             auto maxDiff = std::max(std::abs(normMeanMax - normMeanMean), std::abs(normMeanMean - normMeanMin));
-            auto diff = std::max((normMeanMax - normMeanMean) , (normMeanMean - normMeanMin));
+            //auto maxDiff = normMeanMax - normMeanMin;
+            auto diff = maxDiff;
             //auto a = 3 / diff;
-            auto a = 3* sigma / diff;
+            //auto a = 3* sigma / diff;
+            auto a = normMeanVar;
+            if ((diff != 0) && (!std::isnan(diff)) && (!std::isinf(diff)))
+            { a = a / diff; }
             auto b = normMeanMean * a;
             //auto c = 3/(normMeanMax - normMeanMean);
-            auto c = 3* sigma /(normMeanMax - normMeanMean);
-            for (auto& range : line) {
-                //range.samples[sampleNum] = (normMeanMean - range.samples[sampleNum])/normMeanVar;
-                //range.samples[sampleNum] = (b - range.samples[sampleNum]*a);
-                //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean) *c;
-                //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean)*a;
-                //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean)/(3 * sigma);
-                range.samples[sampleNum] /= normSum;
-                //range.samples[sampleNum] /= (3 * sigma);
-            }
+            //auto c = normMeanVar /(normMeanMax - normMeanMean);
+            auto c = normMeanVar;
+            if ((normMeanMax - normMeanMean)!=0) c = c/(normMeanMax - normMeanMean);
+            if (normSum != 0)
+                for (auto& range : line) {
+                    //range.samples[sampleNum] = (normMeanMean - range.samples[sampleNum])/normMeanVar;
+                    //range.samples[sampleNum] = (b - range.samples[sampleNum]*a);
+                    //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean) *c;
+                    //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean)*a;
+                    //range.samples[sampleNum] = (range.samples[sampleNum] - normMeanMean)/(normMeanVar);
+                    range.samples[sampleNum] /= normSum; //заремарил 02/07/2025 - после сухого
+                    //range.samples[sampleNum] /= (3 * sigma);
+                };
             //for (auto& range : line) {
             //    range.samples[sampleNum] /= sums[sampleNum];
             //}
@@ -905,6 +1512,8 @@ void ScanProcessingTask::operator() ()
   ::std::vector< ::PeaksLine > tempPeaks;
 
   scan->parameters = params;
+  auto count_Local = 2;
+  bool foundIt = false;
 
   switch(scan->processingStage){
   default:
@@ -916,31 +1525,36 @@ void ScanProcessingTask::operator() ()
     scan->trimmedLines.clear();
 
     //дополнение первой строки до размера следующей // TODO проверить, надо ли?
-//    if (scan->lines.size() > 1) {
-////*******
-//      size_t j = 1;
-//      if (scan->lines.size() > 2) {
-//          j = 2;
-//      }
-//      auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
-//      //if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
-//      if (scan->lines[0].samples.size() < scan->lines[j].samples.size()) {
-//          scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
-//        }
-//      else {
-//          scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
-//      }
-////*******
-//    }
+    if (params.headAndScanCollectorParameters.needTrimFirstLine) {
+        if (scan->lines.size() > 1) {
+            //*******
+            size_t j = 1;
+            if (scan->lines.size() > 2) {
+                j = 2;
+            }
+            auto difference = scan->lines[j].samples.size() - scan->lines[0].samples.size();
+            //if (std::floor(scan->lines[0].samples.size() / 1000) < std::floor(scan->lines[j].samples.size() / 1000)) {
+            if (scan->lines[0].samples.size() < scan->lines[j].samples.size()) {
+                scan->lines[0].samples.insert(scan->lines[0].samples.begin(), difference, 0.0);
+            }
+            else {
+                scan->lines[0].samples.erase(scan->lines[0].samples.begin(), scan->lines[0].samples.begin() - difference);
+            }
+            //*******
+        }
+    }
     boost::transform(scan->lines,
                      std::back_inserter(scan->trimmedLines),
                      p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));
-
+    if (params.headAndScanCollectorParameters.needIgnoreFirstLine) {
+        scan->trimmedLines.erase(scan->trimmedLines.begin());
+    }
     scan->processingStage = ScanProcessingStage::LinesTrimmed;
 
   case ScanProcessingStage::LinesTrimmed:
     emit stageStarted("Детектирование пиков", scan->lines.size());
     scan->peaks.clear();
+
     boost::transform(scan->trimmedLines, 
                      std::back_inserter(scan->peaks),
                      p::bind(&ScanProcessingTask::findPeaks, this, pa::_1, 
@@ -953,9 +1567,9 @@ void ScanProcessingTask::operator() ()
 
   case ScanProcessingStage::PeaksDetected: 
     emit stageStarted("Определение координат пиков", scan->peaks.size());
-    boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::getCoordinateOfPeaks, this, pa::_1));
+    //boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::getCoordinateOfPeaks, this, pa::_1));
+    getCoordinateOfPeaks(scan);
     scan->processingStage = ScanProcessingStage::PeaksCoordinateFinded;
-
   case ScanProcessingStage::PeaksCoordinateFinded:
     emit stageStarted("Нормализация направления сканирования", scan->peaks.size());
     boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::normalizeDirection, this, pa::_1));
@@ -968,15 +1582,34 @@ void ScanProcessingTask::operator() ()
                   begin(scan->trimmedLines), end(scan->trimmedLines),
                   begin(scan->peaks));
     scan->processingStage = ScanProcessingStage::FrequencyRangesSplited;
+  case ScanProcessingStage::FrequencyRangesSplited:
 
+      for (auto line: scan->spec) {
+          for (auto item : line) {
+              auto localSize = item.sampleIndexes.size();
+              if (foundIt = (localSize > 0)) {
+                  count_Local = scan->spec.size() * line.size() * localSize;
+              };
+              if (foundIt) break;
+          }
+      }
+      //count_Local = scan->spec.size() * scan->spec.begin()->size() * scan->spec.begin()->begin()->sampleIndexes.size();
+      emit stageStarted("Реорганизация пиков согласно найденным координатам", count_Local);
+      
+      if (rearranged == true) { return; };
+      reArarngePeak(scan);
+      scan->processingStage = ScanProcessingStage::SpecNormalized;
+
+      scan->processingStage = ScanProcessingStage::SpectreRestructuredOnPeaksCoordinates;
+  case ScanProcessingStage::SpectreRestructuredOnPeaksCoordinates:
+    emit stageStarted("Нормализация спектра",scan->spec.size());
     scan->normalizedSpec = scan->spec;
     if(scan->parameters.shouldNormalize){
-      emit stageStarted("Нормализация спектра",scan->spec.size());
       //normalizeSpectrogram(scan->spec);
       normalizeSpectrogram(scan->normalizedSpec);
-
     }
-
+    scan->processingStage = ScanProcessingStage::SpecNormalized; 
+  case ScanProcessingStage::SpecNormalized:
     emit stageStarted("Поиск относительного уровня сигнала",scan->normalizedSpec.size());
     if (scan->parameters.shouldRelate)
     {
@@ -985,7 +1618,8 @@ void ScanProcessingTask::operator() ()
         else
             findRelativeSignals(*scan, scan->parameters.specNormalization);
     }
-  case ScanProcessingStage::FrequencyRangesSplited:
+    scan->processingStage = ScanProcessingStage::RelativeSignalsFounded;
+  case ScanProcessingStage::RelativeSignalsFounded:
     emit stageStarted("Сглаживание строк",scan->normalizedSpec.size());
     smoothRanges(*scan);     //производится сглаживание по строкам с помощью весовой функции,далее работаем со сглаженными графиками
     scan->processingStage = ScanProcessingStage::RangesSmoothed;
@@ -1018,7 +1652,8 @@ void ScanProcessingTask::operator() ()
     }
     scan->processingStage = ScanProcessingStage::ModelSubstracted;
   case ScanProcessingStage::ModelSubstracted:
-    emit stageStarted("Выделение дефектных точек", scan->parameters.defectPoints.size());
+    emit stageStarted("Выделение точек неоднородностей", scan->parameters.defectPoints.size());
+    //emit stageStarted("Выделение дефектных точек", scan->parameters.defectPoints.size());
     scan->rawDefectPoints.clear();
 
     for (auto const& dp : scan->parameters.defectPoints) {
@@ -1026,14 +1661,16 @@ void ScanProcessingTask::operator() ()
       emit stageProgressed();
     }
 
-    emit stageStarted("Рендеринг дефектных точек (пропорциональный цвет)", scan->parameters.defectPoints.size());
+    emit stageStarted("Рендеринг точек неоднородностей(пропорциональный цвет)", scan->parameters.defectPoints.size());
+    //emit stageStarted("Рендеринг дефектных точек (пропорциональный цвет)", scan->parameters.defectPoints.size());
     scan->renderedDefectPoints.clear();
     for (auto const& dp : scan->parameters.defectPoints) {
       scan->renderedDefectPoints.push_back(renderDefectPoints(dp, scan->rangesResiduals, scan->parameters.defectRendering));
       emit stageProgressed();
     }
 
-    emit stageStarted("Рендеринг дефектных точек (фиксированный цвет)", scan->parameters.defectPoints.size());
+    emit stageStarted("Рендеринг точек неоднородностей(фиксированный цвет)", scan->parameters.defectPoints.size());
+    //emit stageStarted("Рендеринг дефектных точек (фиксированный цвет)", scan->parameters.defectPoints.size());
     scan->renderedDefectPointsFixedColor.clear();
     for (auto const& dp : scan->parameters.defectPoints) {
       scan->renderedDefectPointsFixedColor.push_back(renderDefectPointsWithFixedColor(dp, scan->rangesResiduals, scan->parameters.defectRendering));

@@ -18,6 +18,7 @@
 #include "Core/ScriptSettings.hh"
 #include "Core/QtScript/ProgressReporter.hh"
 #include "Core/PersistentVariable.hh"
+#include "Core/ImageProcessing.hh"
 #include "RealTime/RTContext.h"
 
 
@@ -42,6 +43,7 @@ private:
 	ScriptExecutor* scriptExecutor;
 	QThread* scriptExecutorThread;
 	script::ProgressReporter* scriptProgressReporter;
+	std::shared_ptr<std::vector<Defect>> defects;
 
 	realtime::RTContext& m_rtCtxt;
 
@@ -109,4 +111,7 @@ private:
 
   Q_SLOT void showScan(const std::shared_ptr<Scan>& scan);
   Q_SLOT void showHideUnusedAction(bool needShow = false);
+  
+  Q_SLOT void moveAlongDefect(const std::vector<Defect*>& defectsIn, ::DefectSearchingParameters defectSearching);
+
 };

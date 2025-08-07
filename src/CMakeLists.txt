@@ -5,6 +5,7 @@ ADD_DEFINITIONS(
   -DFUSION_MAX_MAP_SIZE=40
   -DFUSION_MAX_VECTOR_SIZE=40)
 
+
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
 INCLUDE_DIRECTORIES(DevTalk-Drivers-APL-Techno-Motion
@@ -34,7 +35,8 @@ INCLUDE_DIRECTORIES(DevTalk-Drivers-APL-Techno-Motion
 LINK_DIRECTORIES(
   ${BERKELEY_DB_LIBRARY_DIR}
   ${Boost_LIBRARY_DIRS}
-  ${FFTW_LIBRARY_DIRS})
+  ${FFTW_LIBRARY_DIRS}
+  )
 
 QT6_ADD_RESOURCES(CompositeScanner_Generated_Resources
   Gui/tango-icons.qrc)
@@ -214,6 +216,8 @@ add_executable(CompositeScanner #WIN32
   Gui/Loadable.hh
   Gui/ScanControlDialog.cc
   Gui/ScanControlDialog.hh
+  Gui/PeakAndBscanVtkView.cc
+  Gui/PeakAndBscanVtkView.hh
   Gui/ScanDisplayWindow.cc
   Gui/ScanDisplayWindow.hh
   Gui/AutoScanWindow.cc

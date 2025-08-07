@@ -240,7 +240,8 @@ public:
 	    case Qt::EditRole:
 		  if(index.row()==0){
 			  switch (index.column()) {
-			  case 0: return QString("Наименование дефекта:");
+			  case 0: return QString("Наименование неоднородности:");
+			  //case 0: return QString("Наименование дефекта:");
 			  default:
           if (defects.empty()) return QVariant();
           return index.column() % 2 ? QString::fromStdString(defects[(index.column() - 1) / 2 - 1].name) : QVariant();
@@ -374,7 +375,8 @@ public:
 		beginInsertColumns(parent, column, column + count);
 
 		DefectType defect = defects.front();
-		defect.name = "Новый дефект";
+		defect.name = "Новая неоднородность";
+		//defect.name = "Новый дефект";
 		for(auto& param : defect.params){
 		  std::vector<unsigned int> ranges(2,0);
 		  param.koeff = 1;
@@ -483,7 +485,6 @@ public:
 
 	Q_SLOT void addDefect()
 	{
-
 		auto selection = tableView->selectionModel();
 		tableView->model()->insertColumn(tableView->model()->columnCount());
 		tableView->setSpan(0,tableView->model()->columnCount()-2,1,2);

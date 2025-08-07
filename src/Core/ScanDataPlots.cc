@@ -105,6 +105,7 @@ getPoints()
   for (auto i = 0u; i < size; i++){
     //xs->InsertNextValue((line.finalCoordinate - line.startCoordinate) * double(line.sampleIndexes[i]) / double(line.sourceLineSize) + line.startCoordinate);
     xs->InsertNextValue(multiplex * double(line.sampleIndexes[i]) + line.startCoordinate);
+    //xs->InsertNextValue(line.peaks[i].x);
     ys->InsertNextValue(line.samples[i]);
   }
 

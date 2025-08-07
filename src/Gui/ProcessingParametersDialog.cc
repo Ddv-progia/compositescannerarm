@@ -648,6 +648,7 @@ void ProcessingParametersDialog::fillWidgets()
   ui.countOfPeakToCatchForAreaBox->setValue(params.headAndScanCollectorParameters.countOfPeakToCatchForAreaBox);
   ui.columnModelOrderBox->setValue(params.columnModelOrder);
   ui.smoothingPointsCountBox->setValue(params.smoothingPointsCount);
+  ui.smoothingCheckBox->setChecked(params.smoothingPointsWeigted);
   ui.normalizeCheckBox->setChecked(params.shouldNormalize);
   ui.relateCheckBox->setChecked(params.shouldRelate);
   ui.useSubRangesCheckBox->setChecked(params.useSubRanges);
@@ -687,6 +688,10 @@ void ProcessingParametersDialog::fillWidgets()
   ui.approximationComboBox->setCurrentIndex(this->params.defectSearching.edgesApproximationType-1);
   ui.defectInterpretationComboBox->setCurrentIndex((int)this->params.defectSearching.isDefectInside);
   ui.minAreaOfDefectDblSpinBox->setValue(this->params.defectSearching.minDefectArea);
+  ui.markerVelocityDblSpinBox->setValue(this->params.defectSearching.markerVelocityDblSpinBox);
+  ui.markerAccelerationDblSpinBox->setValue(this->params.defectSearching.markerAccelerationDblSpinBox);
+  ui.markerDXDblSpinBox->setValue(this->params.defectSearching.markerdxDblSpinBox);
+  ui.markerDYDblSpinBox->setValue(this->params.defectSearching.markerdyDblSpinBox);
   
   ui.heightBox->setValue(this->params.headAndScanCollectorParameters.height);
   ui.widthBox->setValue(this->params.headAndScanCollectorParameters.width);
@@ -694,12 +699,12 @@ void ProcessingParametersDialog::fillWidgets()
   ui.spinBoxSoundsSampleRate->setValue(this->params.headAndScanCollectorParameters.soundsSampleRate);
   ui.spinBoxMaxRecordingTime->setValue(this->params.headAndScanCollectorParameters.maximumTimeMinutes);
 
-  if (this->params.headAndScanCollectorParameters.needPackInSquare) {
-      ui.rbPackInSquare->setChecked(true);
-  }
-  if (this->params.headAndScanCollectorParameters.needPackInLine) {
-      ui.rbPackInLine->setChecked(true);
-  }
+  ui.rbPackInSquare->setChecked(this->params.headAndScanCollectorParameters.needPackInSquare);
+  ui.rbPackInLine->setChecked(this->params.headAndScanCollectorParameters.needPackInLine);
+  ui.chbxShowTrajectory->setChecked(this->params.headAndScanCollectorParameters.needShowTrajectory);
+  ui.chbxShowCountOfPeak->setChecked(this->params.headAndScanCollectorParameters.needShowCountOfPeak);
+  ui.chbxIgnoreFirstLine->setChecked(this->params.headAndScanCollectorParameters.needIgnoreFirstLine);
+  ui.chbxTrimFirstLine->setChecked(this->params.headAndScanCollectorParameters.needTrimFirstLine);
 }
 
 void ProcessingParametersDialog::updateParameters()
@@ -708,6 +713,7 @@ void ProcessingParametersDialog::updateParameters()
   params.initialSkip = ui.initialSkipBox->value();
   params.stepForSplitFrequencyRanges = ui.stepForSplitFrequencyRangesSpinBox->value();
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
+  params.smoothingPointsWeigted = ui.smoothingCheckBox->isChecked();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
   params.shouldRelate = ui.relateCheckBox->isChecked();
   params.useSubRanges = ui.useSubRangesCheckBox->isChecked();
@@ -725,11 +731,18 @@ void ProcessingParametersDialog::updateParameters()
   params.headAndScanCollectorParameters.soundsSampleRate   = ui.spinBoxSoundsSampleRate->value();
   params.headAndScanCollectorParameters.maximumTimeMinutes = ui.spinBoxMaxRecordingTime->value();
   bool Sbool = ui.rbPackInSquare->isChecked();
-  bool Lbool = ui.rbPackInLine->isChecked();;
+  bool Lbool = ui.rbPackInLine->isChecked();
       params.headAndScanCollectorParameters.needPackInSquare = Sbool;
       params.headAndScanCollectorParameters.needPackInLine = Lbool;
-
+  bool Tbool = ui.chbxShowTrajectory->isChecked();
+  params.headAndScanCollectorParameters.needShowTrajectory = Tbool;
+  bool Cbool = ui.chbxShowCountOfPeak->isChecked();
+  params.headAndScanCollectorParameters.needShowCountOfPeak = Cbool;
   params.columnModelOrder = ui.columnModelOrderBox->value();
+  bool Fbool = ui.chbxTrimFirstLine->isChecked();
+  params.headAndScanCollectorParameters.needTrimFirstLine = Fbool;
+  bool FIbool = ui.chbxIgnoreFirstLine->isChecked();
+  params.headAndScanCollectorParameters.needIgnoreFirstLine = FIbool;
 
   params.defectRendering.red.startValue = ui.redStartBox->value();
   params.defectRendering.red.endValue = ui.redEndBox->value();
@@ -757,7 +770,10 @@ void ProcessingParametersDialog::updateParameters()
 
   params.defectSearching.isDefectInside = (bool)ui.defectInterpretationComboBox->currentIndex();
   params.defectSearching.minDefectArea = ui.minAreaOfDefectDblSpinBox->value();
-
+  params.defectSearching.markerVelocityDblSpinBox = ui.markerVelocityDblSpinBox->value();
+  params.defectSearching.markerAccelerationDblSpinBox = ui.markerAccelerationDblSpinBox->value();
+  params.defectSearching.markerdxDblSpinBox = ui.markerDXDblSpinBox->value();
+  params.defectSearching.markerdyDblSpinBox = ui.markerDYDblSpinBox->value();
   //CV_CHAIN_APPROX_NONE=1,
   //CV_CHAIN_APPROX_SIMPLE=2,
   //CV_CHAIN_APPROX_TC89_L1=3,

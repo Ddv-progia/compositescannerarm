@@ -41,6 +41,12 @@ void ScriptExecutor::runScript(const QString& code, const QString& filename, boo
           //fileName
           //lineNumber
           //stack
+  //if (intermediate) {
+
+  //      commonModule = scriptEngine->importModule(filename);
+  //      //return;
+  //}
+  scriptEngine->setInterrupted(false);
   QJSValue result = scriptEngine->evaluate(code, filename);
   if (result.isError()) {
       qDebug()

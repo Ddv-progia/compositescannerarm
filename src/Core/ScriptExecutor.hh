@@ -43,10 +43,11 @@ public:
 
 
   Q_SLOT void runScript(const QString& code, const QString& filename, bool intermediate);
+  QJSValue commonModule;
   QString settingsFile;
   QSettings* settings;
   Q_SLOT void setProperty(const QString& name, const QJSValue& value) {
-    scriptEngine->globalObject().setProperty(name, value);
+    scriptEngine->globalObject().setProperty(name,  value);
       settings->setValue(name, value.toVariant());
   }
 

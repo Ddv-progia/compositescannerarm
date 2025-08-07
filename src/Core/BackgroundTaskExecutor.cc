@@ -46,7 +46,8 @@ void BackgroundTaskExecutor::enqueue(ProgressReportingTask* task)
 void BackgroundTaskExecutor::operator()()
 {
   try {
-    while (true) {
+      bool var_tru = true;
+    while (var_tru) {
       std::unique_ptr<ProgressReportingTask> t(impl->getTask());
       connect(t.get(), SIGNAL(started(const QString&, int)), this, SIGNAL(started(const QString&, int)), Qt::DirectConnection);
       connect(t.get(), SIGNAL(stageStarted(const QString&, int)), this, SIGNAL(stageStarted(const QString&, int)), Qt::DirectConnection);

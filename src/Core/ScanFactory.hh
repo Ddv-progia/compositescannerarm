@@ -31,10 +31,10 @@ public:
 protected:
 	Q_SIGNAL void newScanPublished(const std::shared_ptr<Scan>& scan);
 	Q_SIGNAL void newScanPublished(const std::shared_ptr<ScanArm>& scan);
+	ProcessingParameters processingParameters;
 
 private:
 	BackgroundTaskExecutor& taskExecutor;
-	ProcessingParameters processingParameters;
 
 	std::mutex rangeScanLinesMutex;
 	std::vector<SourceScanLine> rangeScanLines;

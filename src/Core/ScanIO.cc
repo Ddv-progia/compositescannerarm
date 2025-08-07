@@ -104,8 +104,9 @@ void saveToWaveDirectory(const QString& dirName, const Scan& scan)
     saveLineToWaveFile(fileName, lines[i]);
     info.lines.push_back(RawScanLineInfo{ QString("line-%1.wav").arg(i).toStdString(), lines[i].sampleRate,
         lines[i].startCoordinate, lines[i].finalCoordinate, lines[i].lineCoordinate, lines[i].finalLineCoordinate,
-        //lines[i].timestampStart, lines[i].timestampEnd });
-         });
+        lines[i].timestampStart, lines[i].timestampEnd,
+        lines[i].startCoordinateZ , lines[i].finalCoordinateZ,
+                                        });
   }
 
   PersistentVariable<RawScanInfo> rawScan(info, QDir(dirName).filePath("line.xml").toStdString(), "Raw-Scan");

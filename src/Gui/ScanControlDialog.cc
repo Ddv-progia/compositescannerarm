@@ -29,5 +29,6 @@ void ScanControlDialog::scanTaskProgressed()
 
 void ScanControlDialog::scanTaskFinished()
 {
+
   setText("Остановить сканирование");
 }

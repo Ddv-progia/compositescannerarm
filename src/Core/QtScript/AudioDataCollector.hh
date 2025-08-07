@@ -22,11 +22,13 @@ namespace script {
     uts::devtalk::AudioDataCollectorPrx collector;
     QJSEngine* scriptEngine;
   public:
-    AudioDataCollector(const uts::devtalk::AudioDataCollectorPrx& collector, QJSEngine* scriptEngine);
+    AudioDataCollector(const uts::devtalk::AudioDataCollectorPrx& collector, QJSEngine* scriptEngineIn);
     //AudioDataCollector(const uts::devtalk::AudioDataCollectorPrx& collector);
 
     Q_INVOKABLE void start(int sampleRate);
-    Q_INVOKABLE void stop(double startCoordinate, double finalCoordinate, double lineCoordinate);
+    Q_INVOKABLE void start(int sampleRate, int channelCount);
+    Q_INVOKABLE void stop(double startCoordinate, double finalCoordinate, double lineCoordinate, double finalLineCoordinate=0);
+    Q_INVOKABLE void stopAndDiscardSamples();
     Q_INVOKABLE void discard();
 
   protected:
@@ -35,6 +37,7 @@ namespace script {
   private:
     template<typename F>
     void wrapExceptions(F f);
+    unsigned long long int timestampStart = 0;
   };
 
   class TestLabel : public QObject

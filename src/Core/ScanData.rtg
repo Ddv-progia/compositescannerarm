@@ -32,6 +32,9 @@ enum ScanProcessingStage is
 	RangesNormalized,
 	ModelSubstracted,
 	PeaksCoordinateFinded,
+	SpectreRestructuredOnPeaksCoordinates,
+	RelativeSignalsFounded,
+	SpecNormalized,
 	RtRawDataObtained,
 	RtPeaksDetected,
 	RtLinesTrimmed,
@@ -101,6 +104,7 @@ struct DefectSearchingRange is
 	range : Unsigned_Integer
 	minimumValue : Double_Precision_Real
 	maximumValue : Double_Precision_Real
+	isDefectInside : Boolean = {true}
 end
 
 struct DefectSearchingParameters is 
@@ -115,6 +119,11 @@ struct DefectSearchingParameters is
 	defectRanges : Std::Vector(DefectSearchingRange)
 	minDefectArea: Double_Precision_Real
 	isDefectInside: Boolean
+    markerVelocityDblSpinBox: Double_Precision_Real ={10}
+    markerAccelerationDblSpinBox: Double_Precision_Real ={20}
+    markerdxDblSpinBox: Double_Precision_Real ={0}
+    markerdyDblSpinBox: Double_Precision_Real ={0}
+
 end
 
 struct ColorStop is
@@ -156,9 +165,16 @@ struct HeadAndScanCollectorParameters is
   countOfPeakToCatchForAreaBox: Unsigned_Integer = {1}
   peakForestepSound:  Double_Precision_Real = {0.0}
   currentNumArea:  Unsigned_Integer = {1}  -- шаг разбиения на клетки. фактически deltaX = currentNumArea и deltaY = currentNumArea 
+  deltaX :  Double_Precision_Real  = {1}  -- шаг разбиения на клетки. deltaX = currentNumArea и deltaY = currentNumArea 
+  deltaY :  Double_Precision_Real  = {1}  -- шаг разбиения на клетки. фактически deltaY = шаг по оси Y для сканирования рамкой
   firstStepShift: Double_Precision_Real = {0.0}
   needPackInSquare: Boolean = {true}
   needPackInLine: Boolean = {false}
+  needShowTrajectory: Boolean = {false}
+  needShowCountOfPeak: Boolean = {false}
+  needShowBScan: Boolean = {true}
+  needIgnoreFirstLine: Boolean = {false}
+  needTrimFirstLine: Boolean = {false}
 end
 
 
@@ -191,6 +207,8 @@ struct ProcessingParameters is
   stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
 
   shouldRelate : Boolean  = {true} 
+  smoothingPointsWeigted: Boolean = {true} --//учитывать ли веса сглаживающих  точек
+
 end
 
 
@@ -203,6 +221,8 @@ struct SourceScanLine is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+  startCoordinateZ: Double_Precision_Real = { 0 }
+  finalCoordinateZ: Double_Precision_Real = { 0 }
 end
 
 struct SourceScanChunk is
@@ -226,6 +246,8 @@ struct RawScanLineInfo is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+  startCoordinateZ: Double_Precision_Real = { 0 }
+  finalCoordinateZ: Double_Precision_Real = { 0 }
 
 end
 
@@ -244,7 +266,8 @@ struct SourceScanLineSlice is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-
+  startCoordinateZ: Double_Precision_Real = { 0 }
+  finalCoordinateZ: Double_Precision_Real = { 0 }
 end
 
 struct PeaksLine is
@@ -255,26 +278,29 @@ struct PeaksLine is
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
+  startCoordinateZ: Double_Precision_Real = { 0 }
+  finalCoordinateZ: Double_Precision_Real = { 0 }
 
 end
 
 
 struct RangeScanLine is
-  samples : Std::Vector(Single_Precision_Real)
-  sampleIndexes : Std::Vector(Unsigned_Integer)
-  sampleRate :  Unsigned_Integer
-  startCoordinate :  Double_Precision_Real
-  finalCoordinate :  Double_Precision_Real
-  sourceLineSize :  Unsigned_Integer
-  lineCoordinate :  Double_Precision_Real
+  samples             : Std::Vector(Single_Precision_Real)
+  sampleIndexes       : Std::Vector(Unsigned_Integer)
+  peaks               : Std::Vector(Peak)
+  sampleRate          :  Unsigned_Integer
+  startCoordinate     :  Double_Precision_Real
+  finalCoordinate     :  Double_Precision_Real
+  sourceLineSize      :  Unsigned_Integer
+  lineCoordinate      :  Double_Precision_Real
   finalLineCoordinate :  Double_Precision_Real = { 0.0 }
-  timestampStart : Unsigned_Long_Long_Integer = { 0 }
-  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-
+  timestampStart      : Unsigned_Long_Long_Integer = { 0 }
+  timestampEnd        : Unsigned_Long_Long_Integer = { 0 }
   range :  FrequencyRange
   subBegin : Std::Vector(RangeScanLine)::Iterator
   subEnd : Std::Vector(RangeScanLine)::Iterator
-
+  startCoordinateZ    : Double_Precision_Real = { 0 }
+  finalCoordinateZ    : Double_Precision_Real = { 0 }
 end
 
 
@@ -296,10 +322,16 @@ struct NormalizedRange is
   minView : MultiArray(Single_Precision_Real)
   averView : MultiArray(Single_Precision_Real)
   diffView : MultiArray(Single_Precision_Real)
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  
+  finalLineCoordinates: Std::Vector(Double_Precision_Real)
+--  lineCoordinatesMin: Double_Precision_Real = { 0 }
+--  finalLineCoordinateMax: Double_Precision_Real = { 0 }
+  lineCoordinate: Double_Precision_Real = { 0 }
+  finalLineCoordinate: Double_Precision_Real = { 0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-
+  startCoordinateZ: Double_Precision_Real = { 0 }
+  finalCoordinateZ: Double_Precision_Real = { 0 }
 end
 
 struct Polynomial is
@@ -318,6 +350,7 @@ struct DefectsView is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinates : Std::Vector(Double_Precision_Real)
+  finalLineCoordinates : Std::Vector(Double_Precision_Real)
 end
 
 struct Position is

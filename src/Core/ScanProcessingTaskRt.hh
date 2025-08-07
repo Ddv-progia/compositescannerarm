@@ -33,7 +33,7 @@ private:
 
     RangeScanLine findAverageLine(std::vector<RangeScanLine>& rangedLines, FrequencyRange range);
 
-    void normalizeDirection(PeaksLine& line);
+    void normalizeDirectionRt(PeaksLine& line);
     std::vector<RangeScanLine> splitFrequencyRanges(const SourceScanLineSlice& line, const std::vector<Peak>& peaks);
 
     void alignLines(const std::vector<PeaksLine>& peaks, std::vector<std::vector<RangeScanLine>>& ranges);

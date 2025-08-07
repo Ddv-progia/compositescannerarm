@@ -24,22 +24,21 @@ namespace {
 }
 
 std::vector<Peak>
-findPeaks(std::vector<float>::const_iterator srcBegin, 
-          std::vector<float>::const_iterator srcEnd, 
-          unsigned int sampleRate, 
-          float peakLimit, 
-          double backstepSeconds, 
-          double forestepSeconds,
-          //unsigned int peakPauseCountSeconds)
-          double peakPauseCountSeconds)
+    findPeaks(std::vector<float>::const_iterator srcBegin,
+        std::vector<float>::const_iterator srcEnd,
+        unsigned int sampleRate,
+        float peakLimit,
+        std::size_t backstep,
+        std::size_t forestep,
+        std::size_t peakPauseCount)
 {
-  const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
-  const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
-  const auto pauseCount = static_cast<std::size_t>(std::floor(peakPauseCountSeconds * sampleRate + 0.5));
+  //const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
+  //const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
+  //const auto pauseCount = static_cast<std::size_t>(std::floor(peakPauseCountSeconds * sampleRate + 0.5));
 
   if (forestep == 0) {
     BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException() 
-      << uts::ErrInfo_Description((format("Длительность пика слишком мала: %1% при частоте дискретизации %2%") % backstepSeconds % sampleRate).str()));
+      << uts::ErrInfo_Description((format("Длительность пика слишком мала: %1% при частоте дискретизации %2%") % forestep % sampleRate).str()));
   }
   std::vector<Peak> peaks;
   std::size_t srcSize = std::distance(srcBegin, srcEnd);
@@ -70,18 +69,29 @@ findPeaks(std::vector<float>::const_iterator srcBegin,
  //      peakPauseCount = 0;
  //  }
  //  i++;
- //}
+ //}          if (startPos < 0) startPos = 0;
+
  //*******
+  int endOfPeakPos = 0;
+  auto peakLenght = forestep + backstep;
   for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
-    if (std::abs(*(srcBegin + i)) > peakLimit) {
-        auto startPos = i - backstep;
-        if (startPos < 0) startPos = 0;
-      peaks.push_back(Peak{ (unsigned int)std::max((unsigned int)0, static_cast<unsigned int>(startPos)), (unsigned int)(i + forestep) });
-      //i += (forestep+ pauseCount);
-      i += forestep + backstep;
-    } else {
-      i++;
-    }
+      if (std::abs(*(srcBegin + i)) > peakLimit) {
+
+          int startPos = i - backstep;
+          if (startPos < 0) startPos = 0;
+          //peaks.push_back(Peak{ (unsigned int)std::max((unsigned int)0, static_cast<unsigned int>(startPos)), (unsigned int)(i + forestep) });
+          peaks.push_back(Peak{ (unsigned int)(startPos), (unsigned int)(i + forestep) });
+          //i += (forestep+ pauseCount);
+          i += peakLenght;
+          endOfPeakPos = i;
+      }
+      else {
+          if (std::abs(int(i) - endOfPeakPos) > (peakLenght)) {
+              peaks.push_back(Peak{ static_cast<unsigned int>(endOfPeakPos + 1), (unsigned int)(i) });
+              endOfPeakPos = i;
+          }
+          i++;
+      }
   }
   //*******
 
@@ -138,7 +148,7 @@ bool getCoordinateOfPeak(size_t& indexInSound, size_t& curChunkIndex, Peak& peak
                     auto trajectoryIndexPred = curTrajectoryIndex - 1;
                     auto dst = (curTrajectoryTimeStamp - positions->at(trajectoryIndexPred).timeStamp);
                     if (dst) {
-                        auto kt = (curTrajectoryTimeStamp - timestampForIndexInSound) / dst;
+                        double kt = double(curTrajectoryTimeStamp - timestampForIndexInSound) / double (dst);
                         auto dx = (positions->at(curTrajectoryIndex).x - positions->at(trajectoryIndexPred).x) * kt;
                         auto dy = (positions->at(curTrajectoryIndex).y - positions->at(trajectoryIndexPred).y) * kt;
                         auto dz = (positions->at(curTrajectoryIndex).z - positions->at(trajectoryIndexPred).z) * kt;
@@ -171,15 +181,20 @@ namespace {
 
   std::size_t maxPeakLength(const std::vector<Peak>& peaks)
   {
+      std::vector<size_t> peaksize;
+      for (auto peak: peaks){
+          peaksize.push_back(peak.endIndex- peak.beginIndex);
+      }
     switch (peaks.size()) {
-    default:
-      return peakLength(peaks[1]);
     case 0:
       return std::size_t(0);
     case 1:
       return peakLength(peaks.front());
     case 2:
       return std::max(peakLength(peaks.front()), peakLength(peaks.back()));
+    default:
+      //return peakLength(peaks[1]);
+        return size_t(*std::max_element(peaksize.begin(), peaksize.end()));
     }
   }
 
@@ -253,7 +268,11 @@ splitFrequencyRanges(std::vector<float>::const_iterator srcBegin,
 
   // Преобразование последнего пика, если он не единственный
   if (peaks.size() > 1) {
-    std::copy(srcBegin + peaks.back().beginIndex, srcBegin + peaks.back().endIndex, inputFrame);
+      auto bi = peaks.back().beginIndex;
+      auto ei = peaks.back().endIndex;
+
+    //std::copy(srcBegin + peaks.back().beginIndex, srcBegin + peaks.back().endIndex, inputFrame);
+    std::copy(srcBegin + bi, srcBegin + ei, inputFrame);
     fftwf_plan lastPlan = fftwf_plan_dft_r2c_1d(peakLength(peaks.back()), inputFrame, fft, FFTW_ESTIMATE); 
     //fftwf_execute(firstPlan);
     //*******

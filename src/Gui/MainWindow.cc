@@ -50,7 +50,7 @@ MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& task
 {
   ui.setupUi(this);
   ui.backgroundTasksBox->hide();
-  showHideUnusedAction(false);
+  showHideUnusedAction(true);
   updateTimer = new QTimer(this);
 
   prepareScriptEnvironment();
@@ -80,30 +80,45 @@ template <typename T> void addType(QJSEngine* engine) {
 
 void MainWindow::prepareScriptEnvironment()
 {
-    scriptEngine = new QJSEngine(this);
+    scriptEngine = new QJSEngine(this); 
+    scriptEngine->installExtensions(QJSEngine::ConsoleExtension);
+   
     scriptProgressReporter = new script::ProgressReporter(this);
     auto audioDataCollector = new script::AudioDataCollector(devices::audioDataCollector, scriptEngine);
+    //audioDataCollector->start(96000, 1);
+    //for (int i = 0; i < 300000000; i++) {};
+    //audioDataCollector->stop(10,30,30);
 
     scriptEngine->globalObject().setProperty("testLabel",
         //scriptEngine->newQObject(new script::TestLabel(ui.label_2, scriptEngine), QJSEngine::ScriptOwnership));
         scriptEngine->newQObject(new script::TestLabel(ui.label_2, scriptEngine)));
 
-
+    script::StepMotor* xAxisScriptMotor = new script::StepMotor(devices::xAxisMotor, scriptEngine);
+    script::StepMotor* yAxisScriptMotor = new script::StepMotor(devices::yAxisMotor, scriptEngine);
+    xAxisScriptMotor->addMotor(devices::yAxisMotor); 
+    yAxisScriptMotor->addMotor(devices::xAxisMotor);
     scriptEngine->globalObject().setProperty("audioDataCollector",
         scriptEngine->newQObject(audioDataCollector));
     scriptEngine->globalObject().setProperty("builtin_xAxisMotor",
-        scriptEngine->newQObject(new script::StepMotor(devices::xAxisMotor, scriptEngine)));
-    scriptEngine->globalObject().setProperty("builtin_yAxisMotor",
-        scriptEngine->newQObject(new script::StepMotor(devices::yAxisMotor, scriptEngine)));
+        //scriptEngine->newQObject(new script::StepMotor(devices::xAxisMotor, scriptEngine)));
+        scriptEngine->newQObject(xAxisScriptMotor));
+        scriptEngine->globalObject().setProperty("builtin_yAxisMotor",
+        scriptEngine->newQObject(yAxisScriptMotor));
     scriptEngine->globalObject().setProperty("builtin_coil",
         scriptEngine->newQObject(new script::Coil(devices::coil, scriptEngine)));
     scriptEngine->globalObject().setProperty("progressReporter", scriptEngine->newQObject(scriptProgressReporter));
-    
+    //auto xyMotor = new script::StepMotor(devices::xAxisMotor, scriptEngine);
+    //xyMotor->addMotor(devices::yAxisMotor);
+    //scriptEngine->globalObject().setProperty("builtin_xyMotor",
+    //    scriptEngine->newQObject(xyMotor));
+
     //scriptEngine->globalObject().setProperty("sleep", scriptEngine->newFunction(script::sleep));
     //scriptEngine->globalObject().setProperty("pause", scriptEngine->newFunction(script::pause));
     QJSValue funcObj = scriptEngine->newQObject(new script::FunctionalObject());
     scriptEngine->globalObject().setProperty("sleep", funcObj.property("sleep"));
     scriptEngine->globalObject().setProperty("pause", funcObj.property("pause"));
+    scriptEngine->globalObject().setProperty("alert", funcObj.property("alert"));
+
 
 
     scriptExecutorThread = new QThread;
@@ -114,8 +129,10 @@ void MainWindow::prepareScriptEnvironment()
     qTimer->moveToThread(scriptExecutorThread);
 
     scriptEngine->globalObject().setProperty("qTimer", scriptEngine->newQObject(qTimer));
+    scriptEngine->globalObject().setProperty("line", 0);
 
     scriptExecutor = new ScriptExecutor(scriptEngine);
+
     scriptExecutor->moveToThread(scriptExecutorThread);
 
     connect(audioDataCollector, SIGNAL(lineFechted(const SourceScanLine&)), &scanFactory, SLOT(addRangeScanLine(const SourceScanLine&)), Qt::QueuedConnection);
@@ -176,6 +193,8 @@ void MainWindow::connectSignals()
   connect(this, SIGNAL(scriptStarted(const QString&, const QString&, bool)), scriptExecutor, SLOT(runScript(const QString&, const QString&, bool)), Qt::QueuedConnection);
 
   connect(&scanFactory, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), this, SLOT(showScan(const std::shared_ptr<Scan>&)));
+
+  //событие для проезда по контуру аномалии:
 }
 
 void MainWindow::loadConfiguration()
@@ -468,6 +487,8 @@ void MainWindow::runScript()
         connect(scriptProgressReporter, SIGNAL(taskStarted(int)), &scd, SLOT(newScanTask(int)), Qt::QueuedConnection);
         connect(scriptProgressReporter, SIGNAL(taskProgressed()), &scd, SLOT(scanTaskProgressed()), Qt::QueuedConnection);
         connect(scriptProgressReporter, SIGNAL(taskFinished()), &scd, SLOT(scanTaskFinished()), Qt::QueuedConnection);
+        //connect(scriptProgressReporter, SIGNAL(taskFinished()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
+        //connect(scriptProgressReporter, SIGNAL(taskFinishedSoPlot()), &scanFactory, SLOT(finishScan()), Qt::QueuedConnection);
 
         emit scriptStarted(ew->scriptCode(), "", false);
 
@@ -647,13 +668,14 @@ void MainWindow::initialize()
 
 void MainWindow::showScan(const std::shared_ptr<Scan>& scan)
 {
-  auto sdw = new ScanDisplayWindow(scan);
+  auto sdw = new ScanDisplayWindow(scan, this);
   sdw->setAttribute(Qt::WA_DeleteOnClose, true);
   sdw->scanFactory = &scanFactory;
 
   ui.mdiArea->addSubWindow(sdw);
   sdw->showMaximized();
   connect(sdw,SIGNAL(refreshScan(std::shared_ptr<Scan>&)),&scanFactory,SLOT(recalculateScan(std::shared_ptr<Scan>&)));
+  connect(sdw,SIGNAL(moveAlongSelectedDefect(const std::vector<Defect*>&, ::DefectSearchingParameters )),this,SLOT(moveAlongDefect(const std::vector<Defect*>&, ::DefectSearchingParameters)));
 }
 
 void MainWindow::showHideUnusedAction(bool needShow)
@@ -679,6 +701,31 @@ void MainWindow::showHideUnusedAction(bool needShow)
     ui.pasteAction->setVisible(needShow);
     ui.setZeroCoodinateButton->setVisible(needShow);
 
+}
+
+void MainWindow::moveAlongDefect(const std::vector<Defect*>& defectsIn,::DefectSearchingParameters defectSearching)
+{
+    script::StepMotor* xAxisScriptMotor = new script::StepMotor(devices::xAxisMotor, scriptEngine);
+    xAxisScriptMotor->addMotor(devices::yAxisMotor);
+    //QMessageBox::critical(this, "Ошибка", "Не удалось считать программу инициализации");
+    auto dx = defectSearching.markerdxDblSpinBox;
+    auto dy = defectSearching.markerdyDblSpinBox;
+    auto vel = defectSearching.markerVelocityDblSpinBox;
+    auto accel = defectSearching.markerAccelerationDblSpinBox;
+    for (auto def : defectsIn) {
+        auto point = def->contour.begin();
+        xAxisScriptMotor->moveXYZ(vel, accel, accel, { point->x()+ dx,  point->y() + dy });
+        QMessageBox putOnMarkerBox(QMessageBox::NoIcon, "Обводка контура.", "Закрепите маркер в рабочее положение!", { QMessageBox::Cancel, QMessageBox::Ok });
+        putOnMarkerBox.setDefaultButton(QMessageBox::Ok);
+        if (putOnMarkerBox.exec() == QMessageBox::Ok) {
+            while(++point != def->contour.end()) {
+                xAxisScriptMotor->moveXYZ(vel, accel, accel, { point->x() + dx,  point->y() + dy });
+            };
+        }
+    }
+    QMessageBox putOffMarkerBox(QMessageBox::NoIcon, "Обводка контура.", "Обводка контура закончена.\r\nУберите маркер.", { QMessageBox::Ok });
+    putOffMarkerBox.exec();
+    return Q_SLOT void();
 }
 
 void MainWindow::closeEvent(QCloseEvent* evt)

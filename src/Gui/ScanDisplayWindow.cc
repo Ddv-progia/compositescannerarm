@@ -1,3 +1,5 @@
+#pragma once
+
 /*
  * Gui/ScanDisplayWindow.cc
  */
@@ -17,6 +19,7 @@
 #include <qwt_scale_div.h>
 #include <qwt_scale_engine.h>
 #include <qwt_painter.h>
+#include <QSplitter>
 #include <QSettings>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
@@ -59,6 +62,61 @@
 #include "Gui/ColoredRangeSelector.hh"
 #include "Gui/FrequencyRose.hh"
 #include "Gui/EditorWindow.hh"
+#include "Gui/PeakAndBscanVTKView.hh"
+
+//new 2024
+#include <vtkCamera.h>
+#include <vtkCellData.h>
+#include <vtkDiscretizableColorTransferFunction.h>
+#include <vtkGlyph3DMapper.h>
+#include <vtkImageMapToColors.h>
+#include <vtkLookupTable.h>
+
+#include <vtkNamedColors.h>
+#include <vtkNew.h>
+#include <vtkParametricFunctionSource.h>
+#include <vtkParametricSuperEllipsoid.h>
+#include <vtkPointSource.h>
+#include <vtkPoints.h>
+#include <vtkPolyLine.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkScalarBarActor.h>
+#include <vtkScalarBarWidget.h>
+#include <vtkSphereSource.h>
+#include <vtkTransform.h>
+
+#include <iostream>
+#include <string> 
+//***
+
+#include <vtkActor.h>
+#include <vtkDataSetMapper.h>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkPointData.h>
+//#include <vtkProperty.h>
+//#include <vtkRenderer.h>
+//#include <vtkSphereSource.h>
+
+#include <QApplication>
+#include <QDockWidget>
+#include <QGridLayout>
+#include <QLabel>
+#include <QMainWindow>
+#include <QPointer>
+//#include <QPushButton>
+//#include <QVBoxLayout>
+#include <QVTKOpenGLNativeWidget.h>
+#include <cmath>
+
+//end new 2024
 
 
 QImage ScanPlotDefectsMarker::buildMaskImage() const
@@ -115,7 +173,6 @@ void ScanPlotDefectsMarker::selectContour(const Defect& defect)
   }
 }
 
-
 ScanPlotDefectsMarker::ScanPlotDefectsMarker(const QwtText& title): QwtPlotItem(title)
 {
   setRenderHint( QwtPlotItem::RenderAntialiased, true );
@@ -136,6 +193,16 @@ int ScanPlotDefectsMarker::rtti() const
   return QwtPlotItem::Rtti_PlotUserItem;
 }
 
+void ScanDisplayWindow::slot_clicked(vtkObject* ob, unsigned long lo, void* vo, void* vi)
+{
+    auto inter = static_cast<vtkRenderWindowInteractor*>(ob);
+    auto b = inter->GetEventPosition();
+    std::cout << "Clicked. " << b[0] << " " << b[1] << " " << b[2] << b[3] << std::endl;
+
+    auto iren = this->armVtkRenderWidget->genericOpenGLRenderWindow->GetInteractor();
+    auto a = iren->GetEventPosition();
+    std::cout << "Clicked. " << a[0] << " " << a[1] << " " << a[2] << a[3] << std::endl;
+}
 
 
 ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget* parent)
@@ -149,21 +216,25 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   kindBox = new QComboBox;
   kindBox->addItem("Диапазоны");
   kindBox->addItem("Вычеты модели по столбцам");
-  kindBox->addItem("Дефектные точки (пропорциональный цвет)");
-  kindBox->addItem("Дефектные точки (фиксированный цвет)");
+  kindBox->addItem("Точки неоднородности (пропорциональный цвет)");
+  kindBox->addItem("Точки неоднородности (фиксированный цвет)");
+  //kindBox->addItem("Дефектные точки (пропорциональный цвет)");
+  //kindBox->addItem("Дефектные точки (фиксированный цвет)");
 
   plotBox = new QComboBox;
 
+  auto outlineSelectedDefectsButton = new QPushButton("Обвести неоднородность");
+  outlineSelectedDefectsButton ->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   auto additionalPlotsButton = new QPushButton("Детальный график");
   additionalPlotsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   additionalPlotsButton->setCheckable(true);
   auto plotsButton = new QPushButton("Графики");
   plotsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  plotsButton->setCheckable(true);
+  plotsButton->setCheckable(false);
   auto resizeToWindowButton = new QPushButton("Сохранять пропорции");
   resizeToWindowButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   resizeToWindowButton->setCheckable(true);
-  auto defectsButton = new QPushButton("Отображать дефекты");
+  auto defectsButton = new QPushButton("Отображать неоднородности");
   defectsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   defectsButton->setCheckable(true);
 
@@ -178,6 +249,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   commandLayout->insertStretch(2,3);
 
   //commandLayout->addStretch();
+  commandLayout->addWidget(outlineSelectedDefectsButton);
   commandLayout->addWidget(additionalPlotsButton);
   commandLayout->addWidget(plotsButton);
   commandLayout->addWidget(resizeToWindowButton);
@@ -368,6 +440,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   bottomHolder->setLayout(bottomLayout);
 
   mainLayout = new QVBoxLayout;
+  mainWidget = new QWidget;
 
   widgetLayout = new QGridLayout;
   widgetLayout->setContentsMargins(2, 2, 2, 2);
@@ -381,20 +454,70 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   commandScrollArea->setFrameStyle(1);
   commandScrollArea->setLayout(commandLayout);
   commandScrollArea->setWidgetResizable(true);
+
+  QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
+  
+  //armVtkRenderWidget->setRenderWindow(genericOpenGLRenderWindow.Get());
+  //armVtkRenderWidget->setRenderWindow(renderWindow.Get());
+
+
+  // connect the buttons
+  //QObject::connect(randomizeButton, &QPushButton::released, this, &ScanDisplayWindow::Randomize);
+  vtkNew<vtkEventQtSlotConnect> slotConnector;
+  this->armVtkRenderWidget->Connections = slotConnector;
+#if VTK890
+  this->armVtkRenderWidget->Connections->Connect(
+      this->armVtkRenderWidget->genericOpenGLRenderWindow->GetInteractor(),
+      vtkCommand::LeftButtonPressEvent, this,
+      SLOT(slot_clicked(vtkObject*, unsigned long, void*, void*)));
+
+
+  //this->armVtkRenderWidget->Connections->Connect(
+  //    this->armVtkRenderWidget->genericOpenGLRenderWindow->GetInteractor(),
+  //    vtkCommand::LeftButtonReleaseEvent, this,
+  //    SLOT(slot_clicked(vtkObject*, unsigned long, void*, void*)));
+  ////this->armVtkRenderWidget->Connections->Connect(
+  ////    this->armVtkRenderWidget->genericOpenGLRenderWindow->GetInteractor(),
+  ////    vtkCommand::LeftButtonPressEvent, this,
+  ////    SLOT(slot_clicked(vtkObject*, unsigned long, void*, void*)));
+#else
+  this->armVtkRenderWidget->Connections->Connect(
+      //QVTKOpenGLNativeWidget
+      this->armVtkRenderWidget->RenderWindow()->GetInteractor(),
+      vtkCommand::LeftButtonPressEvent, this,
+      SLOT(slot_clicked(vtkObject*, unsigned long, void*, void*)));
+#endif
+  dockLayout->addWidget(armVtkRenderWidget);
+  layoutContainer->setLayout(dockLayout);
+  armVtkRenderWidget->showQuantizedPoints(scan);
+
   //commandScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   widgetLayout->addWidget(commandScrollArea, 0, 0);
   //widgetLayout->addLayout(commandLayout, 0, 0);
   widgetLayout->addWidget(rangeSelector, 0, 2);
+
   widgetLayout->addWidget(scanScrollArea, 3, 0);
   widgetLayout->addWidget(scanRightColorScale, 3, 1);
   widgetLayout->addWidget(rightHolder, 3, 2);
   widgetLayout->addWidget(bottomHolder, 4, 0);
   widgetLayout->addWidget(infoWidget, 4, 2);
+  //widgetLayout->addWidget(layoutContainer, 5, 0, 1, 2);
 
   widgetLayout->setColumnStretch(0, 9);
   widgetLayout->setColumnStretch(2, 1);
-  widgetLayout->setRowStretch(3, 1);
+  widgetLayout->setRowStretch(3, 5);
+  widgetLayout->setRowStretch(4, 1);
+  //widgetLayout->setRowStretch(5, 1);
+  
+
+  //auto splitter = new QSplitter(Qt::Vertical);
+  //splitter->addWidget(mainWidget);
+  //splitter->addWidget(armVtkRenderWidget);
+  //splitter->setStretchFactor(0, 5);
+  //splitter->setStretchFactor(1, 1);
+
   setLayout(widgetLayout);
+
 
   createColoredRangeSelector();
 
@@ -407,6 +530,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   connect(scanPlotEventFilter, SIGNAL(moveMarkers(int, int)), this, SLOT(moveMarkers(int, int)));
   connect(scanPlotEventFilter, SIGNAL(changeExtremums()), this, SLOT(changeExtremums()));
 
+  connect(outlineSelectedDefectsButton, SIGNAL(clicked()), this, SLOT (moveAlongDefects()));
   connect(additionalPlotsButton, SIGNAL(toggled(bool)), this, SLOT(setAdditionalGraphicsVisibility(bool)));
   connect(defectsButton, SIGNAL(toggled(bool)), this, SLOT(setDefectsVisible(bool)));
   connect(resizeToWindowButton, SIGNAL(toggled(bool)), this, SLOT(togleWindowSize(bool)));
@@ -521,6 +645,14 @@ void ScanDisplayWindow::showUserRange()
   updatePlot();
 }
 
+void ScanDisplayWindow::moveAlongDefects()
+{
+    const auto defs = defectsMarker->selectedDefects;
+    DefectSearchingParameters params = scan->parameters.defectSearching;
+    emit moveAlongSelectedDefect(defs, params);
+    return Q_SLOT void();
+}
+
 QPoint ScanDisplayWindow::specIndex(QPoint& viewPoint, std::size_t nRange)
 {
   // из индексов в точки спектра
@@ -597,7 +729,8 @@ void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::v
     //  }
     //}
   }
-  scan->processingStage = ScanProcessingStage::DirectionNormalized;
+  //scan->processingStage = ScanProcessingStage::DirectionNormalized;
+  scan->processingStage = ScanProcessingStage::SpecNormalized;
   refreshWindow();
 }
 
@@ -631,9 +764,10 @@ void ScanDisplayWindow::normalizeRegion(const QRectF& rect)
   if(beginPoint.y() >= scan->normalizedRanges.begin()->view.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.shape()[1] - 1);
   if(beginPoint.x() >= scan->normalizedRanges.begin()->view.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.shape()[0] - 1);
 
-  /* for(int i = 1;i<6;i++) 
-      normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
-  normalizeSpec(beginPoint, endPoint, scan->spec);
+  ///* for(int i = 1;i<6;i++) 
+  //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
+  //normalizeSpec(beginPoint, endPoint, scan->spec);
+  normalizeSpec(beginPoint, endPoint, scan->normalizedSpec);
 }
 
 void ScanDisplayWindow::getRegionFrequencyRose(const QRectF& rect)
@@ -889,13 +1023,15 @@ void ScanDisplayWindow::updateRangesPlot()
   
   scan->currentRange = idx;
   auto* normalizedRanges = &scan->normalizedRanges;
+  auto extremum = scan->parameters.extremumOfRanges[idx];
   if(showCommonRange) {
     normalizedRanges = &scan->commonNormalizedRanges;
     idx = commonRangeNum;
   }
   else{
       //switch (scan->normalizedRanges[idx].extremum){
-      switch (scan->parameters.extremumOfRanges[idx]) {
+      //switch (scan->parameters.extremumOfRanges[idx]) {
+      switch (extremum) {
       case Extremum::Max:
           scan->normalizedRanges[idx].view = scan->normalizedRanges[idx].maxView;
           break;
@@ -913,11 +1049,34 @@ void ScanDisplayWindow::updateRangesPlot()
   auto spec = new QwtPlotSpectrogram;
   spec->setData(new NormalizedRangeRasterData((*normalizedRanges)[idx]));
   //spec->setData(new RangeRasterData(scan->ranges, idx));
+  spec->setRenderThreadCount(0);
+
   if (scan->parameters.defectRendering.fixedColorScale)
     spec->setColorMap(new FixedColorMap(scan->parameters.colorStopsList));
   else
     spec->setColorMap(new StandardColorMap);
   spec->attach(scanPlot);
+  //****************10/07/2025
+ //// A color bar on the right axis
+ // auto colorMap2 = new QwtLinearColorMap(Qt::darkCyan, Qt::red);
+ // colorMap2->addColorStop(0.1, Qt::cyan);
+ // colorMap2->addColorStop(0.6, Qt::green);
+ // colorMap2->addColorStop(0.95, Qt::yellow);
+
+ // QwtScaleWidget* rightAxis = scanPlot->axisWidget(QwtPlot::yLeft);
+ // rightAxis->setTitle("Intensity");
+ // rightAxis->setColorBarEnabled(true);
+ // QwtInterval interval = spec->data()->interval(Qt::ZAxis);
+ // //rightAxis->setColorMap(d_data->range(), colorMap);
+ // rightAxis->setColorMap(interval, colorMap2);
+
+ // scanPlot->setAxisScale(QwtPlot::yLeft, interval.minValue(), interval.maxValue());
+ // scanPlot->enableAxis(QwtPlot::yLeft);
+
+ // //plotLayout()->setAlignCanvasToScales(true);
+ // scanPlot->replot();
+
+  //****************10/07/2025
 
   QwtColorMap* colorMap;
   QwtInterval zInterval = spec->data()->interval(Qt::ZAxis);
@@ -930,8 +1089,24 @@ void ScanDisplayWindow::updateRangesPlot()
     scanRightColorScale->setColorMap(zInterval, colorMap);
     scanPlot->setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
   }
+
   scanPlot->updateAxes();
   scanRightColorScale->setScaleDiv(scanPlot->axisScaleDiv(QwtPlot::yRight));
+  armVtkRenderWidget->SetPolyDataSource(idx, armVtkRenderWidget->pointSource, normalizedRanges);
+  //armVtkRenderWidget->inputMapper->GetLookupTable()->SetRange(armVtkRenderWidget->pointSource->GetScalarRange());
+  armVtkRenderWidget->inputMapper->UseLookupTableScalarRangeOn();
+  armVtkRenderWidget->inputMapper->SetScalarRange(armVtkRenderWidget->pointSource->GetScalarRange());
+  armVtkRenderWidget->inputMapper->Modified();
+  armVtkRenderWidget->inputMapper->Update();
+  //armVtkRenderWidget->renderWindow->Render();
+  
+  //vtkRendererCollection* renderers = armVtkRenderWidget->genericOpenGLRenderWindow->GetRenderers();
+  //auto numberOfItems = renderers->GetNumberOfItems();
+  //renderers->InitTraversal();
+  //for (auto i = 0; i < numberOfItems; ++i)
+  //{
+  //    renderers->GetNextItem()->Render();
+  //}
 }
 
 void ScanDisplayWindow::selectRange(int idx, Extremum ex)
@@ -947,6 +1122,7 @@ void ScanDisplayWindow::selectRange(int idx, Extremum ex)
 
   scanPlot->replot();
   updatePlot();
+
 
   rowPlot->updateAxes();
   rowLeftScale->setScaleDiv(rowPlot->axisScaleDiv(QwtPlot::yLeft));
@@ -965,11 +1141,23 @@ void  ScanDisplayWindow::getSelectedContour(const QItemSelection& selected, cons
 {
   defectsMarker->removeSelection();
   if(selected.isEmpty()) return;
-  for(auto & index : selected.front().indexes()) {
-    auto defectNum = table->model()->index(index.row(), 0, index.parent()).data().toInt();
+  auto selin = selected.indexes();
+  QSet<int> rowSet;
+  //QSet<int> uniqueSet = originalList.toSet();
+  for (auto& index : selin) {
+
+      rowSet.insert(index.row());
+  }
+  for(auto & index : rowSet) {
+    auto defectNum = table->model()->index(index, 0 ).data().toInt();
     auto defect = plotDefectsModel->currentDefects().at(defectNum - 1);
     defectsMarker->selectContour(defect);
   }
+  //for(auto & index : selected.front().indexes()) {
+  //  auto defectNum = table->model()->index(index.row(), 0, index.parent()).data().toInt();
+  //  auto defect = plotDefectsModel->currentDefects().at(defectNum - 1);
+  //  defectsMarker->selectContour(defect);
+  //}
   scanPlot->replot();
 }
 
@@ -1053,16 +1241,77 @@ void ScanDisplayWindow::updateResidualsPlot()
   scanPlot->setAxisScale(QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue());
   scanPlot->updateAxes();
   scanRightColorScale->setScaleDiv(scanPlot->axisScaleDiv(QwtPlot::yRight));
+
+  armVtkRenderWidget->SetPolyDataSource(idx, armVtkRenderWidget->pointSource, &(scan->rangesResiduals));
+  armVtkRenderWidget->renderWindow->Render();
+
 }
 
 void ScanDisplayWindow::updateDefectPointsPlot()
 {
   auto idx = plotBox->currentIndex();
   if (idx < 0) return;
-
+  auto defectPoints = scan->renderedDefectPoints[idx];
   auto item = new DefectPointsItem(scan->renderedDefectPoints[idx]);
 
   item->attach(scanPlot);
+
+  // недописано //TODO 
+  //armVtkRenderWidget->createImageDataFromDefectsView(armVtkRenderWidget->imageDefectsView, &defectPoints);
+  //auto va = scan->scanArm.parameters.headAndScanCollectorParameters.currentNumArea;
+  //auto he = scan->scanArm.parameters.headAndScanCollectorParameters.height;
+  //auto wi = scan->scanArm.parameters.headAndScanCollectorParameters.width;
+  //auto xDim = defectPoints.view.shape()[0];
+  //auto yDim = defectPoints.view.shape()[1];
+  //double xSpace = double(wi) / xDim;
+  //double ySpace = double(he) / yDim;
+  ////double xSpace = double(wi) / double(xDim);
+  ////double ySpace = double(he) / double(yDim);
+  //armVtkRenderWidget->imageDefectsView->SetSpacing(xSpace, ySpace, 1);
+  ////armVtkRenderWidget->imageDefectsView->SetSpacing(wi/ xDim, he / yDim, 1);
+  ////armVtkRenderWidget->imageDefectsView->SetDimensions(xDim, yDim, 1);
+  ////auto df = armVtkRenderWidget->imageDefectsView->GetDimensions();
+  //armVtkRenderWidget->axial->GetMapper()->SetInputData(armVtkRenderWidget->imageDefectsView);
+  //armVtkRenderWidget->axial->SetDisplayExtent(0, xDim-1, 0, yDim-1, 0, 0);
+  //armVtkRenderWidget->axial->SetInputData(armVtkRenderWidget->imageDefectsView);
+  //armVtkRenderWidget->axial->ForceOpaqueOn();
+  //vtkNew<vtkTransform> transform1a;
+  //transform1a->PostMultiply();
+  ////transform1a->Translate(xDim, 0.0, 0.0);
+  //transform1a->Translate(wi, 0.0, 0.0);
+  //armVtkRenderWidget->axial->SetUserTransform(transform1a);
+  //armVtkRenderWidget->axial->Modified();
+  //armVtkRenderWidget->axial->Update();
+  //armVtkRenderWidget->leftRenderer->AddActor(armVtkRenderWidget->axial);
+  ////armVtkRenderWidget->inputMapper->UseLookupTableScalarRangeOff();
+  ////armVtkRenderWidget->inputMapper->SetScalarRange(armVtkRenderWidget->pointSource->GetScalarRange());
+  //////armVtkRenderWidget->inputMapper->CreateDefaultLookupTable();
+  //////armVtkRenderWidget->inputMapper->GetLookupTable()->SetRange(0,255*256*256);
+  ////armVtkRenderWidget->inputMapper->Modified();
+  ////armVtkRenderWidget->inputMapper->Update();
+  ////auto num = armVtkRenderWidget->renderWindow->GetRenderers()->GetNumberOfItems();
+  //vtkRendererCollection* renderers = armVtkRenderWidget->renderWindow->GetRenderers();
+  //if (renderers->GetNumberOfItems() < 1)
+  //{
+  //    return;
+  //}
+  //renderers->InitTraversal();
+  ////vtkRenderer* ren0 = renderers->GetNextItem();
+  ////// Bottom item.
+  ////vtkRenderer* ren1 = renderers->GetNextItem();
+  //vtkRenderer* ren2;
+  //while (ren2 = renderers->GetNextItem() )
+  //{
+  //    try
+  //    {
+  //        ren2->Render();
+  //    }
+  //    catch (const std::exception&)
+  //    {
+  //        //Do nothing&
+  //    }
+  //};
+  // end недописано
 }
 
 void ScanDisplayWindow::updateFixedColorDefectPointsPlot()
@@ -1075,12 +1324,422 @@ void ScanDisplayWindow::updateFixedColorDefectPointsPlot()
 }
 
 
+//vtkNew<vtkDiscretizableColorTransferFunction> ScanDisplayWindow::buildCTF(bool const& raduga, std::vector<ColorStop> colors)
+//{
+//
+//    vtkNew<vtkDiscretizableColorTransferFunction> ctf;
+//
+//    ctf->SetColorSpaceToRGB();
+//    ctf->SetScaleToLinear();
+//    ctf->SetNanColor(0.5, 0.5, 0.5);
+//    //ctf->SetBelowRangeColor(0.0, 0.0, 0.0);
+//
+//    if (colors.size() > 0) {
+//        int ans = std::stoi(colors[0].color.substr(1), 0, 16);
+//        double r = ((ans >> 16) & 0xff ) / 255;
+//        double b = (ans & 0xff) / 255;
+//        double g = ((ans >> 8) & 0xff)/255;
+//        ctf->SetAboveRangeColor(r, g, b);
+//        ans = std::stoi(colors.at(colors.size()-1).color.substr(1), 0, 16);
+//        r = ((ans >> 16) & 0xff) / 255;
+//        b = (ans & 0xff )/ 255;
+//        g = ((ans >> 8) & 0xff )/ 255;
+//        ctf->SetBelowRangeColor(r, g, b);
+//    }
+//    else {
+//
+//        ctf->SetAboveRangeColor(1.0, 1.0, 1.0);
+//        ctf->SetBelowRangeColor(0.0, 0.0, 0.0);
+//    }
+//        ctf->UseAboveRangeColorOn();
+//        ctf->UseBelowRangeColorOn();
+//
+//    if (raduga)
+//    {
+//        ctf->AddRGBPoint(-1.0, 1.0, 0.0, 0.0);                 // Red
+//        ctf->AddRGBPoint(-2.0 / 3.0, 1.0, 128.0 / 255.0, 0.0); // Orange #ff8000
+//        ctf->AddRGBPoint(-1.0 / 3.0, 1.0, 1.0, 0.0);           // Yellow
+//        ctf->AddRGBPoint(0.0, 0.0, 1.0, 0.0);                  // Green  #00ff00
+//        ctf->AddRGBPoint(1.0 / 3.0, 0.0, 1.0, 1.0);            // Cyan
+//        ctf->AddRGBPoint(2.0 / 3.0, 0.0, 0.0, 1.0);            // Blue
+//        ctf->AddRGBPoint(1.0, 128.0 / 255.0, 0.0, 1.0);        // Violet #8000ff
+//        ctf->SetNumberOfValues(7);
+//    }
+//    else {
+//        for (auto colorPair : colors) {
+//            int ans = stoi(colorPair.color.substr(1), 0, 16);
+//            auto r = (ans >> 16) & 0xff;
+//            auto b = ans & 0xff;
+//            auto g = (ans >> 8) & 0xff;
+//            //int i = c.toUInt();
+//            //unsigned int x;
+//            //std::stringstream ss;
+//            //ss << std::hex << colorPair.color.substr(1);
+//            //ss >> x;
+//            //// output it as a signed type
+//            //std::cout << static_cast<int>(x) << std::endl;
+//            //auto r = (x >> 16) & 0xff;
+//            //auto b = x & 0xff;
+//            //auto g = (x>>8) & 0xff;
+//            ctf->AddRGBPoint(colorPair.val, r/255.0,g/255.0,b/255.0);
+//        }
+//        ctf->SetNumberOfValues(colors.size());
+//    }
+//    ctf->DiscretizeOff();
+//    return ctf;
+//}
+//
+//void ScanDisplayWindow::showQuantizedPoints()
+//{
+//    vtkNew<vtkNamedColors> colors;
+//
+//    //vtkNew<vtkPointSource> pointSource;
+//    //pointSource->SetNumberOfPoints(100);
+//    //pointSource->Update();
+//    vtkNew<vtkPolyData> pointSource;
+//    vtkNew<vtkPolyData> peakRtPolyData;
+//    //pointSource->DeepCopy(sphere);
+//    
+//    ///******* готовим точки пиков
+//    int numOfPoints = 0;
+//    double t = 0;
+//    double x, y,z;
+//
+//
+//    vtkSmartPointer<vtkPoints> peakRtpoints = vtkSmartPointer<vtkPoints>::New();
+//    vtkSmartPointer<vtkCellArray> peakRtcells = vtkSmartPointer<vtkCellArray>::New();
+//    vtkSmartPointer<vtkFloatArray> peakValueArr = vtkSmartPointer<vtkFloatArray>::New();
+//    peakValueArr->SetName("value");
+//    boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::max, boost::accumulators::tag::min>> akumRt;
+//    {
+//        for (auto& line : scan->scanArm.rtPeaks) {
+//            vtkSmartPointer<vtkPolyLine> peakRtPolyLine = vtkSmartPointer<vtkPolyLine>::New();
+//            for (int j= 0; j < line.size(); j++) {
+//                for (auto peak : line.at(j)) {
+//                    auto idOfPoint = peakRtpoints->InsertNextPoint(peak.x, peak.y, peak.z+50.0 );
+//                    peakRtPolyLine->GetPointIds()->InsertNextId(idOfPoint);
+//                    auto averIndexOfPeak = (peak.endIndex + peak.beginIndex) / 2;
+//                    auto averValue = scan->scanArm.sound.samples.at(averIndexOfPeak);
+//                    peakValueArr->InsertNextTuple1(averValue);
+//                    akumRt(averValue);
+//                }
+//            }
+//            peakRtcells->InsertNextCell(peakRtPolyLine);
+//        }
+//        //stageProgressed();
+//    }
+//    double minValueRt = boost::accumulators::min(akumRt);
+//    double maxValueRt = boost::accumulators::max(akumRt);
+//
+//    peakRtPolyData->SetPoints(peakRtpoints);
+//    peakRtPolyData->SetLines (peakRtcells );
+//    peakRtPolyData->SetVerts (peakRtcells );
+//    peakRtPolyData->GetPointData()->SetScalars(peakValueArr);
+//    peakRtPolyData->Modified();
+//
+//    vtkNew<vtkPolyData> trajectoryPolyData;
+//    vtkSmartPointer<vtkPoints> pointsTrajectory = vtkSmartPointer<vtkPoints>::New();
+//    vtkSmartPointer<vtkCellArray> cellsTrajectory = vtkSmartPointer<vtkCellArray>::New();
+//    vtkSmartPointer<vtkFloatArray> scalarsTrajectory = vtkSmartPointer<vtkFloatArray>::New();
+//    scalarsTrajectory->SetName("Y");
+//    vtkSmartPointer<vtkPolyLine> trajectoryPolyLine = vtkSmartPointer<vtkPolyLine>::New();
+//    for (auto elem : scan->scanArm.trajectory.pos)
+//    {
+//                auto idOfPoint = pointsTrajectory->InsertNextPoint(elem.x, elem.y, elem.z -50.0);
+//                trajectoryPolyLine->GetPointIds()->InsertNextId(idOfPoint);
+//
+//    };
+//    cellsTrajectory->InsertNextCell(trajectoryPolyLine);
+//    trajectoryPolyData->SetPoints(pointsTrajectory);
+//    trajectoryPolyData->SetLines(cellsTrajectory);
+//    trajectoryPolyData->SetVerts(cellsTrajectory);
+//    trajectoryPolyData->Modified();
+//
+//
+//
+//    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+//    vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
+//    vtkSmartPointer<vtkFloatArray> scalars = vtkSmartPointer<vtkFloatArray>::New();
+//    scalars->SetName("range");
+//    auto nRanges = scan->normalizedSpec.begin()->size();
+//    //for (int nRange = 0; nRange < nRanges; nRange++) {
+//    int nRange = 0;
+//    {
+//        for (auto& line : scan->normalizedSpec) {
+//            vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
+//            if (line.size() > nRange) {
+//                //for (auto& pointValue : line[nRange].samples)
+//                for (int i = 0; i < line[nRange].samples.size(); i++) {
+//                    auto pointValue = line[nRange].samples[i];
+//                    auto peak = line[nRange].peaks[i];
+//                    auto idOfPoint = points->InsertNextPoint(peak.x, peak.y,peak.z);
+//                    polyLine->GetPointIds()->InsertNextId(idOfPoint);
+//                    scalars->InsertNextTuple1(pointValue);
+//                    //scalars->InsertNextTuple1(peak.y);
+//                }
+//            }
+//            cells->InsertNextCell(polyLine);
+//        }
+//        //stageProgressed();
+//    }
+//
+//    pointSource->SetPoints(points);
+//    pointSource->SetLines (cells );
+//    //pointSource->SetVerts (cells );
+//    //pointSource->Modified();
+//    pointSource->GetPointData()->SetScalars(scalars);
+//    pointSource->GetCellData()->SetScalars(scalars);
+//    pointSource->Modified();
+//
+//    std::cout << "There are " << pointSource->GetNumberOfPoints() << " points."
+//        << std::endl;
+//    ///******* end готовим точки пиков
+//
+//    vtkNew<vtkQuantizePolyDataPoints> quantizeFilter;
+//    //quantizeFilter->SetInputConnection(pointSource->GetOutputPort());
+//    quantizeFilter->SetInputData(pointSource);
+//    quantizeFilter->SetQFactor(scan->parameters.headAndScanCollectorParameters.currentNumArea);
+//    //quantizeFilter->SetQFactor(.1);
+//    quantizeFilter->Update();
+//
+//    vtkNew<vtkQuantizePolyDataPoints> quantizeFilterRt;
+//    quantizeFilterRt->SetInputData(peakRtPolyData);
+//    quantizeFilterRt->SetQFactor(scan->parameters.headAndScanCollectorParameters.currentNumArea);
+//    quantizeFilterRt->Update();
+//
+//    //vtkPolyData* quantized = quantizeFilter->GetOutput();
+//    //std::cout << "There are " << quantized->GetNumberOfPoints()
+//    //    << " quantized points." << std::endl;
+//    //for (vtkIdType i = 0; i < pointSource->GetNumberOfPoints(); i++)
+//    //{
+//    //    double pOrig[3];
+//    //    double pQuantized[3];
+//    //    pointSource->GetPoint( i, pOrig);
+//    //    if (i <= quantized->GetNumberOfPoints()) {
+//    //        quantized->GetPoints()->GetPoint(i, pQuantized);
+//    //        std::cout << "Point " << i << " : (" << pOrig[0] << ", " << pOrig[1] << ", "
+//    //            << pOrig[2] << ")" << " (" << pQuantized[0] << ", "
+//    //            << pQuantized[1] << ", " << pQuantized[2] << ")" << std::endl;
+//    //    }
+//    //    else {
+//    //        std::cout << "Point " << i << " : (" << pOrig[0] << ", " << pOrig[1] << ", "
+//    //            << pOrig[2] << ")" << " ( no point)" << std::endl;
+//    //    }
+//    //}
+//
+//    //double radius = 0.02;
+//    double radius = scan->parameters.headAndScanCollectorParameters.currentNumArea/2;
+//    vtkNew<vtkSphereSource> sphereSource;
+//    sphereSource->SetRadius(radius);
+//
+//    auto params = scan->parameters;
+//    
+//    //vtkNew<vtkLookupTable> lookupTable;
+//    //lookupTable->SetNumberOfTableValues(params.colorStopsList.size());
+//    //int i = 0;
+//    //double minValue;
+//    //double maxValue;
+//
+//    //boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::max, boost::accumulators::tag::min>> akum;
+//    //for (auto colorPair : params.colorStopsList)
+//    //{
+//    //    akum(colorPair.val);
+//    //}
+//    //minValue = boost::accumulators::min(akum);
+//    //maxValue = boost::accumulators::max(akum);
+//
+//    //for (auto colorPair : params.colorStopsList)
+//    //{
+//    //    int ans = stoi(colorPair.color.substr(1), 0, 16);
+//    //    auto r = (ans >> 16) & 0xff;
+//    //    auto b = ans & 0xff;
+//    //    auto g = (ans >> 8) & 0xff;
+//
+//    //    lookupTable->SetTableValue(i, r/255.0,g / 255.0,b / 255.0,1);
+//    //    i++;
+//    //}
+//    //lookupTable->SetRampToLinear();
+//    //lookupTable->SetTableRange(minValue, maxValue);
+//    //lookupTable->Build();
+//
+//    vtkNew<vtkGlyph3DMapper> inputMapper;
+//    inputMapper->SetInputData(pointSource);
+//    //inputMapper->SetScalarRange(
+//    //    pointSource->GetPointData()->GetScalars()->GetRange()[0],
+//    //    pointSource->GetPointData()->GetScalars()->GetRange()[1]);
+//    inputMapper->SetLookupTable(buildCTF(false , params.colorStopsList));
+//    inputMapper->SetSourceConnection(sphereSource->GetOutputPort());
+//    inputMapper->ScalarVisibilityOn();
+//    inputMapper->InterpolateScalarsBeforeMappingOff();
+//    //inputMapper->UseLookupTableScalarRangeOn();
+//    //inputMapper->SetScalarModeToUseCellData();
+//    //inputMapper->SetScalarModeToUsePointData();
+//    //inputMapper->MapScalars(0.4);
+//    inputMapper->ScalingOff();
+//    //inputMapper->SetLookupTable(lookupTable);
+//    inputMapper->Update();
+//    vtkNew<vtkActor> inputActor;
+//    inputActor->SetMapper(inputMapper);
+//    //inputActor->GetProperty()->SetColor(colors->GetColor3d("Orchid").GetData());
+//
+//
+//    vtkNew<vtkScalarBarActor> scalarBar;
+//    scalarBar->SetLookupTable(inputMapper->GetLookupTable());
+//    //scalarBar->SetLookupTable(lookupTable);
+//    scalarBar->SetTitle("Range");
+//    //scalarBar->SetNumberOfLabels(4);
+//    scalarBar->UnconstrainedFontSizeOn();
+//    scalarBar->DragableOn();
+//    scalarBar->DrawFrameOn();
+//    //scalarBar->SetPosition(0, 50);
+//
+//
+//    //vtkNew<vtkPolyDataMapper> polyMapper;
+//    //polyMapper->SetInputData(pointSource);
+//    //polyMapper->Update();
+//    //vtkNew<vtkActor> polyActor;
+//    //polyActor->SetMapper(polyMapper);
+//    //polyActor->GetProperty()->EdgeVisibilityOn();
+//    //polyActor->GetProperty()->SetEdgeColor(colors->GetColor3d("Black").GetData());
+//
+//    vtkNew<vtkGlyph3DMapper> quantizedMapper;
+//    quantizedMapper->SetInputConnection(quantizeFilter->GetOutputPort());
+//    quantizedMapper->SetSourceConnection(sphereSource->GetOutputPort());
+//    quantizedMapper->ScalarVisibilityOff();
+//    quantizedMapper->ScalingOff();
+//
+//    vtkNew<vtkActor> quantizedActor;
+//    quantizedActor->SetMapper(quantizedMapper);
+//    quantizedActor->GetProperty()->SetColor( colors->GetColor3d("DodgerBlue").GetData());
+//
+//    vtkNew<vtkPolyDataMapper> trajectoryMapper; 
+//    trajectoryMapper->SetInputData(trajectoryPolyData);
+//    //trajectoryMapper->ScalarVisibilityOff();
+//    //trajectoryMapper->ScalingOff();
+//
+//    vtkNew<vtkActor> trajectoryActor;
+//    trajectoryActor->SetMapper(trajectoryMapper);
+//    trajectoryActor->GetProperty()->SetColor( colors->GetColor3d("Orange").GetData());
+//    trajectoryActor->GetProperty()->SetLineWidth(scan->parameters.headAndScanCollectorParameters.currentNumArea);
+//
+//    //***
+//
+//    vtkNew<vtkParametricSuperEllipsoid> parametricSuperEllipsoid;
+//    parametricSuperEllipsoid->SetN1(0.2);
+//    parametricSuperEllipsoid->SetN2(0.2);
+//    parametricSuperEllipsoid->SetXRadius(radius);
+//    parametricSuperEllipsoid->SetYRadius(radius);
+//    parametricSuperEllipsoid->SetZRadius(radius/3);
+//
+//
+//    vtkSmartPointer<vtkParametricFunctionSource> parametricFunctionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+//    parametricFunctionSource->SetParametricFunction(parametricSuperEllipsoid);
+//    parametricFunctionSource->SetUResolution(11);
+//    parametricFunctionSource->SetVResolution(11);
+//    parametricFunctionSource->SetWResolution(11);
+//    parametricFunctionSource->Update();
+//
+//
+//    vtkNew<vtkSphereSource> sphereSourceRt;
+//    sphereSourceRt->SetRadius(radius);
+//
+//    vtkNew<vtkGlyph3DMapper> inputMapperRt;
+//    //inputMapper->SetInputConnection(pointSource->GetOutputPort());
+//    inputMapperRt->SetInputData(peakRtPolyData);
+//    //inputMapperRt->SetSourceConnection(sphereSourceRt->GetOutputPort());
+//    inputMapperRt->SetSourceConnection(parametricFunctionSource->GetOutputPort());
+//    //auto tableRt = buildCTF(false, params.colorStopsList);
+//    //tableRt->SetRange(minValueRt, maxValueRt);
+//    //inputMapperRt->SetLookupTable(tableRt);
+//    inputMapperRt->SetRange(peakRtPolyData->GetScalarRange());
+//    inputMapperRt->CreateDefaultLookupTable();
+//    //inputMapperRt->SetUseLookupTableScalarRange(1);
+//    inputMapperRt->ScalarVisibilityOn();
+//    inputMapperRt->ScalingOff();
+//    inputMapperRt->Update();
+//
+//    vtkNew<vtkScalarBarActor> scalarBarRt;
+//    scalarBarRt->SetLookupTable(inputMapperRt->GetLookupTable());
+//    scalarBarRt->SetTitle("RT Amplitude");
+//    scalarBarRt->UnconstrainedFontSizeOn();
+//    scalarBarRt->DragableOn();
+//    scalarBarRt->DrawFrameOn();
+//    scalarBarRt->SetOrientationToHorizontal();
+//
+//    vtkNew<vtkActor> inputActorRt;
+//    inputActorRt->SetMapper(inputMapperRt);
+//    inputActorRt->GetProperty()->SetColor(colors->GetColor3d("Green").GetData());
+//    
+//    vtkNew<vtkGlyph3DMapper> quantizedMapperRt;
+//    quantizedMapperRt->SetInputConnection(quantizeFilterRt->GetOutputPort());
+//    quantizedMapperRt->SetSourceConnection(parametricFunctionSource->GetOutputPort());
+//    quantizedMapperRt->ScalarVisibilityOff();
+//    quantizedMapperRt->ScalingOff();
+//
+//    vtkNew<vtkActor> quantizedActorRt;
+//    quantizedActorRt->SetMapper(quantizedMapperRt);
+//    quantizedActorRt->GetProperty()->SetColor(colors->GetColor3d("Aquamarine").GetData());
+////***
+//
+//    // Define viewport ranges.
+//    // (xmin, ymin, xmax, ymax)
+//    double leftViewport[4] = { 0.0, 0.0, 0.5, 1.0 };
+//    double rightViewport[4] = { 0.5, 0.0, 1.0, 1.0 };
+//
+//    // Setup both renderers.
+//    vtkNew<vtkRenderer> leftRenderer;
+//    renderWindow->AddRenderer(leftRenderer);
+//    leftRenderer->SetViewport(leftViewport);
+//    leftRenderer->SetBackground(colors->GetColor3d("Bisque").GetData());
+//
+//    vtkNew<vtkRenderer> rightRenderer;
+//    renderWindow->AddRenderer(rightRenderer);
+//    rightRenderer->SetViewport(rightViewport);
+//    rightRenderer->SetBackground(colors->GetColor3d("PaleTurquoise").GetData());
+//
+//   
+//    renderer->AddActor(inputActor);
+//    renderer->AddActor(inputActorRt);
+//    renderer->AddActor2D(scalarBar);
+//    renderer->AddActor2D(scalarBarRt); 
+//    
+//    leftRenderer->AddActor(inputActor);
+//    leftRenderer->AddActor(inputActorRt);
+//    //leftRenderer->AddActor2D(scalarBar);
+//    //leftRenderer->AddActor2D(scalarBarRt);
+//    //leftRenderer->AddActor(polyActor);
+//    leftRenderer->AddActor(trajectoryActor);
+//    rightRenderer->AddActor(quantizedActor);
+//    rightRenderer->AddActor(quantizedActorRt);
+//
+//    leftRenderer->ResetCamera();
+//    leftRenderer->ResetCameraClippingRange();
+//
+//
+//    rightRenderer->SetActiveCamera(leftRenderer->GetActiveCamera());
+//
+//    scalarBarWidgetRt->SetInteractor(interactor);
+//    scalarBarWidgetRt->SetScalarBarActor(scalarBarRt);
+//    scalarBarWidgetRt->On();
+//
+//    scalarBarWidget->SetInteractor(interactor);
+//    scalarBarWidget->SetScalarBarActor(scalarBar);
+//    scalarBarWidget->On();
+//
+//    renderWindow->SetSize(640, 360);
+//    renderWindow->SetWindowName("QuantizePolyDataPoints");
+//    interactor->SetRenderWindow(renderWindow);
+//
+//    renderWindow->Render();
+//    interactor->Start();
+//}
+//
 void ScanDisplayWindow::updatePlot()
 {
   scanPlot->detachItems(QwtPlotItem::Rtti_PlotSpectrogram);
   scanPlot->detachItems(DefectPointsItem::Rtti_DefectPointsItem);
-
-  switch (kindBox->currentIndex()) {
+  auto indx = kindBox->currentIndex();
+  switch (indx) {
   case 0:
     updateRangesPlot();
     scanRightColorScale->show();
@@ -1114,7 +1773,7 @@ void ScanDisplayWindow::updatePlot()
   scanPlot->replot();
   rowPlot->replot();
   columnPlot->replot();
-
+  //armVtkRenderWidget->showQuantizedPoints(scan);
 }
 
 void ScanDisplayWindow::updatePlotList()
@@ -1211,7 +1870,6 @@ void ScanDisplayWindow::updateRangeViewPoint()
   rowCurve->setData(new MultiArraySliceSeriesData(range->view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
                     range->finalCoordinate));
   try {
-
       columnCurve->setData(new MultiArraySliceVerticalSeriesData(range->view[boost::indices[pointIndexes(currentViewPoint).x()][all]],
           range->lineCoordinates));
   }
@@ -1288,6 +1946,28 @@ void ScanDisplayWindow::updateDefectsViewPoint()
   columnCurve->setData(0);
   averageColumnCurve->setData(0);
   averageColumnPolynomialCurve->setData(0);
+
+  
+}
+
+//void ScanDisplayWindow::SetPointInfoWidget(QPoint& ip)
+
+void ScanDisplayWindow::SetPointInfoWidget(const int columnValue, const int rowValue, const double xValue, const double yValue, int signCount, double valueValue)
+{
+    //columnLabel->setText(QString::number(ip.x()));
+    //rowLabel->setText(QString::number(ip.y()));
+    //xLabel->setText(QString::number(currentViewPoint.x(), 'f', 3));
+    //yLabel->setText(QString::number(currentViewPoint.y(), 'f', 3));
+    columnLabel->setText(QString::number(columnValue));
+    rowLabel->setText(QString::number(rowValue));
+    xLabel->setText(QString::number(xValue, 'f', signCount));
+    yLabel->setText(QString::number(yValue, 'f', signCount));
+    if (isnan(valueValue)) {
+        valueLabel->setText("");
+    }
+    else {
+        valueLabel->setText(QString::number(valueValue, 'f', signCount));
+    }
 }
 
 void ScanDisplayWindow::updateViewPoint()
@@ -1301,10 +1981,7 @@ void ScanDisplayWindow::updateViewPoint()
   yColumnMarker->setYValue(currentViewPoint.y());
 
   auto ip = pointIndexes(currentViewPoint);
-  columnLabel->setText(QString::number(ip.x()));
-  rowLabel->setText(QString::number(ip.y()));
-  xLabel->setText(QString::number(currentViewPoint.x(), 'f', 3));
-  yLabel->setText(QString::number(currentViewPoint.y(), 'f', 3));
+  SetPointInfoWidget(ip.x(), ip.y(), currentViewPoint.x(), currentViewPoint.y());
 
   switch (kindBox->currentIndex()) {
   case 0:
@@ -1336,6 +2013,7 @@ void ScanDisplayWindow::setViewPoint(const QPointF& newViewPoint)
   scanPlot->replot();
   rowPlot->replot();
   columnPlot->replot();
+
 }
 
 

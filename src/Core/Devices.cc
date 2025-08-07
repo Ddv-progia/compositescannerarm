@@ -47,6 +47,8 @@ uts::devtalk::utscp::APLSystemPrx devices::aplSystem1112Prx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevicePrx;
 uts::devtalk::drivers::utscp::APLMultiDevicePrx devices::aplMultiDevice1112Prx;
 uts::devtalk::AudioDataCollectorFactoryPrx audioDataCollectorFactory;
+uts::devtalk::SerialPortFactoryPrx serialPortFactory;
+
 
 void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr& comm, ObjectKeeper& objectKeeper)
 {
@@ -78,13 +80,21 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
             auto name = std::find(adcs.begin(), adcs.end(), conf.audioDataCollector);
             if (name == adcs.end()) {
                 QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
-                for (auto value : adcs)
+                for (auto value : adcs) {
                     devices += QString::fromStdString(value) + "\n";
+                    std::cout << value;
+                }
                 QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
                     QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));
                 name = adcs.begin();
             }
-            audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
+            if (conf.coil == 2022) 
+                audioDataCollector = audioDataCollectorFactory->getInstanceRealTime(*name);
+            else
+                audioDataCollector = audioDataCollectorFactory->getInstance(*name);
+            //audioDataCollector->start(96000, 2);
+            //for (int i = 0; i < 300000000; i++) {};
+            //audioDataCollector->stop();
         }
     }
     catch (uts::devtalk::CommunicationException& exc) {
@@ -137,9 +147,6 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
         }
     }
     else {
-        auto coilFactory = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
-        auto serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
-
         auto motorPortConfig = new uts::devtalk::WindowsSerialPortConfig;
         motorPortConfig->baudRate = 9600;
         motorPortConfig->dataBits = uts::devtalk::SerialPort::DataBits8;
@@ -152,6 +159,11 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
         motorPortConfig->readTotalTimeoutMultiplier = 1;
         motorPortConfig->writeTotalTimeoutConstant = 0;
         motorPortConfig->writeTotalTimeoutMultiplier = 0;
+
+        auto coilFactory = getObject<uts::devtalk::CoilFactoryPrx>(comm, "Factory/Coil");
+
+        serialPortFactory = getObject<uts::devtalk::SerialPortFactoryPrx>(comm, "Factory/WindowsSerialPort");
+
         try {
             auto motorPort = serialPortFactory->make(motorPortConfig);
             objectKeeper.registerObject(motorPort);
