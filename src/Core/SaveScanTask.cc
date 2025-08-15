@@ -116,6 +116,8 @@ void SaveScanTask::operator() ()
       putVal<double>(db, (boost::format("lines.@%1%.finalCoordinate") % i).str(), scan.lines[i].finalCoordinate);
       putVal<double>(db, (boost::format("lines.@%1%.lineCoordinate") % i).str(), scan.lines[i].lineCoordinate);
       putVal<double>(db, (boost::format("lines.@%1%.finalLineCoordinate") % i).str(), scan.lines[i].finalLineCoordinate);
+      putVal<double>(db, (boost::format("lines.@%1%.timestampStart") % i).str(), scan.lines[i].timestampStart);
+      putVal<double>(db, (boost::format("lines.@%1%.timestampEnd") % i).str(), scan.lines[i].timestampEnd);
       putVal<double>(db, (boost::format("lines.@%1%.startCoordinateZ") % i).str(), scan.lines[i].startCoordinateZ);
       putVal<double>(db, (boost::format("lines.@%1%.finalCoordinateZ") % i).str(), scan.lines[i].finalCoordinateZ);
 

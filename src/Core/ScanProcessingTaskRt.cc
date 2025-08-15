@@ -45,6 +45,11 @@ SourceScanLineSlice ScanProcessingTaskRt::trimLine(const SourceScanLine& line, d
     trimmedLine.finalCoordinate = line.finalCoordinate;
     trimmedLine.sampleRate = line.sampleRate;
     trimmedLine.lineCoordinate = line.lineCoordinate;
+    trimmedLine.finalLineCoordinate = line.finalLineCoordinate;
+    trimmedLine.timestampStart = line.timestampStart;
+    trimmedLine.timestampEnd = line.timestampEnd;
+    trimmedLine.startCoordinateZ = line.startCoordinateZ;
+    trimmedLine.finalCoordinateZ = line.finalCoordinateZ;
 
     std::size_t offset = static_cast<std::size_t>(std::floor(initialSkip * line.sampleRate + 0.5));
     trimmedLine.samplesBegin = line.samples.begin() + offset;
@@ -59,7 +64,13 @@ PeaksLine ScanProcessingTaskRt::findPeaks(const SourceScanLineSlice& line, float
     return PeaksLine{ ::findPeaks(line.samplesBegin, line.samplesEnd, line.sampleRate, peakLimit, backstep, forestep, pauseCount),
                       line.startCoordinate,
                       line.finalCoordinate,
-                      line.lineCoordinate };
+                      line.lineCoordinate, 
+                      line.finalLineCoordinate,
+                      line.timestampStart,
+                      line.timestampEnd,
+                      line.startCoordinateZ,
+                      line.finalCoordinateZ
+    };
 }
 
 void ScanProcessingTaskRt::normalizeDirectionRt(PeaksLine& line)
@@ -68,9 +79,14 @@ void ScanProcessingTaskRt::normalizeDirectionRt(PeaksLine& line)
         line = PeaksLine{ std::vector<Peak>(line.peaks.rbegin(), line.peaks.rend()),
                           line.finalCoordinate,
                           line.startCoordinate,
-                          line.lineCoordinate };
+                          line.lineCoordinate,
+                          line.finalLineCoordinate,
+                          line.timestampStart,
+                          line.timestampEnd,
+                          line.startCoordinateZ,
+                          line.finalCoordinateZ
+        };
     }
-
     emit stageProgressed();
 }
 
@@ -104,6 +120,11 @@ std::vector<RangeScanLine> ScanProcessingTaskRt::splitFrequencyRanges(const Sour
             r[i].range = ranges[i];
             r[i].sourceLineSize = std::distance(line.samplesBegin, line.samplesEnd);
             r[i].lineCoordinate = line.lineCoordinate;
+            r[i].finalLineCoordinate = line.finalLineCoordinate;
+            r[i].startCoordinateZ= line.startCoordinateZ;
+            r[i].finalCoordinateZ= line.finalCoordinateZ;
+            r[i].timestampStart = line.timestampStart;
+            r[i].timestampEnd = line.timestampEnd;
         }
     }
 
@@ -285,6 +306,9 @@ void ScanProcessingTaskRt::normalizeRange(NormalizedRange& normalizedRange,
     normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
     normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
     normalizedRange.finalCoordinate = ranges.front().front().finalCoordinate;
+    normalizedRange.lineCoordinate = ranges.front().front().lineCoordinate;
+    normalizedRange.finalLineCoordinate = ranges.front().front().finalLineCoordinate;
+
     normalizedRange.beginIndex = startIndex;
     normalizedRange.endIndex = stopIndex;
     normalizedRange.step = step;
@@ -292,6 +316,12 @@ void ScanProcessingTaskRt::normalizeRange(NormalizedRange& normalizedRange,
 
 
     normalizedRange.lineCoordinates.resize(linesCount);
+    normalizedRange.finalLineCoordinates.resize(linesCount);
+    normalizedRange.timestampsStart.resize(linesCount);
+    normalizedRange.timestampsEnd.resize(linesCount);
+    normalizedRange.startCoordinatesZ.resize(linesCount);
+    normalizedRange.finalCoordinatesZ.resize(linesCount);
+
 
     if (linesCount > 0) {
         //if (ranges[0][rangeIndex].lineCoordinate < 0) {
@@ -300,13 +330,19 @@ void ScanProcessingTaskRt::normalizeRange(NormalizedRange& normalizedRange,
         //  normalizedRange.lineCoordinates[0] = ranges[0][rangeIndex].lineCoordinate;
         //}
 
-        for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) //{
+        for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
             // if (ranges[lineIndex][rangeIndex].lineCoordinate < 0) {
             //   normalizedRange.lineCoordinates[lineIndex] = normalizedRange.lineCoordinates[lineIndex - 1] + 1;
             // } else {
             normalizedRange.lineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].lineCoordinate;
+            normalizedRange.finalLineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].finalLineCoordinate;
+            normalizedRange.timestampsStart[lineIndex] = ranges[lineIndex][rangeIndex].timestampStart;
+            normalizedRange.timestampsEnd[lineIndex] = ranges[lineIndex][rangeIndex].timestampEnd;
+            normalizedRange.startCoordinatesZ[lineIndex] = ranges[lineIndex][rangeIndex].startCoordinateZ;
+            normalizedRange.finalCoordinatesZ[lineIndex] = ranges[lineIndex][rangeIndex].finalCoordinateZ;
+
         // }
-       //}
+        }
     }
 
     //normalizedRange.view = normalizedRange.maxView; //2024

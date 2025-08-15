@@ -326,12 +326,12 @@ struct NormalizedRange is
   finalLineCoordinates: Std::Vector(Double_Precision_Real)
 --  lineCoordinatesMin: Double_Precision_Real = { 0 }
 --  finalLineCoordinateMax: Double_Precision_Real = { 0 }
-  lineCoordinate: Double_Precision_Real = { 0 }
-  finalLineCoordinate: Double_Precision_Real = { 0 }
-  timestampStart : Unsigned_Long_Long_Integer = { 0 }
-  timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-  startCoordinateZ: Double_Precision_Real = { 0 }
-  finalCoordinateZ: Double_Precision_Real = { 0 }
+  lineCoordinate: Double_Precision_Real = { -1 }
+  finalLineCoordinate: Double_Precision_Real = { -1 }
+  timestampsStart:   Std::Vector(Double_Precision_Real)
+  timestampsEnd:     Std::Vector(Double_Precision_Real)
+  startCoordinatesZ: Std::Vector(Double_Precision_Real)
+  finalCoordinatesZ: Std::Vector(Double_Precision_Real)
 end
 
 struct Polynomial is

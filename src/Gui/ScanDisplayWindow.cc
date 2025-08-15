@@ -1047,8 +1047,12 @@ void ScanDisplayWindow::updateRangesPlot()
       }
   }
   auto spec = new QwtPlotSpectrogram;
-  spec->setData(new NormalizedRangeRasterData((*normalizedRanges)[idx]));
-  //spec->setData(new RangeRasterData(scan->ranges, idx));
+  if (scan->parameters.shouldNormalize) {
+    spec->setData(new NormalizedRangeRasterData((*normalizedRanges)[idx]));
+  }
+  else {
+    spec->setData(new RangeRasterData(scan->ranges, idx));
+  }
   spec->setRenderThreadCount(0);
 
   if (scan->parameters.defectRendering.fixedColorScale)

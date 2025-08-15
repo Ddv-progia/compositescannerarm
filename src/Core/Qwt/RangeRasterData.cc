@@ -38,11 +38,19 @@ RangeRasterData::RangeRasterData(std::vector<std::vector<RangeScanLine>> const &
   }
   m_intervals.at(Qt::XAxis) = QwtInterval(beginX, endX);
 
-  if (linesCoordinates.back() > linesCoordinates.front()) {
-      m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.front(),linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]));
-  } else {
-      m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]),linesCoordinates.front());
+  auto maxYIter = std::max_element(linesCoordinates.begin(), linesCoordinates.end());
+  auto minYIter = std::min_element(linesCoordinates.begin(), linesCoordinates.end());
+  if ((maxYIter != linesCoordinates.end()) && (minYIter != linesCoordinates.end()))
+  {
+      auto deltaYLocal = (*maxYIter - *minYIter) / (linesCoordinates.size());
+      m_intervals.at(Qt::YAxis) = QwtInterval(*minYIter , *maxYIter+ deltaYLocal);
   }
+  //if (linesCoordinates.back() > linesCoordinates.front()) {
+  //    m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.front(),linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]));
+  //} else {
+  //    m_intervals.at(Qt::YAxis) = QwtInterval(linesCoordinates.back() + (linesCoordinates.back() - linesCoordinates[linesCoordinates.size() - 2]),linesCoordinates.front());
+  //}
+
   m_intervals.at(Qt::ZAxis) = QwtInterval(minZ, maxZ);
 }
 

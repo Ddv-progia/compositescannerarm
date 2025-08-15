@@ -14,18 +14,19 @@ script::AudioDataCollector::AudioDataCollector(const uts::devtalk::AudioDataColl
 
 void script::AudioDataCollector::start(int sampleRate, int channelCount)
 {
+    //auto timestampStartLocal =  boost::posix_time::microsec_clock::local_time();
+    
     //collector->start(sampleRate, channelCount);
         //auto timeStampNewData = std::chrono::system_clock::now();//std::time_t timeStampNewData = std::time(nullptr);boost::posix_time::microsec_clock::local_time()
-    auto timestampStartLocal =  boost::posix_time::microsec_clock::local_time();
         //using namespace std::chrono;
        //    /*int64_t */std::time_t timeStampNewData = duration_cast<milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     auto timestampStartLocal2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     
-    std::cout << "timestampStartLocal  = " << timestampStartLocal <<" \n";
-    std::cout << "timestampStartLocal2 = " << timestampStartLocal2 <<" \n";
-    timestampStart = timestampStartLocal2;
+    //std::cout << "timestampStartLocal  = " << timestampStartLocal <<" \n";
+    //std::cout << "timestampStartLocal2 = " << timestampStartLocal2 <<" \n";
 
-  wrapExceptions([=]() { collector->start(sampleRate, channelCount); });
+    wrapExceptions([=]() { collector->start(sampleRate, channelCount); });
+    timestampStart = timestampStartLocal2;
 }
 
 void script::AudioDataCollector::start(int sampleRate)
@@ -39,13 +40,13 @@ void script::AudioDataCollector::start(int sampleRate)
 
 void script::AudioDataCollector::stop(double startCoordinate, double finalCoordinate, double lineCoordinate, double finalLineCoordinate)
 {
-    uts::devtalk::AudioDataCollectorSamples* samples = new uts::devtalk::AudioDataCollectorSamples();
+  uts::devtalk::AudioDataCollectorSamples* samples = new uts::devtalk::AudioDataCollectorSamples();
+  std::time_t  timestampStartLocal2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
   wrapExceptions([=]() { 
    *samples = collector->stop();
   });
   if (samples->samples.size() > 0) {
-      auto timestampStartLocal = boost::posix_time::microsec_clock::local_time();
-      std::time_t  timestampStartLocal2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      //auto timestampStartLocal = boost::posix_time::microsec_clock::local_time();
       //std::cout << "AudioDataCollector::stop timestampStartLocal  = " << timestampStartLocal << " \n"; // out:  "2025-Jul-23 10:33:26.564334"
       //std::cout << "AudioDataCollector::stop timestampStartLocal2 = " << timestampStartLocal2 << " \n";
       wrapExceptions([=]() {

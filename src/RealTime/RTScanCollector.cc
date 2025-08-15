@@ -474,7 +474,8 @@ ScanArmToScan(std::shared_ptr<ScanArm> scanArm, std::shared_ptr<Scan> &scanIn)
         line.startCoordinate = 0;
         line.finalCoordinate = scanIn->parameters.headAndScanCollectorParameters.width * scanIn->parameters.headAndScanCollectorParameters.height;
         line.lineCoordinate = 0; //**********
-        line.finalLineCoordinate = line.lineCoordinate;
+        line.finalLineCoordinate = 1; // высоту строки делаем = 1;
+        //line.finalLineCoordinate = line.lineCoordinate;
         line.sampleRate = sound.sampleRate;
         line.samples.insert(line.samples.end(), sound.samples.begin(), sound.samples.end());
         scanIn->lines.push_back(line);

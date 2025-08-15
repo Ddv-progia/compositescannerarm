@@ -59,10 +59,9 @@ SourceScanLineSlice ScanProcessingTask::trimLine(const SourceScanLine& line, dou
   trimmedLine.finalCoordinateZ= line.finalCoordinateZ;
 
   std::size_t offset = static_cast<std::size_t>(std::floor(initialSkip * line.sampleRate + 0.5));
-  //trimmedLine.samplesBegin = line.samples.begin() + offset;
-  trimmedLine.samplesBegin = line.samples.begin();
+  trimmedLine.samplesBegin = line.samples.begin() + offset;
+  //trimmedLine.samplesBegin = line.samples.begin();
   trimmedLine.samplesEnd = line.samples.end();
-
   emit stageProgressed();
   return trimmedLine;
 }
@@ -146,10 +145,14 @@ bool ScanProcessingTask::getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int ne
                         auto yFinal = line.finalLineCoordinate;
                         auto zStart = line.startCoordinateZ;
                         auto zFinal = line.finalCoordinateZ;
-                        if (yFinal == 0) {
+                        if (yFinal == -1) {
                             yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
                             line.finalLineCoordinate = yStart;
                         }
+                        //if (yFinal == 0) {
+                        //    yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
+                        //    line.finalLineCoordinate = yStart;
+                        //}
                         double xSize = (finalCoordinate - startCoordinate);
                         double ySize = (yFinal - yStart);
                         double zSize = (zFinal - zStart);
@@ -256,10 +259,14 @@ bool ScanProcessingTask::getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int ne
                 auto yFinal = line.finalLineCoordinate;
                 auto zStart = line.startCoordinateZ;
                 auto zFinal = line.finalCoordinateZ;
-                if ((yFinal == 0) && (yStart != 0)) {
+                if (yFinal == -1) {
                     yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
                     line.finalLineCoordinate = yStart;
                 }
+                //if ((yFinal == 0) && (yStart != 0)) {
+                //    yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
+                //    line.finalLineCoordinate = yStart;
+                //}
                 double xSize = (finalCoordinate - startCoordinate);
                 double ySize = (yFinal - yStart);
                 double zSize = (zFinal - zStart);
@@ -315,6 +322,7 @@ void ScanProcessingTask::formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vec
 
 void ScanProcessingTask::normalizeDirection(PeaksLine& line)
 {
+    
     // Инвертируем строки с обратным ходом
     if (line.finalCoordinate < line.startCoordinate) {
         //std::reverse(&arr[x + 1], &arr[y]);
@@ -323,7 +331,15 @@ void ScanProcessingTask::normalizeDirection(PeaksLine& line)
         auto tempValue = line.finalCoordinate;
         line.finalCoordinate = line.startCoordinate;
         line.startCoordinate = tempValue;
-       
+        
+        tempValue = line.finalLineCoordinate;
+        line.finalLineCoordinate = line.lineCoordinate;
+        line.lineCoordinate = tempValue;
+
+        tempValue = line.finalCoordinateZ;
+        line.finalCoordinateZ = line.startCoordinateZ;
+        line.startCoordinateZ = tempValue;
+
         auto tempStampValue = line.timestampEnd;
         line.timestampEnd = line.timestampStart;
         line.timestampStart = tempStampValue;
@@ -389,6 +405,8 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
       r[i].finalLineCoordinate = line.finalLineCoordinate;
       r[i].startCoordinateZ = line.startCoordinateZ;
       r[i].finalCoordinateZ = line.finalCoordinateZ;
+      r[i].timestampStart = line.timestampStart;
+      r[i].timestampEnd = line.timestampEnd;
     }
   }
 
@@ -409,7 +427,7 @@ void ScanProcessingTask::rearrangeSpec(std::shared_ptr<Scan>& scan, double Xmin,
     //std::size_t peakCount = 1 + floor(0.5+params.headAndScanCollectorParameters.width / numArea);
     std::size_t peakCount = 0;
     if (dX != 0) {
-        peakCount = floor(0.5 + params.headAndScanCollectorParameters.width / dX);
+        peakCount = floor(0.5 + params.headAndScanCollectorParameters.width / std::abs(dX));
     }
     //auto be = boost::extents[lineCount][peakCount];
     auto be = boost::extents[lineCount][rangeCount][peakCount];
@@ -718,8 +736,8 @@ void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<st
         for (auto& range : line)
             if (range.sampleIndexes.front() > range.sampleIndexes.back()) {
                 for (auto& si : range.sampleIndexes)
-                    //si = std::abs(distance - si);
-                    si = (distance - si);
+                    si = std::abs(distance - si);
+                    //si = (distance - si);
             }
       emit stageProgressed();
     }
@@ -788,6 +806,37 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
     normalizeRange(scan.commonNormalizedRanges[rangeIndex2],scan.commonRanges, rangeIndex2, step, startIndex, stopIndex, extremum);
     emit stageProgressed();
   }
+}
+
+std::tuple<double, double, double, double> ScanProcessingTask::minMaxCoordinatesOfNormalizedRange(std::vector<std::vector<RangeScanLine>>& ranges, std::size_t rangeIndex)
+{
+    //auto bar = std::make_tuple("test", 3.1, 14, 'y');
+    std::tuple<double, double, double, double> tupleOut;
+
+    auto linesCount = ranges.size();
+    if (linesCount > 0) {
+        double minlico = ranges.front().front().lineCoordinate;
+        double maxlico = ranges.front().front().lineCoordinate;
+        double minCoord = ranges.front().front().startCoordinate;
+        double maxCoord = ranges.front().front().finalCoordinate;
+        double minlicoLocal;
+        double maxlicoLocal;
+        double minСoordLocal;
+        double maxСoordLocal;
+        for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
+            minlicoLocal = ranges[lineIndex][rangeIndex].lineCoordinate;
+            maxlicoLocal = ranges[lineIndex][rangeIndex].finalLineCoordinate;
+            minСoordLocal = ranges[lineIndex][rangeIndex].startCoordinate;
+            maxСoordLocal = ranges[lineIndex][rangeIndex].finalCoordinate;
+            minlico = std::min({ minlico, minlicoLocal, maxlicoLocal });
+            maxlico = std::max({ maxlico, minlicoLocal, maxlicoLocal });
+            minCoord = std::min({ minCoord , minСoordLocal, maxСoordLocal });
+            maxCoord = std::max({ maxCoord , minСoordLocal, maxСoordLocal });
+            // }
+        }
+        tupleOut = std::make_tuple(minCoord, maxCoord, minlico, maxlico);
+    }
+    return tupleOut;
 }
 
 
@@ -883,43 +932,26 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.extremum = extremumOfRangesIn;
   normalizedRange.lineCoordinates.resize(linesCount);
   normalizedRange.finalLineCoordinates.resize(linesCount);
+  normalizedRange.timestampsStart.resize(linesCount);
+  normalizedRange.timestampsEnd.resize(linesCount);
+  normalizedRange.startCoordinatesZ.resize(linesCount);
+  normalizedRange.finalCoordinatesZ.resize(linesCount);
   //normalizedRange.finalLineCoordinate = ranges.front().front().finalLineCoordinate;
   
   if (linesCount > 0) {
-    //if (ranges[0][rangeIndex].lineCoordinate < 0) {
-    //  normalizedRange.lineCoordinates[0] = 0;
-    //} else {
-    //  normalizedRange.lineCoordinates[0] = ranges[0][rangeIndex].lineCoordinate;
-    //}
-
-      double minlico = ranges.front().front().lineCoordinate;
-      double maxlico = ranges.front().front().lineCoordinate;
-      double minCoord = normalizedRange.startCoordinate;
-      double maxCoord = normalizedRange.finalCoordinate;
-      double minlicoLocal;
-      double maxlicoLocal;
-      double minСoordLocal;
-      double maxСoordLocal;
     for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
-     // if (ranges[lineIndex][rangeIndex].lineCoordinate < 0) {
-     //   normalizedRange.lineCoordinates[lineIndex] = normalizedRange.lineCoordinates[lineIndex - 1] + 1;
-     // } else {
-        minlicoLocal = ranges[lineIndex][rangeIndex].lineCoordinate;
-        maxlicoLocal = ranges[lineIndex][rangeIndex].finalLineCoordinate;
-        minСoordLocal = ranges[lineIndex][rangeIndex].startCoordinate;
-        maxСoordLocal = ranges[lineIndex][rangeIndex].finalCoordinate;
-        normalizedRange.lineCoordinates[lineIndex] = minlicoLocal;
-        normalizedRange.finalLineCoordinates[lineIndex] = maxlicoLocal;
-        minlico = std::min({ minlico, minlicoLocal, maxlicoLocal });
-        maxlico = std::max({ maxlico, minlicoLocal, maxlicoLocal });
-        minCoord = std::min({ minCoord , minСoordLocal, maxСoordLocal });
-        maxCoord = std::max({ maxCoord , minСoordLocal, maxСoordLocal });
-     // }
+        normalizedRange.lineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].lineCoordinate;
+        normalizedRange.finalLineCoordinates[lineIndex] = ranges[lineIndex][rangeIndex].finalLineCoordinate;
+        normalizedRange.timestampsStart[lineIndex] = ranges[lineIndex][rangeIndex].timestampStart;
+        normalizedRange.timestampsEnd[lineIndex] = ranges[lineIndex][rangeIndex].timestampEnd;
+        normalizedRange.startCoordinatesZ[lineIndex] = ranges[lineIndex][rangeIndex].startCoordinateZ;
+        normalizedRange.finalCoordinatesZ[lineIndex] = ranges[lineIndex][rangeIndex].finalCoordinateZ;
+
     }
-    normalizedRange.lineCoordinate = minlico;
-    normalizedRange.finalLineCoordinate = maxlico;
-    normalizedRange.startCoordinate = minCoord;
-    normalizedRange.finalCoordinate = maxCoord;
+    std::tie(normalizedRange.startCoordinate,
+        normalizedRange.finalCoordinate,
+        normalizedRange.lineCoordinate,
+        normalizedRange.finalLineCoordinate) = minMaxCoordinatesOfNormalizedRange(ranges, rangeIndex);
   }
   if (normalizedRange.extremum == ::Extremum::Max) {
       normalizedRange.view = normalizedRange.maxView;

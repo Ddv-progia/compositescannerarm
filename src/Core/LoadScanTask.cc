@@ -155,8 +155,8 @@ void LoadScanTask::loadLine(Db& db, std::uint32_t i)
   line.startCoordinateZ = getVal<double>(db, (boost::format("lines.@%1%.startCoordinateZ") % i).str(), -1.0);
   line.finalCoordinateZ= getVal<double>(db, (boost::format("lines.@%1%.finalCoordinateZ") % i).str(), -1.0);
 
-  if (line.lineCoordinate == -1.0) line.lineCoordinate = 0.0;
-  if (line.finalLineCoordinate == -1.0) line.finalLineCoordinate = 0.0;
+  //if (line.lineCoordinate == -1.0) line.lineCoordinate = 0.0;
+  //if (line.finalLineCoordinate == -1.0) line.finalLineCoordinate = 0.0;
 
   auto lineSize = getVal<std::uint32_t>(db, (boost::format("lines.@%1%.samples.@size") % i).str());
   auto lineFormat = static_cast<LineEncoding>(getVal<std::uint32_t>(db, (boost::format("lines.@%1%.samples.@format") % i).str(), 
