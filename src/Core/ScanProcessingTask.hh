@@ -68,6 +68,7 @@ private:
   void findRelativeSignals(Scan& scan,const std::vector<SpecNormalizationParams>& params);
   void restartProcessingTask(Scan& scan,const std::vector<SpecNormalizationParams>& params);
   void normalizeSpectrogram(std::vector<std::vector<RangeScanLine>>& spec);
+  void normalizeSpectrogramNew(std::vector<std::vector<RangeScanLine>>& spec, float multiplierForSigma = 3);
   Polynomial signleRangeModel(const std::vector<double>& lineView, 
                               const std::vector<double>& lineCoordinates, 
                               unsigned int order);

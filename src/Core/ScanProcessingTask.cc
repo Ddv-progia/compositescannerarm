@@ -388,7 +388,7 @@ std::vector<RangeScanLine> ScanProcessingTask::splitFrequencyRanges(const Source
         ranges.push_back(FrequencyRange{ (double)startFrequency, (double)startFrequency + step });
     auto bands = ::splitFrequencyRanges(line.samplesBegin, line.samplesEnd, line.sampleRate, peaks, ranges);
     //
-
+    
     r.resize(bands.size());
     for (std::size_t i = 0; i < bands.size(); i++) {
       r[i].sampleRate = line.sampleRate;
@@ -1416,7 +1416,8 @@ void ScanProcessingTask::findRelativeSignals(Scan& scan, const std::vector<SpecN
                 if (line.size() > nRange) {
                     for (auto& point : line[nRange].samples)
                         if (point != 0)
-                            point = (point - average) / (3 * sigma);
+                            //point = (point - average) / (3 * sigma);
+                            point = (point - average) / (1 * sigma);
                 }
             }
         }
@@ -1444,6 +1445,61 @@ void ScanProcessingTask::restartProcessingTask(Scan& scan, const std::vector<Spe
 
 }
 
+void ScanProcessingTask::normalizeSpectrogramNew(std::vector<std::vector<RangeScanLine>>& spec, float multiplierForSigma)
+{
+    auto rangeSize = spec.begin()->size();
+    for (auto rangeIndex = 0; rangeIndex < rangeSize; rangeIndex++) {
+        ba::accumulator_set<float, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min, ba::tag::variance>> valuesInRange;
+        for (auto& line : spec) {
+            for (auto& value : line.at(rangeIndex).samples) {
+                valuesInRange(value);
+            }
+        }
+        auto normMean = ba::mean(valuesInRange);
+        auto normMeanMax = ba::max(valuesInRange);
+        auto normMeanMin = ba::min(valuesInRange);
+        auto sigma = std::sqrt(ba::variance(valuesInRange));
+        auto normMeanVar = sigma * multiplierForSigma;
+
+        auto normSum = ba::sum(valuesInRange);
+
+        auto maxDiff = std::max(std::abs(normMeanMax - normMean), std::abs(normMean - normMeanMin));
+        auto diff = maxDiff;
+        for (auto& line : spec) {
+            for (auto& value : line.at(rangeIndex).samples) {
+                value = (value - normMean) / normMeanVar;
+            }
+        }
+    }
+
+    for (auto& line : spec) {
+        if (line.size() == 0) {
+        }
+        else {
+            std::vector<float> sums;
+            auto lineSamplesSize = line.begin()->samples.size();
+            sums.resize(lineSamplesSize);
+            for (auto sampleNum = 0; sampleNum < lineSamplesSize; sampleNum++) {
+
+                ba::accumulator_set<float, ba::stats<ba::tag::sum>> normMean;
+                for (auto& range : line) {
+                    normMean(range.samples[sampleNum]);
+                }
+                auto normSum = ba::sum(normMean);
+                sums[sampleNum] = normSum;
+            }
+            line.push_back(RangeScanLine(line.back()));
+            line.back().samples = sums;
+            auto fromLocal = line.front().range.from;
+            auto toLocal = line.back().range.to;
+            line.back().range = FrequencyRange{ fromLocal , toLocal };
+        }
+        emit stageProgressed();
+    }
+
+}
+
+//******************                               линии     ranges
 void ScanProcessingTask::normalizeSpectrogram(std::vector<std::vector<RangeScanLine>>& spec)
 {
   for(auto& line:spec){
@@ -1636,9 +1692,17 @@ void ScanProcessingTask::operator() ()
   case ScanProcessingStage::SpectreRestructuredOnPeaksCoordinates:
     emit stageStarted("Нормализация спектра",scan->spec.size());
     scan->normalizedSpec = scan->spec;
+    
     if(scan->parameters.shouldNormalize){
-      //normalizeSpectrogram(scan->spec);
-      normalizeSpectrogram(scan->normalizedSpec);
+      ////normalizeSpectrogram(scan->spec);
+      //normalizeSpectrogram(scan->normalizedSpec);
+      if (scan->parameters.shouldNormalizeNew) {
+          //normalizeSpectrogram(scan->spec);
+          float multiplier = scan->parameters.multiplierForSigma;
+          normalizeSpectrogramNew(scan->normalizedSpec, multiplier);
+      }
+      else normalizeSpectrogram(scan->normalizedSpec);
+
     }
     scan->processingStage = ScanProcessingStage::SpecNormalized; 
   case ScanProcessingStage::SpecNormalized:

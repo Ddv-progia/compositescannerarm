@@ -641,6 +641,7 @@ void ProcessingParametersDialog::fillWidgets()
   ui.peakMagnitudeLimitBox->setValue(params.peakMagnitudeLimit);
   ui.peakBackstepBox->setValue(params.peakBackstep);
   ui.peakForestepBox->setValue(params.peakForestep);
+  ui.multiplierForSigmaBox->setValue(params.multiplierForSigma);
   ui.peakForestepSoundBox->setValue(params.headAndScanCollectorParameters.peakForestepSound);
   ui.firstStepShiftBox->setValue(params.headAndScanCollectorParameters.firstStepShift);
 
@@ -650,6 +651,7 @@ void ProcessingParametersDialog::fillWidgets()
   ui.smoothingPointsCountBox->setValue(params.smoothingPointsCount);
   ui.smoothingCheckBox->setChecked(params.smoothingPointsWeigted);
   ui.normalizeCheckBox->setChecked(params.shouldNormalize);
+  ui.normalizeNewCheckBox->setChecked(params.shouldNormalizeNew);
   ui.relateCheckBox->setChecked(params.shouldRelate);
   ui.useSubRangesCheckBox->setChecked(params.useSubRanges);
 
@@ -715,10 +717,12 @@ void ProcessingParametersDialog::updateParameters()
   params.smoothingPointsCount = ui.smoothingPointsCountBox->value();
   params.smoothingPointsWeigted = ui.smoothingCheckBox->isChecked();
   params.shouldNormalize = ui.normalizeCheckBox->isChecked();
+  params.shouldNormalizeNew = ui.normalizeNewCheckBox->isChecked();
   params.shouldRelate = ui.relateCheckBox->isChecked();
   params.useSubRanges = ui.useSubRangesCheckBox->isChecked();
   params.peakMagnitudeLimit = ui.peakMagnitudeLimitBox->value();
   params.peakBackstep = ui.peakBackstepBox->value();
+  params.multiplierForSigma = ui.multiplierForSigmaBox->value();
   params.peakForestep = ui.peakForestepBox->value();
   params.headAndScanCollectorParameters.peakForestepSound = ui.peakForestepSoundBox->value();
   params.headAndScanCollectorParameters.firstStepShift = ui.firstStepShiftBox->value();

@@ -193,6 +193,8 @@ struct ProcessingParameters is
   columnModelOrder :  Unsigned_Integer
   smoothingPointsCount : Unsigned_Integer
   shouldNormalize : Boolean 
+  shouldNormalizeNew : Boolean = {false}
+  multiplierForSigma: Double_Precision_Real = {3.0}
   useSubRanges : Boolean
   specNormalization :Std::Vector(SpecNormalizationParams)
 
