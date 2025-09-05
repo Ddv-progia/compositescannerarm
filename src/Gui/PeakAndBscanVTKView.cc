@@ -573,6 +573,11 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
         auto view = normalizedRanges.view;
         auto xSize = view.shape()[0];
         auto ySize = view.shape()[1];
+        auto kx = (3.14 / 50.0);
+        auto ky = (3.14 / 50.0);
+        auto shx = 70.0;
+        auto shy = 30.0;
+        auto Az = 10.0;
         for (size_t i = 0; i < ySize; i++) {
             vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
             for (size_t j = 0; j < xSize; j++) {
@@ -583,7 +588,15 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
                 auto x = normalizedRanges.startCoordinate+ stepX *j;
                 //auto y = normalizedRanges.finalLineCoordinate - normalizedRanges.lineCoordinates[i];
                 auto y = normalizedRanges.lineCoordinates[i];
-                auto idOfPoint = points->InsertNextPoint(x, y, 0);
+                auto z = 0;
+                if (scan->parameters.addZCoordinates) {
+                    auto xx = kx * (x - shx );
+                    auto yy = ky * (y - shy);
+                    auto t = (xx * xx + yy * yy);
+                    //z = 20*(std::sin(t)* std::cos(t));
+                    z = Az*(std::sin(xx)* std::cos(yy));
+                }
+                auto idOfPoint = points->InsertNextPoint(x, y, z);
                 polyLine->GetPointIds()->InsertNextId(idOfPoint);
                 scalars->InsertNextTuple1(view[j][i]);
                 //scalars->InsertNextTuple1(peak.y);
@@ -592,7 +605,7 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
         }
         //stageProgressed();
     }
-
+    
     pointSource->SetPoints(points);
     pointSource->SetLines(cells);
     pointSource->GetPointData()->SetScalars(scalars);
@@ -602,7 +615,7 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
 }
 
 /// <summary>
-/// Отображение удара в 3d сцене
+/// РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ СѓРґР°СЂР° РІ 3d СЃС†РµРЅРµ
 /// </summary>
 /// <param name="peak"></param>
 /// <param name="scan"></param>
@@ -726,7 +739,7 @@ void PeakAndBscanVTKView::ShowPeak(Peak& peak, std::shared_ptr<Scan>& scan)
 }
 
 /// <summary>
-/// Отдельное окно с отображением удара (peak) 
+/// РѕС‚РґРµР»СЊРЅРѕРµ РѕРєРЅРѕ СЃ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµРј СѓРґР°СЂР° (peak) 
 /// </summary>
 /// <param name="peak"></param>
 /// <param name="scan"></param>
@@ -930,7 +943,7 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     this->scan = scan;
     vtkNew<vtkPolyData> peakRtPolyData;
 
-    ///******* готовим точки пиков
+    ///******* РіРѕС‚РѕРІРёРј С‚РѕС‡РєРё РїРёРєРѕРІ
     int numOfPoints = 0;
     double t = 0;
     double x, y, z;
@@ -1015,7 +1028,7 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
 
 //    std::cout << "There are " << pointSource->GetNumberOfPoints() << " points."
 //        << std::endl;
-    ///******* end готовим точки пиков
+    ///******* end РіРѕС‚РѕРІРёРј С‚РѕС‡РєРё РїРёРєРѕРІ
 
     vtkNew<vtkQuantizePolyDataPoints> quantizeFilter;
     //quantizeFilter->SetInputConnection(pointSource->GetOutputPort());
@@ -1107,7 +1120,8 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
         radiusY = stepY;
     }
     vtkNew<vtkSphereSource> sphereSource;
-    double radiusZ = scan->parameters.headAndScanCollectorParameters.currentNumArea / 2;
+    double radiusZ = scan->parameters.headAndScanCollectorParameters.currentNumArea * scan->parameters.headAndScanCollectorParameters.koeffSphere;
+    //double radiusZ = scan->parameters.headAndScanCollectorParameters.currentNumArea / 2;
     sphereSource->SetRadius(radiusZ);
 
     vtkNew<vtkParametricSuperEllipsoid> parametricSuperEllipsoidForInputMapper;
@@ -1417,8 +1431,8 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     imageActor->SetPosition(20, 20);
 
     //vtkImageData* image = new 
-    //axialColors->SetInputConnection(ImageGridSource->GetOutputPort()); //TODO на входе должен быть vtkImageData
-    axialColors->SetInputData(colorImage); //TODO на входе должен быть vtkImageData
+    //axialColors->SetInputConnection(ImageGridSource->GetOutputPort()); //TODO РЅР° РІС…РѕРґРµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ vtkImageData
+    axialColors->SetInputData(colorImage); //TODO РЅР° РІС…РѕРґРµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ vtkImageData
     axialColors->SetLookupTable(hueLut);
     axialColors->Update();
 

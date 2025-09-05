@@ -327,6 +327,7 @@
    <addaction name="runCursorAction"/>
    <addaction name="stopHandleScanAction"/>
    <addaction name="makeBScanAction"/>
+   <addaction name="addZcoordinatesAction"/>
   </widget>
   <action name="quitAction">
    <property name="icon">
@@ -624,6 +625,18 @@
    </property>
    <property name="text">
     <string>runCursor</string>
+   </property>
+  </action>
+  <action name="addZcoordinatesAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/tab-new.png</normaloff>:/icons/actions/icons/actions/tab-new.png</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить/Убрать z координаты</string>
+   </property>
+   <property name="toolTip">
+    <string>Добавить/Убрать всем точкам координаты Z</string>
    </property>
   </action>
  </widget>

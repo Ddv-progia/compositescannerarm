@@ -15,36 +15,36 @@ native Uint8 is "::uint8_t" header "stdint.h"
 
 
 enum Extremum is
-	Max,
-	Min,
-	Aver,
-	Diff
+    Max,
+    Min,
+    Aver,
+    Diff
 
 enum ScanProcessingStage is
-	RawDataObtained,
-	PeaksDetected,
-	LinesTrimmed,
-	DirectionNormalized,
-	FrequencyRangesSplited,
-	RangesSmoothed,
-	RangesSelected,
-	LinesAligned,
-	RangesNormalized,
-	ModelSubstracted,
-	PeaksCoordinateFinded,
-	SpectreRestructuredOnPeaksCoordinates,
-	RelativeSignalsFounded,
-	SpecNormalized,
-	RtRawDataObtained,
-	RtPeaksDetected,
-	RtLinesTrimmed,
-	RtDirectionNormalized,
-	RtFrequencyRangesSplited,
-	RtRangesSmoothed,
-	RtRangesSelected,
-	RtLinesAligned,
-	RtRangesNormalized,
-	RtModelSubstracted
+    RawDataObtained,
+    PeaksDetected,
+    LinesTrimmed,
+    DirectionNormalized,
+    FrequencyRangesSplited,
+    RangesSmoothed,
+    RangesSelected,
+    LinesAligned,
+    RangesNormalized,
+    ModelSubstracted,
+    PeaksCoordinateFinded,
+    SpectreRestructuredOnPeaksCoordinates,
+    RelativeSignalsFounded,
+    SpecNormalized,
+    RtRawDataObtained,
+    RtPeaksDetected,
+    RtLinesTrimmed,
+    RtDirectionNormalized,
+    RtFrequencyRangesSplited,
+    RtRangesSmoothed,
+    RtRangesSelected,
+    RtLinesAligned,
+    RtRangesNormalized,
+    RtModelSubstracted
 
 struct FrequencyRange is 
   from : Double_Precision_Real
@@ -94,31 +94,31 @@ end
 
 struct Kernel is
   height : Integer
-	width : Integer
-	centerx : Integer
-	centery : Integer
-	kernelType :  Integer
+    width : Integer
+    centerx : Integer
+    centery : Integer
+    kernelType :  Integer
 end
 
 struct DefectSearchingRange is
-	range : Unsigned_Integer
-	minimumValue : Double_Precision_Real
-	maximumValue : Double_Precision_Real
-	isDefectInside : Boolean = {true}
+    range : Unsigned_Integer
+    minimumValue : Double_Precision_Real
+    maximumValue : Double_Precision_Real
+    isDefectInside : Boolean = {true}
 end
 
 struct DefectSearchingParameters is 
-	useBlur : Boolean
-	blurHeight : Integer
-	blurWidth : Integer
-	useUnion : Boolean
-	unionKernel : Kernel
-	useSeparation : Boolean
-	separationKernel : Kernel
-	edgesApproximationType : Integer
-	defectRanges : Std::Vector(DefectSearchingRange)
-	minDefectArea: Double_Precision_Real
-	isDefectInside: Boolean
+    useBlur : Boolean
+    blurHeight : Integer
+    blurWidth : Integer
+    useUnion : Boolean
+    unionKernel : Kernel
+    useSeparation : Boolean
+    separationKernel : Kernel
+    edgesApproximationType : Integer
+    defectRanges : Std::Vector(DefectSearchingRange)
+    minDefectArea: Double_Precision_Real
+    isDefectInside: Boolean
     markerVelocityDblSpinBox: Double_Precision_Real ={10}
     markerAccelerationDblSpinBox: Double_Precision_Real ={20}
     markerdxDblSpinBox: Double_Precision_Real ={0}
@@ -127,12 +127,12 @@ struct DefectSearchingParameters is
 end
 
 struct ColorStop is
-	val : Double_Precision_Real
-	color : Std::String
+    val : Double_Precision_Real
+    color : Std::String
 end
 
 enum DefectAnalysisToken is
-	MIN_IN_RANGE,
+    MIN_IN_RANGE,
   MAX_IN_RANGE,
   POS_HALF_SUM, 
   NEG_HALF_SUM,
@@ -140,15 +140,15 @@ enum DefectAnalysisToken is
   NEG_RELATIVE_RESIDUAL
 
 struct DefectClassificationParameter is
-	token :  Unsigned_Integer
-	ranges :  Std::Vector(Unsigned_Integer)
-	koeff :  Double_Precision_Real
-	val :  Double_Precision_Real
+    token :  Unsigned_Integer
+    ranges :  Std::Vector(Unsigned_Integer)
+    koeff :  Double_Precision_Real
+    val :  Double_Precision_Real
 end
 
 struct DefectType is
-	name : Std::String
-	params : Std::Vector(DefectClassificationParameter)
+    name : Std::String
+    params : Std::Vector(DefectClassificationParameter)
 end
 
 struct SpecNormalizationParams is
@@ -164,9 +164,9 @@ struct HeadAndScanCollectorParameters is
   height :  Unsigned_Integer = { 200 }
   countOfPeakToCatchForAreaBox: Unsigned_Integer = {1}
   peakForestepSound:  Double_Precision_Real = {0.0}
-  currentNumArea:  Unsigned_Integer = {1}  -- шаг разбиения на клетки. фактически deltaX = currentNumArea и deltaY = currentNumArea 
-  deltaX :  Double_Precision_Real  = {1}  -- шаг разбиения на клетки. deltaX = currentNumArea и deltaY = currentNumArea 
-  deltaY :  Double_Precision_Real  = {1}  -- шаг разбиения на клетки. фактически deltaY = шаг по оси Y для сканирования рамкой
+  currentNumArea:  Unsigned_Integer = {1}  -- С€Р°Рі СЂР°Р·Р±РёРµРЅРёСЏ РЅР° РєР»РµС‚РєРё. С„Р°РєС‚РёС‡РµСЃРєРё deltaX = currentNumArea Рё deltaY = currentNumArea 
+  deltaX :  Double_Precision_Real  = {1}  -- С€Р°Рі СЂР°Р·Р±РёРµРЅРёСЏ РЅР° РєР»РµС‚РєРё. deltaX = currentNumArea Рё deltaY = currentNumArea 
+  deltaY :  Double_Precision_Real  = {1}  -- С€Р°Рі СЂР°Р·Р±РёРµРЅРёСЏ РЅР° РєР»РµС‚РєРё. С„Р°РєС‚РёС‡РµСЃРєРё deltaY = С€Р°Рі РїРѕ РѕСЃРё Y РґР»СЏ СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ СЂР°РјРєРѕР№
   firstStepShift: Double_Precision_Real = {0.0}
   needPackInSquare: Boolean = {true}
   needPackInLine: Boolean = {false}
@@ -175,6 +175,7 @@ struct HeadAndScanCollectorParameters is
   needShowBScan: Boolean = {true}
   needIgnoreFirstLine: Boolean = {false}
   needTrimFirstLine: Boolean = {false}
+  koeffSphere: Double_Precision_Real = {0.6}
 end
 
 
@@ -209,7 +210,8 @@ struct ProcessingParameters is
   stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
 
   shouldRelate : Boolean  = {true} 
-  smoothingPointsWeigted: Boolean = {true} --//учитывать ли веса сглаживающих  точек
+  smoothingPointsWeigted: Boolean = {true} --//СѓС‡РёС‚С‹РІР°С‚СЊ Р»Рё РІРµСЃР° СЃРіР»Р°Р¶РёРІР°СЋС‰РёС…  С‚РѕС‡РµРє
+  addZCoordinates: Boolean = {false} --//СѓС‡РёС‚С‹РІР°С‚СЊ Р»Рё РІРµСЃР° СЃРіР»Р°Р¶РёРІР°СЋС‰РёС…  С‚РѕС‡РµРє
 
 end
 
@@ -356,31 +358,31 @@ struct DefectsView is
 end
 
 struct Position is
-	x           : Single_Precision_Real
-	y           : Single_Precision_Real
-	z           : Single_Precision_Real
-	zenithAngle : Single_Precision_Real
-	rotation    : Single_Precision_Real
-	timeStamp   : Unsigned_Long_Long_Integer = { 0 }
+    x           : Single_Precision_Real
+    y           : Single_Precision_Real
+    z           : Single_Precision_Real
+    zenithAngle : Single_Precision_Real
+    rotation    : Single_Precision_Real
+    timeStamp   : Unsigned_Long_Long_Integer = { 0 }
 end
 
 struct Trajectory is
-	pos         :  Std::Vector(Position)
-	sampleRate  :  Unsigned_Integer
+    pos         :  Std::Vector(Position)
+    sampleRate  :  Unsigned_Integer
 end
 
 struct Sound is
-	samples     : Std::Vector(Single_Precision_Real)
-	sampleRate  : Unsigned_Integer
+    samples     : Std::Vector(Single_Precision_Real)
+    sampleRate  : Unsigned_Integer
 end
 
 struct ScanArm is 
-	--original							:	OriginalData
-	sound								:	Sound
-	trajectory							:	Trajectory
-	rtPeaks								:	Std::Vector(Std::Vector(Std::List(Peak)))
-	parameters							:	ProcessingParameters
-	
+    --original							:	OriginalData
+    sound								:	Sound
+    trajectory							:	Trajectory
+    rtPeaks								:	Std::Vector(Std::Vector(Std::List(Peak)))
+    parameters							:	ProcessingParameters
+    
 --	lines								:	Std::Vector(SourceScanLine)                     with UCL::Reflection::Binding::Transient_Member
 --	trimmedLines 						:	Std::Vector(SourceScanLineSlice)                with UCL::Reflection::Binding::Transient_Member
 --	peaks 								:	Std::Vector(PeaksLine)                          with UCL::Reflection::Binding::Transient_Member
@@ -396,13 +398,13 @@ struct ScanArm is
 --	rawDefectPoints 					:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
 --	renderedDefectPoints 				:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
 --	renderedDefectPointsFixedColor 		:	Std::Vector(DefectsView)                        with UCL::Reflection::Binding::Transient_Member
-	processingStage 					:	ScanProcessingStage                             with UCL::Reflection::Binding::Transient_Member
+    processingStage 					:	ScanProcessingStage                             with UCL::Reflection::Binding::Transient_Member
 --	currentRange 						:	Unsigned_Integer                                with UCL::Reflection::Binding::Transient_Member
-	scanName 							:	Std::String                                     with UCL::Reflection::Binding::Transient_Member
-	shiftX                              :   Single_Precision_Real               = {0.0}
-	shiftY                              :   Single_Precision_Real               = {0.0}
-	shiftZ                              :   Single_Precision_Real               = {0.0}
-	shiftIsCorrect                      :   Boolean                             = {false}
+    scanName 							:	Std::String                                     with UCL::Reflection::Binding::Transient_Member
+    shiftX                              :   Single_Precision_Real               = {0.0}
+    shiftY                              :   Single_Precision_Real               = {0.0}
+    shiftZ                              :   Single_Precision_Real               = {0.0}
+    shiftIsCorrect                      :   Boolean                             = {false}
 --	sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Default_Construct_Missing_Members_Attribute
     sourceScanChunks                    :   SourceScanChunks                               with UCL::Reflection::Binding::Transient_Member
     isScanArmReady                      :   Boolean                             = {false}  with UCL::Reflection::Binding::Transient_Member
@@ -416,7 +418,7 @@ struct Scan is
   peaks                          : Std::Vector(PeaksLine)
   ranges                         : Std::Vector(Std::Vector(RangeScanLine))
   commonRanges                   : Std::Vector(Std::Vector(RangeScanLine))
-				                 
+                                 
   spec                           : Std::Vector(Std::Vector(RangeScanLine))
   normalizedSpec                 : Std::Vector(Std::Vector(RangeScanLine))
        

@@ -113,5 +113,6 @@ private:
   Q_SLOT void showHideUnusedAction(bool needShow = false);
   
   Q_SLOT void moveAlongDefect(const std::vector<Defect*>& defectsIn, ::DefectSearchingParameters defectSearching);
+  Q_SLOT void addZCoordinates();
 
 };

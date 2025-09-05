@@ -152,6 +152,7 @@ void MainWindow::connectSignals()
   connect(ui.assembleScanAction, SIGNAL(triggered()), this, SLOT(showAssembleScanDialog()));
   connect(ui.exportWaveAction, SIGNAL(triggered()), this, SLOT(exportWave()));
   connect(ui.makeBScanAction, SIGNAL(triggered()), this, SLOT(makeBScanAction()));
+  connect(ui.addZcoordinatesAction, SIGNAL(triggered()), this, SLOT(addZCoordinates()));
 
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
@@ -728,6 +729,17 @@ void MainWindow::moveAlongDefect(const std::vector<Defect*>& defectsIn,::DefectS
     return Q_SLOT void();
 }
 
+Q_SLOT void MainWindow::addZCoordinates()
+{
+    auto currentWidget = getCurrentMdiWidget();
+    if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
+        auto par = sdw->getProcessingParameters();
+        par.addZCoordinates = !par.addZCoordinates;
+        sdw->applyParameters(par, scanFactory);
+        return Q_SLOT void();
+    }
+}
+
 void MainWindow::closeEvent(QCloseEvent* evt)
 {
   foreach(auto sw, ui.mdiArea->subWindowList()) {
@@ -819,7 +831,7 @@ void MainWindow::showCurrentParameterDialog()
   auto currentWidget = getCurrentMdiWidget();
   if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
     ProcessingParametersDialog ppd(sdw->getProcessingParameters(), false);
-
+    
     if (ppd.exec() == QDialog::Accepted) {
         sdw->applyParameters(ppd.getProcessingParameters(), scanFactory);
     }
