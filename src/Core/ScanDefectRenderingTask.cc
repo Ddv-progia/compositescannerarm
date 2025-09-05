@@ -124,36 +124,39 @@ DefectsView renderDefectPoints(const DefectKindView& kind,
                                const DefectRenderingParameters& rendering)
 {
   DefectsView result;
+  std::size_t rowCount = 0;
+  std::size_t columnCount = 0;
+  if (ranges.size() > 0) {
+	  rowCount = ranges.front().view.shape()[0];
+	  columnCount = ranges.front().view.shape()[1];
+	  result.sampleRate = ranges.front().sampleRate;
+	  result.startCoordinate = ranges.front().startCoordinate;
+	  result.finalCoordinate = ranges.front().finalCoordinate;
+	  result.lineCoordinates = ranges.front().lineCoordinates;
 
-  std::size_t rowCount = ranges.front().view.shape()[0];
-  std::size_t columnCount = ranges.front().view.shape()[1];
-  result.view.resize(boost::extents[rowCount][columnCount]);
-  result.sampleRate = ranges.front().sampleRate;
-  result.startCoordinate = ranges.front().startCoordinate;
-  result.finalCoordinate = ranges.front().finalCoordinate;
-  result.lineCoordinates = ranges.front().lineCoordinates;
+	  result.view.resize(boost::extents[rowCount][columnCount]);
+	  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
+		  for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+			  auto r = channelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.red, &RgbColor::red);
+			  auto g = channelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.green, &RgbColor::green);
+			  auto b = channelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blue, &RgbColor::blue);
 
-  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
-    for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-      auto r = channelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.red, &RgbColor::red);
-      auto g = channelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.green, &RgbColor::green);
-      auto b = channelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blue, &RgbColor::blue);
-	  
-	  auto sumR=r.red + g.red + b.red;
-	  auto sumG=r.green + g.green + b.green;
-	  auto sumB=r.blue + g.blue + b.blue;
+			  auto sumR = r.red + g.red + b.red;
+			  auto sumG = r.green + g.green + b.green;
+			  auto sumB = r.blue + g.blue + b.blue;
 
-	  if((sumR==0 && sumG==0) && sumB==0)
-      result.view[rowIndex][columnIndex] = RgbColor{ 255, 255, 255 };
-	  else
-      result.view[rowIndex][columnIndex] = RgbColor{  static_cast<uint8_t>(std::min(sumR, 220)),
-                                                      static_cast<uint8_t>(std::min(sumG, 220)),
-                                                      static_cast<uint8_t>(std::min(sumB, 220)) };
-    }
+			  if ((sumR == 0 && sumG == 0) && sumB == 0)
+				  result.view[rowIndex][columnIndex] = RgbColor{ 255, 255, 255 };
+			  else
+				  result.view[rowIndex][columnIndex] = RgbColor{ static_cast<uint8_t>(std::min(sumR, 220)),
+																  static_cast<uint8_t>(std::min(sumG, 220)),
+																  static_cast<uint8_t>(std::min(sumB, 220)) };
+		  }
 
-	//замыкание
-	result.view = morphologic::dilate(result.view);
-	result.view = morphologic::erode(result.view);
+	  //замыкание
+	  result.view = morphologic::dilate(result.view);
+	  result.view = morphologic::erode(result.view);
+  }
   return result;
 }
 
@@ -163,30 +166,33 @@ DefectsView renderDefectPointsWithFixedColor(const DefectKindView& kind,
 {
   DefectsView result;
 
-  std::size_t rowCount = ranges.front().view.shape()[0];
-  std::size_t columnCount = ranges.front().view.shape()[1];
-  result.view.resize(boost::extents[rowCount][columnCount]);
-  result.sampleRate = ranges.front().sampleRate;
-  result.startCoordinate = ranges.front().startCoordinate;
-  result.finalCoordinate = ranges.front().finalCoordinate;
-  result.lineCoordinates = ranges.front().lineCoordinates;
-  result.finalLineCoordinates = ranges.front().finalLineCoordinates;
+  std::size_t rowCount = 0;
+  std::size_t columnCount = 0;
+  if (ranges.size() > 0) {
+	  rowCount = ranges.front().view.shape()[0];
+	  columnCount = ranges.front().view.shape()[1];
+	  result.sampleRate = ranges.front().sampleRate;
+	  result.startCoordinate = ranges.front().startCoordinate;
+	  result.finalCoordinate = ranges.front().finalCoordinate;
+	  result.lineCoordinates = ranges.front().lineCoordinates;
+	  result.finalLineCoordinates = ranges.front().finalLineCoordinates;
 
-  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
-    for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-      uint8_t r = fixedChannelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.redFixed);
-      uint8_t g = fixedChannelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.greenFixed);
-      uint8_t b = fixedChannelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blueFixed);
-	  if((r==0 && g==0) && b ==0)
-      result.view[rowIndex][columnIndex] = RgbColor{ 255, 255, 255 };
-	  else
-      result.view[rowIndex][columnIndex] = RgbColor{ r, g, b };
-    }
+	  result.view.resize(boost::extents[rowCount][columnCount]);
+	  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
+		  for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+			  uint8_t r = fixedChannelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.redFixed);
+			  uint8_t g = fixedChannelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.greenFixed);
+			  uint8_t b = fixedChannelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blueFixed);
+			  if ((r == 0 && g == 0) && b == 0)
+				  result.view[rowIndex][columnIndex] = RgbColor{ 255, 255, 255 };
+			  else
+				  result.view[rowIndex][columnIndex] = RgbColor{ r, g, b };
+		  }
 
-	//замыкание
-    result.view = morphologic::dilate(result.view);
-	result.view = morphologic::erode(result.view);
-
+	  //замыкание
+	  result.view = morphologic::dilate(result.view);
+	  result.view = morphologic::erode(result.view);
+  }
   return result;
 }
 
@@ -194,14 +200,17 @@ DefectsView selectDefectPoints(const DefectKindView& kind,
                                const std::vector<NormalizedRange>& ranges)
 {
   DefectsView result;
-
-  std::size_t rowCount = ranges.front().view.shape()[0];
-  std::size_t columnCount = ranges.front().view.shape()[1];
+  std::size_t rowCount = 0;
+  std::size_t columnCount = 0;
+  if (ranges.size() > 0) {
+	  rowCount = ranges.front().view.shape()[0];
+	  columnCount = ranges.front().view.shape()[1];
+	  result.sampleRate = ranges.front().sampleRate;
+	  result.startCoordinate = ranges.front().startCoordinate;
+	  result.finalCoordinate = ranges.front().finalCoordinate;
+	  result.lineCoordinates = ranges.front().lineCoordinates;
+  }
   result.view.resize(boost::extents[rowCount][columnCount]);
-  result.sampleRate = ranges.front().sampleRate;
-  result.startCoordinate = ranges.front().startCoordinate;
-  result.finalCoordinate = ranges.front().finalCoordinate;
-  result.lineCoordinates = ranges.front().lineCoordinates;
 
   for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
     for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {

@@ -390,13 +390,13 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   regionPicker->setRubberBand(QwtPicker::RectRubberBand);
   regionPicker->setStateMachine(new  QwtPickerDragRectMachine);
   regionPicker->setTrackerMode(QwtPicker::AlwaysOff);
-  regionPicker->setMousePattern(QwtEventPattern::MouseSelect1, Qt::RightButton, Qt::ShiftModifier);
+  regionPicker->setMousePattern(QwtEventPattern::MouseSelect1, Qt::RightButton);
 
   auto regionRosePicker = new QwtPlotPicker(scanPlot->canvas());
   regionRosePicker->setRubberBand(QwtPicker::RectRubberBand);
   regionRosePicker->setStateMachine(new  QwtPickerDragRectMachine);
   regionRosePicker->setTrackerMode(QwtPicker::AlwaysOff);
-  regionRosePicker->setMousePattern(QwtEventPattern::MouseSelect1, Qt::RightButton);
+  regionRosePicker->setMousePattern(QwtEventPattern::MouseSelect1, Qt::RightButton, Qt::ShiftModifier);
 
 
  // Шкалы графиков
@@ -531,6 +531,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   connect(scanPlotEventFilter, SIGNAL(changeExtremums()), this, SLOT(changeExtremums()));
 
   connect(outlineSelectedDefectsButton, SIGNAL(clicked()), this, SLOT (moveAlongDefects()));
+
   connect(additionalPlotsButton, SIGNAL(toggled(bool)), this, SLOT(setAdditionalGraphicsVisibility(bool)));
   connect(defectsButton, SIGNAL(toggled(bool)), this, SLOT(setDefectsVisible(bool)));
   connect(resizeToWindowButton, SIGNAL(toggled(bool)), this, SLOT(togleWindowSize(bool)));
@@ -664,7 +665,7 @@ QPoint ScanDisplayWindow::specIndex(QPoint& viewPoint, std::size_t nRange)
   sample = size / xSize;
   sample *= viewPoint.x() / 3;
 
-  return(QPoint(std::min(size, static_cast<int>(sample)), line));
+  return(QPoint(std::min(size, static_cast<int>(sample)), line));  //TODO не нужен /3 (в xSize И в sample *= )??? //TODO в min( должно быть xSize !?
 }
 
 void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::vector<std::vector<RangeScanLine>>& spec)
@@ -731,6 +732,7 @@ void ScanDisplayWindow::normalizeSpec(QPoint beginPoint, QPoint endPoint, std::v
   }
   //scan->processingStage = ScanProcessingStage::DirectionNormalized;
   scan->processingStage = ScanProcessingStage::SpecNormalized;
+  //scan->processingStage = ScanProcessingStage::SpectreRestructuredOnPeaksCoordinates;
   refreshWindow();
 }
 
@@ -2080,7 +2082,8 @@ void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, Scan
   //  scan->processingStage = ScanProcessingStage::RawDataObtained;
   // new end commented
   scan->processingStage = ScanProcessingStage::RawDataObtained; // new вместо commented
-  factory.startNewScan(params);
+  scan->parameters = params;
+  factory.startNewScan(params);  //rem : 04_09_2025
   for (auto const & l : scan->lines) factory.addRangeScanLine(l);
   refreshWindow();
 }

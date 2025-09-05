@@ -200,6 +200,7 @@ public:
 	void applyParameters(const ProcessingParameters& params, ScanFactory& factory);
 	Q_SIGNAL void refreshScan(std::shared_ptr<Scan>& scan);
 	Q_SIGNAL void moveAlongSelectedDefect(const std::vector<Defect*>& defects, ::DefectSearchingParameters defParams);
+
 	vtkNew<vtkDiscretizableColorTransferFunction> buildCTF(bool const& raduga, std::vector<ColorStop> colors);
 	//void showQuantizedPoints();
 	ScanFactory* scanFactory;

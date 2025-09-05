@@ -82,7 +82,7 @@ void devices::setup(const DevicesConfiguration& conf, const Ice::CommunicatorPtr
                 QString devices = QString::fromStdString(conf.audioDataCollector) + "\n\nДоступные : \n";
                 for (auto value : adcs) {
                     devices += QString::fromStdString(value) + "\n";
-                    std::cout << value;
+                    //std::cout << value;
                 }
                 QMessageBox::warning(nullptr, QString("Устройство из настроек не найдено"),
                     QString(devices + "\nПодключаем доступное устройство ") + QString::fromStdString(*adcs.begin()));

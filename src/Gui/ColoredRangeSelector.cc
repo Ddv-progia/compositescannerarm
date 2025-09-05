@@ -199,25 +199,25 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   this->setFrameStyle(QFrame::StyledPanel);
 
   for(int i = 0; i < ranges.size(); i++) {
-      float val = mins[i];
-      if (isnan(mins[i])) {
-          val = 0;
-      }
+      //float val = mins[i];
+      //if (isnan(mins[i])) {
+      //    val = 0;
+      //}
     auto minView = new RangeView(newColorMap->rgb(interval, mins[i]), ranges[i]);
-    val = maxs[i];
-    if (isnan(maxs[i])) {
-        val = 0;
-    }
+    //val = maxs[i];
+    //if (isnan(maxs[i])) {
+    //    val = 0;
+    //}
     auto maxView = new RangeView(newColorMap->rgb(interval, maxs[i]), ranges[i]);
-    val = avers[i];
-    if (isnan(avers[i])) {
-        val = 0;
-    }
+    //val = avers[i];
+    //if (isnan(avers[i])) {
+    //    val = 0;
+    //}
     auto averView = new RangeView(newColorMap->rgb(interval, avers[i]), ranges[i]);
-    val = diffs[i];
-    if (isnan(diffs[i])) {
-        val = 0;
-    }
+    //val = diffs[i];
+    //if (isnan(diffs[i])) {
+    //    val = 0;
+    //}
     auto diffView = new RangeView(newColorMap->rgb(interval, diffs[i]), ranges[i]);
 
     views[0].push_back(maxView);
