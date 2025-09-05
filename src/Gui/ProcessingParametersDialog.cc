@@ -697,6 +697,7 @@ void ProcessingParametersDialog::fillWidgets()
   
   ui.heightBox->setValue(this->params.headAndScanCollectorParameters.height);
   ui.widthBox->setValue(this->params.headAndScanCollectorParameters.width);
+  ui.koeffSphereBox->setValue(this->params.headAndScanCollectorParameters.koeffSphere);
   ui.spinBoxHeadsSampleRate->setValue(this->params.headAndScanCollectorParameters.headsSampleRate);
   ui.spinBoxSoundsSampleRate->setValue(this->params.headAndScanCollectorParameters.soundsSampleRate);
   ui.spinBoxMaxRecordingTime->setValue(this->params.headAndScanCollectorParameters.maximumTimeMinutes);
@@ -731,6 +732,7 @@ void ProcessingParametersDialog::updateParameters()
 
   params.headAndScanCollectorParameters.height             = ui.heightBox->value();
   params.headAndScanCollectorParameters.width              = ui.widthBox->value();
+  params.headAndScanCollectorParameters.koeffSphere        = ui.koeffSphereBox->value();
   params.headAndScanCollectorParameters.headsSampleRate    = ui.spinBoxHeadsSampleRate->value();
   params.headAndScanCollectorParameters.soundsSampleRate   = ui.spinBoxSoundsSampleRate->value();
   params.headAndScanCollectorParameters.maximumTimeMinutes = ui.spinBoxMaxRecordingTime->value();
