@@ -5,6 +5,7 @@
 #pragma once
 
 #include <UCL/PlotView/Model.hh>
+#include <UCL/PlotView/StandardObjects/PositionMarker.hh>
 #include "Core/ScanData.hh"
 #include <qwt_series_data.h>
 #include <vtkTable.h>
@@ -51,7 +52,8 @@ private:
 class SourceScanLineGroup : public uts::plotting::AbstractItemGroup
 {
 public:
-  SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line);
+  //SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line);
+  SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line, const PeaksLine* peaksLine = 0);
 
   QString getName() const override;
   std::vector<std::shared_ptr<uts::plotting::AbstractCurve>> getCurves() const override;
@@ -60,10 +62,14 @@ public:
   std::vector<std::shared_ptr<uts::plotting::AbstractItemGroup>> getAuxiliaryGroups() const override;
   QString getClassName() const override;
   std::shared_ptr<uts::plotting::AbstractSurface> getSurface() const override;
+  double getXfromIndex(unsigned int index)  const;
 private:
   QString name;
   QString className;
   const SourceScanLine& line;
+  const PeaksLine* peaksLine;
+  //std::vector<std::shared_ptr<uts::plotting::PositionMarker>> markers;
+  std::vector<uts::plotting::PositionMarker> markers;
 };
 
 class RangeScanLineGroup : public uts::plotting::AbstractItemGroup

@@ -11,6 +11,8 @@
 #include <boost/range/numeric.hpp>
 #include <UCL/Exception.hh>
 #include <UCL/PlotView/AttributeKeys.hh>
+//#include <UCL/PlotView/PlotItems/VerticalLineMarker.hh>
+#include <UCL/PlotView/StandardObjects/PositionMarker.hh>
 
 #include "Core/ScanDataPlots.hh"
 #include "Core/Qwt/RangeScanLineSeriesData.hh"
@@ -116,9 +118,23 @@ getPoints()
 }
 
 SourceScanLineGroup::
-SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line)
-  : name(name), className(className), line(line)
-{ }
+//SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line)
+//  : name(name), className(className), line(line)
+SourceScanLineGroup(const QString& name, const QString& className, const SourceScanLine& line, const PeaksLine* peaksLine)
+
+  : name(name), className(className), line(line), peaksLine(peaksLine)
+{
+    int i = 0;
+    for (auto peak : peaksLine->peaks) {
+        auto pos = uts::plotting::XLineMarkerPosition();
+        pos.x = getXfromIndex(peak.beginIndex);
+        markers.push_back(uts::plotting::PositionMarker(QString("beginIndex of %1 peak").arg(i), className,pos));
+        auto posEnd = uts::plotting::XLineMarkerPosition();
+        posEnd.x = getXfromIndex(peak.endIndex);
+        markers.push_back(uts::plotting::PositionMarker(QString("endIndex  of %1 peak").arg(i), className, posEnd, "Green"));
+        i++;
+    }
+}
 
 QString 
 SourceScanLineGroup::
@@ -134,11 +150,50 @@ getCurves() const
   return { std::make_shared<SourceScanLineCurve>(name, className, line) };
 }
 
+double SourceScanLineGroup::getXfromIndex(unsigned int index)  const
+{
+    double xOut;
+    auto multiplex = (line.finalCoordinate - line.startCoordinate) / double(line.samples.size());
+    xOut = multiplex * double(index) + line.startCoordinate;
+
+    return xOut;
+}
+
 std::vector<std::shared_ptr<uts::plotting::AbstractMarker>> 
 SourceScanLineGroup::
 getMarkers() const
 {
-  return std::vector<std::shared_ptr<uts::plotting::AbstractMarker>>();
+    //std::vector<std::shared_ptr<uts::plotting::AbstractMarker>> sharedMarkers;
+    ////int i = 0;
+    //int i = 0;
+    //for (auto peak : peaksLine->peaks) {
+    //    auto pos = uts::plotting::XLineMarkerPosition();
+    //    pos.x = getXfromIndex(peak.beginIndex);
+    //    auto posEnd = uts::plotting::XLineMarkerPosition();
+    //    posEnd.x = getXfromIndex(peak.endIndex);
+    //    sharedMarkers.push_back(std::make_shared<uts::plotting::PositionMarker>(uts::plotting::PositionMarker(QString("bbeginIndex of %1 peak").arg(i), className, pos)));
+    //    sharedMarkers.push_back(std::make_shared<uts::plotting::PositionMarker>(uts::plotting::PositionMarker(QString("eendIndex of %1 peak").arg(i), className, posEnd)));
+    //    i++;
+    //}
+    ////for (auto& mark : markers) {
+    ////    sharedMarkers.push_back(std::make_shared<uts::plotting::PositionMarker>(mark));
+    ////    //auto pos = sharedMarkers.at(i)->getPosition();
+    ////    //uts::plotting::XLineMarkerPosition markerr = boost::get<uts::plotting::XLineMarkerPosition>(pos);
+    ////    //double x3 = markerr.x;
+    ////    //i++;
+    ////}
+    //return sharedMarkers;
+
+    std::vector<std::shared_ptr<uts::plotting::AbstractMarker>> sharedMarkers;
+    for (auto& mark : markers) {
+        sharedMarkers.push_back(std::make_shared<uts::plotting::PositionMarker>(mark));
+        //auto pos = sharedMarkers.at(i)->getPosition();
+        //uts::plotting::XLineMarkerPosition markerr = boost::get<uts::plotting::XLineMarkerPosition>(pos);
+        //double x3 = markerr.x;
+        //i++;
+    }
+
+    return sharedMarkers;
 }
 
 boost::optional<QRectF> 
@@ -325,7 +380,8 @@ SourceScanLineCategory::
 getGroup(unsigned int idx) const
 {
   if (idx < scan->lines.size()) {
-    return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx]);
+      const PeaksLine* peaksLine = &(scan->peaks[idx]);
+    return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx], peaksLine);
   } else {
     BOOST_THROW_EXCEPTION(uts::IndexOutOfBoundsException() << uts::ErrInfo_Index(idx));
   }
@@ -469,7 +525,8 @@ ScanDataRangesModel::
 getGroup(unsigned idx) const
 {
   if (idx < scan->lines.size()) {
-    return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx]);
+      const PeaksLine* peaksLine = &(scan->peaks[idx]);
+    return std::make_shared<SourceScanLineGroup>(QString("scaled line %1").arg(idx), "scaled-line", scan->lines[idx], peaksLine);
   } else {
     idx -= scan->lines.size();
 

@@ -2029,9 +2029,8 @@ void ScanDisplayWindow::showPlots()
   auto plotView = new uts::plotting::PlotCollectionView;
   //FIX
   //plotView->setStylesheetProvider(std::make_shared<uts::plotting::CascadingStylesheetFileProvider>(getConfigurationPathname("RangesStylesheet.xml")));
-  //auto stylesheet = uts::stylesheets::cascadingStylesheetFromFile(Configuration::getConfigurationPathname("etc/RangesStylesheet.xml"));
-  
-  //plotView->setStylesheet(stylesheet);
+  auto stylesheet = uts::stylesheets::cascadingStylesheetFromFile(Configuration::getConfigurationPathname("etc/RangesStylesheet.xml"));
+  plotView->setStylesheet(stylesheet);
   plotView->setModel(model);
 
 
