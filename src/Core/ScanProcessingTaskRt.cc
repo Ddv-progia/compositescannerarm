@@ -38,8 +38,10 @@ ScanProcessingTaskRt::ScanProcessingTaskRt(/*const ProcessingParameters& params,
     : /*params(params),*/ scanArm(newScan)
 { }
 
-SourceScanLineSlice ScanProcessingTaskRt::trimLine(const SourceScanLine& line, double initialSkip)
+SourceScanLineSlice ScanProcessingTaskRt::trimLine(SourceScanLine* lineIn, double initialSkip)
+//SourceScanLineSlice ScanProcessingTaskRt::trimLine(const SourceScanLine& line, double initialSkip)
 {
+    auto line = *lineIn;
     SourceScanLineSlice trimmedLine;
     trimmedLine.startCoordinate = line.startCoordinate;
     trimmedLine.finalCoordinate = line.finalCoordinate;

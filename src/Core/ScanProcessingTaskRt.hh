@@ -28,7 +28,8 @@ protected:
     Q_SIGNAL void newScanReady(const std::shared_ptr<ScanArm>& scan);
 
 private:
-    SourceScanLineSlice trimLine(const SourceScanLine& line, double initialSkip);
+    SourceScanLineSlice trimLine(SourceScanLine* lineIn, double initialSkip);
+    //SourceScanLineSlice trimLine(const SourceScanLine& line, double initialSkip);
     PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount = 30);
 
     RangeScanLine findAverageLine(std::vector<RangeScanLine>& rangedLines, FrequencyRange range);

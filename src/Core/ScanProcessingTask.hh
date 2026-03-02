@@ -22,17 +22,21 @@ class ScanProcessingTask : public ProgressReportingTask
   bool rearranged = false;
 
 public:
-  ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan);
-  //ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan, std::shared_ptr<ScanArm>& newScanArm);
+  ScanProcessingTask(std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan);
+  //ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan);
+  ////ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan, std::shared_ptr<ScanArm>& newScanArm);
   virtual void operator() () override;
 
 protected:
   Q_SIGNAL void newScanReady(const std::shared_ptr<Scan>& scan);
 
 private:
-  SourceScanLineSlice trimLine(const SourceScanLine& line, double initialSkip);
-  //PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount = 30);
-  PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn = 30.0);
+  //SourceScanLineSlice trimLine(SourceScanLine* line, double initialSkip);
+  SourceScanLineSlice trimLine(SourceScanLine& line, double initialSkip);
+
+  PeaksLine findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount = 30);
+  //PeaksLine findPeaks(SourceScanLineSlice* line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn = 30.0);
+  
   //bool getCoordinateOfPeaks(PeaksLine& line);
   bool getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int needSave = 1);
   void formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vector<PeaksLine>& peaks, unsigned int height, unsigned int width, unsigned int multyplex);

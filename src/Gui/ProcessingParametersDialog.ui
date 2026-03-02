@@ -1248,9 +1248,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>10</y>
+         <y>0</y>
          <width>375</width>
-         <height>710</height>
+         <height>801</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout_3">

@@ -451,7 +451,8 @@ QVector<double> findCurveParams(const std::vector<double>& yVals,const std::vect
 
     originalCurve->detach();
     originalCurve->setSamples(originalData);
-    originalCurve->attach(plot);/*
+    originalCurve->attach(plot);
+    /*
     deviationsCurve->detach();
     deviationsCurve->setSamples(curveData);
     deviationsCurve->attach(plot);*/

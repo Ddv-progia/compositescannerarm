@@ -22,6 +22,9 @@
 #include <boost/range/algorithm/min_element.hpp>
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/range/numeric.hpp>
+
+//#include <boost/python.hpp>
+
 #include <UCL/Iteration/Variadic/Transform.hh>
 #include <UCL/RegressionAnalysis/LeastSquares.hh>
 #include <UCL/SignalProcessing/Difference.hh>
@@ -37,7 +40,8 @@ namespace p   = boost::phoenix;
 namespace pa  = boost::phoenix::arg_names;
 namespace v   = uts::iteration::variadic;
 
-ScanProcessingTask::ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan)
+ScanProcessingTask::ScanProcessingTask(std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan)
+//ScanProcessingTask::ScanProcessingTask(const std::vector<SourceScanLine>& rawLines, const ProcessingParameters& params,std::shared_ptr<Scan>& newScan)
   : rawLines(rawLines), params(params), scan(newScan)
 { }
 
@@ -45,29 +49,30 @@ ScanProcessingTask::ScanProcessingTask(const std::vector<SourceScanLine>& rawLin
 //    : rawLines(rawLines), params(params), scan(newScan), scanArm(newScanArm)
 //{ }
 
-SourceScanLineSlice ScanProcessingTask::trimLine(const SourceScanLine& line, double initialSkip)
+SourceScanLineSlice ScanProcessingTask::trimLine(SourceScanLine& line, double initialSkip)
 {
   SourceScanLineSlice trimmedLine;
-  trimmedLine.startCoordinate = line.startCoordinate;
-  trimmedLine.finalCoordinate = line.finalCoordinate;
-  trimmedLine.sampleRate = line.sampleRate;
-  trimmedLine.lineCoordinate = line.lineCoordinate;
+  trimmedLine.startCoordinate =     line.startCoordinate;
+  trimmedLine.finalCoordinate =     line.finalCoordinate;
+  trimmedLine.sampleRate =          line.sampleRate;
+  trimmedLine.lineCoordinate =      line.lineCoordinate;
   trimmedLine.finalLineCoordinate = line.finalLineCoordinate;
-  trimmedLine.timestampStart= line.timestampStart;
-  trimmedLine.timestampEnd= line.timestampEnd;
-  trimmedLine.startCoordinateZ= line.startCoordinateZ;
-  trimmedLine.finalCoordinateZ= line.finalCoordinateZ;
+  trimmedLine.timestampStart=       line.timestampStart;
+  trimmedLine.timestampEnd=         line.timestampEnd;
+  trimmedLine.startCoordinateZ=     line.startCoordinateZ;
+  trimmedLine.finalCoordinateZ=     line.finalCoordinateZ;
 
   std::size_t offset = static_cast<std::size_t>(std::floor(initialSkip * line.sampleRate + 0.5));
+  
+  trimmedLine.samplesEnd = line.samples.end();
   trimmedLine.samplesBegin = line.samples.begin() + offset;
   //trimmedLine.samplesBegin = line.samples.begin();
-  trimmedLine.samplesEnd = line.samples.end();
   emit stageProgressed();
   return trimmedLine;
 }
 
-//PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimit, double backstep, double forestep, unsigned int pauseCount)
-PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn)
+PeaksLine ScanProcessingTask::findPeaks(const SourceScanLineSlice& line, float peakLimitIn, double backstepIn, double forestepIn, unsigned int pauseCountIn)
+//PeaksLine ScanProcessingTask::findPeaks(SourceScanLineSlice* line, float peakLimitIn, double backstepIn, double forestepIn, double pauseCountIn)
 {
     const auto backstep = static_cast<std::size_t>(std::floor(backstepIn * line.sampleRate + 0.5));
     const auto forestep = static_cast<std::size_t>(std::floor(forestepIn * line.sampleRate + 0.5));
@@ -263,10 +268,6 @@ bool ScanProcessingTask::getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int ne
                     yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
                     line.finalLineCoordinate = yStart;
                 }
-                //if ((yFinal == 0) && (yStart != 0)) {
-                //    yFinal = yStart; // TODO эта проверка должна быть не здесь, а там где формируется line.finalLineCoordinate
-                //    line.finalLineCoordinate = yStart;
-                //}
                 double xSize = (finalCoordinate - startCoordinate);
                 double ySize = (yFinal - yStart);
                 double zSize = (zFinal - zStart);
@@ -290,7 +291,13 @@ bool ScanProcessingTask::getCoordinateOfPeaks(std::shared_ptr<Scan> scan, int ne
                         //scan->peaks.at(i).peaks.at(j).y = yStart + multiplexY * peakIndex;
                         scan->peaks.at(i).peaks.at(j).x = startCoordinate + multiplexX * (peakIndex - beginIndexIt);
                         scan->peaks.at(i).peaks.at(j).y = yStart + multiplexY * (peakIndex - beginIndexIt);
-                        scan->peaks.at(i).peaks.at(j).z = zStart + multiplexZ * (peakIndex - beginIndexIt);;
+                        scan->peaks.at(i).peaks.at(j).z = zStart + multiplexZ * (peakIndex - beginIndexIt);
+                        Position posLocal;
+                        posLocal.x = scan->peaks.at(i).peaks.at(j).x;
+                        posLocal.y = scan->peaks.at(i).peaks.at(j).y;
+                        posLocal.z = scan->peaks.at(i).peaks.at(j).z;
+                        scan->scanArm.trajectory.pos.push_back(posLocal);
+
                         j++;
                     }
                     i++;
@@ -322,7 +329,6 @@ void ScanProcessingTask::formPeaksLineOnWidthHeightAndCoordinateOfPeaks(std::vec
 
 void ScanProcessingTask::normalizeDirection(PeaksLine& line)
 {
-    
     // Инвертируем строки с обратным ходом
     if (line.finalCoordinate < line.startCoordinate) {
         //std::reverse(&arr[x + 1], &arr[y]);
@@ -736,8 +742,8 @@ void ScanProcessingTask::alignLines(std::vector<PeaksLine>& peaks,std::vector<st
         for (auto& range : line)
             if (range.sampleIndexes.front() > range.sampleIndexes.back()) {
                 for (auto& si : range.sampleIndexes)
-                    si = std::abs(distance - si);
-                    //si = (distance - si);
+                    //si = std::abs(distance - si);
+                    si = (distance - si);
             }
       emit stageProgressed();
     }
@@ -1494,6 +1500,9 @@ void ScanProcessingTask::normalizeSpectrogramNew(std::vector<std::vector<RangeSc
         for (auto& line : spec) {
             for (auto& value : line.at(rangeIndex).samples) {
                 value = value / std::abs(normMean);
+                //value = (value) / normMeanVar;
+                //value = (value - normMean) / normMeanVar;
+                //value = (value/ std::abs(value))* std::abs(value - normMean) / normMeanVar;
                 //value = (value - normMean) / normMeanVar;
                 //value = (value - normMean)*(std::abs(value - normMean)) / normMeanVar;
             }
@@ -1501,19 +1510,28 @@ void ScanProcessingTask::normalizeSpectrogramNew(std::vector<std::vector<RangeSc
     }
 
     for (auto& line : spec) {
+        ba::accumulator_set<float, ba::stats<ba::tag::mean, ba::tag::sum>> sumOfSumes;
         if (line.size() > 0) {
             std::vector<float> sums;
             auto lineSamplesSize = line.begin()->samples.size();
             sums.resize(lineSamplesSize);
             for (auto sampleNum = 0; sampleNum < lineSamplesSize; sampleNum++) {
 
-                ba::accumulator_set<float, ba::stats<ba::tag::sum>> sumOfSamples;
+                ba::accumulator_set<float, ba::stats<ba::tag::mean, ba::tag::sum>> sumOfSamples;
                 for (auto& range : line) {
                     sumOfSamples(range.samples[sampleNum]);
                 }
                 auto normSum = ba::sum(sumOfSamples);
-                sums[sampleNum] = normSum/ normMean;
+                sums[sampleNum] = normSum;
+                sumOfSumes(normSum);
+                //sums[sampleNum] = normSum/ normMean;
             }
+
+            auto averSum = ba::mean(sumOfSumes);
+            for (auto& val : sums) {
+                val = val/ averSum;
+            }
+
             auto fromLocal = line.front().range.from;
             auto toLocal = line.back().range.to;
             line.push_back(RangeScanLine(line.back()));
@@ -1657,9 +1675,13 @@ void ScanProcessingTask::operator() ()
             //*******
         }
     }
-    boost::transform(scan->lines,
-                     std::back_inserter(scan->trimmedLines),
-                     p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));
+    //boost::transform(scan->lines,
+    //                 std::back_inserter(scan->trimmedLines),
+    //                 p::bind(&ScanProcessingTask::trimLine, this, pa::_1, params.initialSkip));
+    for (auto& line : scan->lines) {
+        auto tl = trimLine(line, params.initialSkip);
+        scan->trimmedLines.push_back(tl);
+    }
     if (params.headAndScanCollectorParameters.needIgnoreFirstLine) {
         scan->trimmedLines.erase(scan->trimmedLines.begin());
     }
@@ -1676,9 +1698,38 @@ void ScanProcessingTask::operator() ()
                              static_cast<float>(params.peakBackstep), 
                              static_cast<float>(params.peakForestep),
                              static_cast<unsigned int>(params.peakPauseCount)));
+    //for (auto trimLineLocal : scan->trimmedLines) {
+    //    //auto pl = findPeaks(trimLine,
+    //    //                    static_cast<float>(params.peakMagnitudeLimit),
+    //    //                    static_cast<float>(params.peakBackstep),
+    //    //                    static_cast<float>(params.peakForestep),
+    //    //                    static_cast<unsigned int>(params.peakPauseCount));
+    //    const auto backstep = static_cast<std::size_t>(std::floor(params.peakBackstep * trimLineLocal.sampleRate + 0.5));
+    //    const auto forestep = static_cast<std::size_t>(std::floor(params.peakForestep * trimLineLocal.sampleRate + 0.5));
+    //    const auto pauseCount = static_cast<std::size_t>(std::floor(params.peakPauseCount * trimLineLocal.sampleRate + 0.5));
+    //    auto pl = PeaksLine{ ::findPeaks(trimLineLocal.samplesBegin, trimLineLocal.samplesEnd, trimLineLocal.sampleRate, params.peakMagnitudeLimit, backstep, forestep, pauseCount),
+    //                    trimLineLocal.startCoordinate,
+    //                    trimLineLocal.finalCoordinate,
+    //                    trimLineLocal.lineCoordinate,
+    //                    trimLineLocal.finalLineCoordinate,
+    //                    trimLineLocal.timestampStart,
+    //                    trimLineLocal.timestampEnd,
+    //                    trimLineLocal.startCoordinateZ,
+    //                    trimLineLocal.finalCoordinateZ,
+    //    };
+    //    scan->peaks.push_back(pl);
+    //}
                              //static_cast<float>(params.peakPauseCount)));
      scan->processingStage = ScanProcessingStage::PeaksDetected;
-
+     //******* вставим звук 1.5 на границе пиков
+     //for (auto i = 0; i < scan->trimmedLines.size(); i++) {
+     //    auto& line = scan->lines.at(i);
+     //    auto peakLine = scan->peaks.at(i);
+     //    for (auto peak: peakLine.peaks) {
+     //        *(line.samples.begin() + peak.beginIndex) = 1.5;
+     //    }
+     //}
+     //******* конец вставим звук 1.5 на границе пиков
   case ScanProcessingStage::PeaksDetected: 
     emit stageStarted("Определение координат пиков", scan->peaks.size());
     //boost::for_each(scan->peaks, p::bind(&ScanProcessingTask::getCoordinateOfPeaks, this, pa::_1));

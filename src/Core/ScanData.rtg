@@ -222,11 +222,11 @@ struct SourceScanLine is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  finalLineCoordinate :  Double_Precision_Real = { -1.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-  startCoordinateZ: Double_Precision_Real = { 0 }
-  finalCoordinateZ: Double_Precision_Real = { 0 }
+  startCoordinateZ: Double_Precision_Real = { -1.0 }
+  finalCoordinateZ: Double_Precision_Real = { -1.0 }
 end
 
 struct SourceScanChunk is
@@ -247,11 +247,11 @@ struct RawScanLineInfo is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  finalLineCoordinate :  Double_Precision_Real = { -1.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-  startCoordinateZ: Double_Precision_Real = { 0 }
-  finalCoordinateZ: Double_Precision_Real = { 0 }
+  startCoordinateZ: Double_Precision_Real = { -1.0 }
+  finalCoordinateZ: Double_Precision_Real = { -1.0 }
 
 end
 
@@ -261,17 +261,19 @@ struct RawScanInfo is
 end
 
 struct SourceScanLineSlice is
-  samplesBegin :  Std::Vector(Single_Precision_Real)::Const_Iterator
-  samplesEnd :  Std::Vector(Single_Precision_Real)::Const_Iterator
+  samplesBegin :  Std::Vector(Single_Precision_Real)::Iterator
+  samplesEnd :  Std::Vector(Single_Precision_Real)::Iterator
+--  samplesBegin :  Std::Vector(Single_Precision_Real)::Const_Iterator
+--  samplesEnd :  Std::Vector(Single_Precision_Real)::Const_Iterator
   sampleRate :  Unsigned_Integer
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  finalLineCoordinate :  Double_Precision_Real = { -1.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-  startCoordinateZ: Double_Precision_Real = { 0 }
-  finalCoordinateZ: Double_Precision_Real = { 0 }
+  startCoordinateZ: Double_Precision_Real = { -1.0 }
+  finalCoordinateZ: Double_Precision_Real = { -1.0 }
 end
 
 struct PeaksLine is
@@ -279,11 +281,11 @@ struct PeaksLine is
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
   lineCoordinate :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  finalLineCoordinate :  Double_Precision_Real = { -1.0 }
   timestampStart : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd : Unsigned_Long_Long_Integer = { 0 }
-  startCoordinateZ: Double_Precision_Real = { 0 }
-  finalCoordinateZ: Double_Precision_Real = { 0 }
+  startCoordinateZ: Double_Precision_Real = { -1.0 }
+  finalCoordinateZ: Double_Precision_Real = { -1.0 }
 
 end
 
@@ -297,14 +299,14 @@ struct RangeScanLine is
   finalCoordinate     :  Double_Precision_Real
   sourceLineSize      :  Unsigned_Integer
   lineCoordinate      :  Double_Precision_Real
-  finalLineCoordinate :  Double_Precision_Real = { 0.0 }
+  finalLineCoordinate :  Double_Precision_Real = { -1.0 }
   timestampStart      : Unsigned_Long_Long_Integer = { 0 }
   timestampEnd        : Unsigned_Long_Long_Integer = { 0 }
   range :  FrequencyRange
   subBegin : Std::Vector(RangeScanLine)::Iterator
   subEnd : Std::Vector(RangeScanLine)::Iterator
-  startCoordinateZ    : Double_Precision_Real = { 0 }
-  finalCoordinateZ    : Double_Precision_Real = { 0 }
+  startCoordinateZ    : Double_Precision_Real = { -1.0 }
+  finalCoordinateZ    : Double_Precision_Real = { -1.0 }
 end
 
 
@@ -330,8 +332,8 @@ struct NormalizedRange is
   finalLineCoordinates: Std::Vector(Double_Precision_Real)
 --  lineCoordinatesMin: Double_Precision_Real = { 0 }
 --  finalLineCoordinateMax: Double_Precision_Real = { 0 }
-  lineCoordinate: Double_Precision_Real = { -1 }
-  finalLineCoordinate: Double_Precision_Real = { -1 }
+  lineCoordinate: Double_Precision_Real = { -1.0 }
+  finalLineCoordinate: Double_Precision_Real = { -1.0 }
   timestampsStart:   Std::Vector(Double_Precision_Real)
   timestampsEnd:     Std::Vector(Double_Precision_Real)
   startCoordinatesZ: Std::Vector(Double_Precision_Real)

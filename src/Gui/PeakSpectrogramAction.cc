@@ -305,8 +305,14 @@ void PeakSpectrogramPlot::showColumnOnYPlot(float time)
       std::vector<float> curveData;
       for (std::size_t i = 0; i < size; i++) curveData.push_back(ys->GetVariantValue(i).ToFloat());
 
-		  auto peaks = findPeaks(curveData.begin(), curveData.end(), sampleRate, processingParameters.peakMagnitudeLimit, processingParameters.peakBackstep, 
-			processingParameters.peakForestep);
+		  const auto backstep = static_cast<std::size_t>(std::floor(processingParameters.peakBackstep * sampleRate + 0.5));
+		  const auto forestep = static_cast<std::size_t>(std::floor(processingParameters.peakForestep * sampleRate + 0.5));
+		  const auto pauseCount = static_cast<std::size_t>(std::floor(processingParameters.peakPauseCount * sampleRate + 0.5));
+
+		  auto peaks = findPeaks(curveData.begin(), curveData.end(), sampleRate, processingParameters.peakMagnitudeLimit, // TODO вместо sampleRate проверить processingParameters.sampleRate 
+			  backstep,
+			  forestep,
+			  pauseCount );
 		  if (peaks.size() > 2) {
 		    auto fftInputLength  = peaks[1].endIndex - peaks[1].beginIndex;
 		    auto fftOutputLength = (fftInputLength - (fftInputLength & 1)) / 2 + 1;

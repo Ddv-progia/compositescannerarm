@@ -1010,12 +1010,24 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
         //vtkSmartPointer<vtkFloatArray> scalarsTrajectory = vtkSmartPointer<vtkFloatArray>::New();
         //scalarsTrajectory->SetName("Y");
         vtkSmartPointer<vtkPolyLine> trajectoryPolyLine = vtkSmartPointer<vtkPolyLine>::New();
-        for (auto elem : scan->scanArm.trajectory.pos)
-        {
-            auto idOfPoint = pointsTrajectory->InsertNextPoint(elem.x, scan->parameters.headAndScanCollectorParameters.height - elem.y, elem.z);
-            trajectoryPolyLine->GetPointIds()->InsertNextId(idOfPoint);
+        if (scan->scanArm.isScanArmReady) {
+            for (auto elem : scan->scanArm.trajectory.pos)
+            {
 
-        };
+                auto idOfPoint = pointsTrajectory->InsertNextPoint(elem.x, scan->parameters.headAndScanCollectorParameters.height - elem.y, elem.z);
+                trajectoryPolyLine->GetPointIds()->InsertNextId(idOfPoint);
+
+            };
+        }
+        else {
+            for (auto elem : scan->scanArm.trajectory.pos)
+            {
+
+                auto idOfPoint = pointsTrajectory->InsertNextPoint(elem.x, elem.y, elem.z);
+                trajectoryPolyLine->GetPointIds()->InsertNextId(idOfPoint);
+
+            };
+        }
         cellsTrajectory->InsertNextCell(trajectoryPolyLine);
         trajectoryPolyData->SetPoints(pointsTrajectory);
         trajectoryPolyData->SetLines(cellsTrajectory);

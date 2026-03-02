@@ -24,13 +24,20 @@ namespace {
 }
 
 std::vector<Peak>
-    findPeaks(std::vector<float>::const_iterator srcBegin,
-        std::vector<float>::const_iterator srcEnd,
+    findPeaks(std::vector<float>::iterator srcBegin,
+        std::vector<float>::iterator srcEnd,
         unsigned int sampleRate,
         float peakLimit,
         std::size_t backstep,
         std::size_t forestep,
         std::size_t peakPauseCount)
+    //findPeaks(std::vector<float>::const_iterator srcBegin,
+    //    std::vector<float>::const_iterator srcEnd,
+    //    unsigned int sampleRate,
+    //    float peakLimit,
+    //    std::size_t backstep,
+    //    std::size_t forestep,
+    //    std::size_t peakPauseCount)
 {
   //const auto backstep = static_cast<std::size_t>(std::floor(backstepSeconds * sampleRate + 0.5));
   //const auto forestep = static_cast<std::size_t>(std::floor(forestepSeconds * sampleRate + 0.5));
@@ -72,18 +79,26 @@ std::vector<Peak>
  //}          if (startPos < 0) startPos = 0;
 
  //*******
+  int maxEndPos = srcSize - forestep;
   int endOfPeakPos = 0;
-  auto peakLenght = forestep + backstep;
-  for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
-      if (std::abs(*(srcBegin + i)) > peakLimit) {
-
+  auto peakLenght = forestep + backstep+ peakPauseCount;
+  for (std::size_t i = 0; i < srcSize;) { 
+  //for (std::size_t i = 0; i < maxEndPos;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+  //for (std::size_t i = 0; i + forestep < srcSize;) { //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+      if (std::abs(*(srcBegin + i)) >= peakLimit) {
           int startPos = i - backstep;
-          if (startPos < 0) startPos = 0;
+          if (startPos < endOfPeakPos) {
+              startPos = endOfPeakPos + 1;
+          }
+          //if (startPos < 0) startPos = 0;
           //peaks.push_back(Peak{ (unsigned int)std::max((unsigned int)0, static_cast<unsigned int>(startPos)), (unsigned int)(i + forestep) });
-          peaks.push_back(Peak{ (unsigned int)(startPos), (unsigned int)(i + forestep) });
+          //peaks.push_back(Peak{ (unsigned int)(startPos), (unsigned int)(i + forestep) });
+          int endPos = i + forestep;
+          if ((startPos >= 0)&&(endPos < maxEndPos))  //не рассматриваем пик, попадающий на границу,так как он дает неверный спектр
+            peaks.push_back(Peak{ (unsigned int)(startPos), (unsigned int)(endPos) });
           //i += (forestep+ pauseCount);
           i += peakLenght;
-          endOfPeakPos = i;
+          endOfPeakPos = endPos;
       }
       else {
           if (std::abs(int(i) - endOfPeakPos) > (peakLenght)) {
