@@ -211,7 +211,12 @@ struct ProcessingParameters is
 
   shouldRelate : Boolean  = {true} 
   smoothingPointsWeigted: Boolean = {true} --//учитывать ли веса сглаживающих  точек
-  addZCoordinates: Boolean = {false} --//учитывать ли веса сглаживающих  точек
+  addZCoordinates: Boolean = {false} --//искусственно добавить z-координату
+  
+  screenResizingNeededRatherThanScaleCount: Boolean = {false} --//Точное изменение размера вместо кратного изменения 
+  screenCountNeeded: Boolean = {true} --//разбивать доп. вид на несколько частей
+  commonViewNeeded: Boolean = {false} --//показывать на доп. виде общий вид скана
+  screenCount: Integer = { 2 } --// на сколько частей разбивать доп. вид
 
 end
 
@@ -328,7 +333,6 @@ struct NormalizedRange is
   minView : MultiArray(Single_Precision_Real)
   averView : MultiArray(Single_Precision_Real)
   diffView : MultiArray(Single_Precision_Real)
-  
   finalLineCoordinates: Std::Vector(Double_Precision_Real)
 --  lineCoordinatesMin: Double_Precision_Real = { 0 }
 --  finalLineCoordinateMax: Double_Precision_Real = { 0 }

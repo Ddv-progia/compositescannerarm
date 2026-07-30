@@ -79,6 +79,9 @@
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkRectilinearGrid.h>
+//#include <vtkDoubleArray.h>
+
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRendererCollection.h>
@@ -91,14 +94,22 @@
 #include <vtkTubeFilter.h>
 #include <vtkTextProperty.h>
 #include <vtkWindowLevelLookupTable.h>
+#include <vtkSmartPointer.h>
+#include <vtkPointData.h>
+#include <vtkDataSetMapper.h>
+#include <vtkActor.h>
+
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+
+#include <ctime>
+
 
 #include <iostream>
 #include <string> 
 //***
 
-#include <vtkActor.h>
-#include <vtkDataSetMapper.h>
-#include <vtkDoubleArray.h>
 #include <vtkContextView.h>
 #include <vtkChartMatrix.h>
 //#include <vtkVector2i.h>
@@ -114,16 +125,7 @@
 //#include <vtkSphereSource.h>
 
 #include <vtkAxis.h>
-#include <vtkChartMatrix.h>
 #include <vtkChartXY.h>
-#include <vtkContextView.h>
-#include <vtkFloatArray.h>
-#include <vtkNamedColors.h>
-#include <vtkNew.h>
-#include <vtkPlot.h>
-#include <vtkPlotPoints.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTable.h>
 #include <vtkVersion.h>
@@ -262,9 +264,156 @@ void CreateColorImage(vtkImageData* image, unsigned int xDim = 20, unsigned int 
 }
 
 
+vtkIdType PeakAndBscanVTKView::paintPointNumber(double xin, double yin, double zin,
+    vtkRectilinearGrid* grid)
+{
+    int b[3];          // аналог b = [0,0,0]
+    double c[3];   // аналог c = [0.0,0.0,0.0]
+
+    double point[3] = { xin, yin, zin };
+
+    int a = grid->ComputeStructuredCoordinates(point, b, c);
+    if (a > 0)
+    {
+        double pcoord[3];
+        grid->GetPoint(b[0], b[1], b[2], pcoord);
+        return grid->ComputePointId(b);
+    }
+
+    return -1; // аналог None
+}
+
+// Основная функция
+vtkDoubleArray* PeakAndBscanVTKView::paintCircle(vtkRectilinearGrid* grid,
+    vtkDoubleArray* scalars,
+    double r, double val,
+    double dx, double dy,
+    double dz)
+{
+    int dims[3];
+    grid->GetDimensions(dims);
+
+    double xSize = dims[0] * dx;
+    double ySize = dims[1] * dy;
+
+    double mindXY = dx;
+    if (dy < dx)
+        mindXY = dy;
+
+    double x = 2 * r + (std::rand() % 101) * (xSize - 2 * r) / 100.0;
+    double y = 2 * r + (std::rand() % 101) * (ySize - 2 * r) / 100.0;
+    double z = 0.0;
+
+    int counter = static_cast<int>(r / mindXY);
+
+    for (int i = 0; i < counter; i++)
+    {
+        double yl = i * mindXY;
+
+        for (int j = 0; j < counter; j++)
+        {
+            double xl = j * mindXY;
+
+            double dist = std::sqrt(xl * xl + yl * yl);
+
+            if (dist <= r)
+            {
+                vtkIdType idp;
+
+                // 4 квадранта
+                idp = paintPointNumber(x + xl, y + yl, z, grid);
+                if (idp != -1)
+                    scalars->SetValue(idp, val);
+
+                idp = paintPointNumber(x + xl, y - yl, z, grid);
+                if (idp != -1)
+                    scalars->SetValue(idp, val);
+
+                idp = paintPointNumber(x - xl, y + yl, z, grid);
+                if (idp != -1)
+                    scalars->SetValue(idp, val);
+
+                idp = paintPointNumber(x - xl, y - yl, z, grid);
+                if (idp != -1)
+                    scalars->SetValue(idp, val);
+            }
+        }
+    }
+
+    return scalars;
+}
+
+vtkDoubleArray* PeakAndBscanVTKView::paintCirclePure(vtkRectilinearGrid* grid, vtkDoubleArray* scalars, double r,
+    double val, double dx, double dy, double dz)
+{
+    int dims[3];
+    grid->GetDimensions(dims);
+
+    double xSize = dims[0] * dx;
+    double ySize = dims[1] * dy;
+
+    double x = 2 * r + (std::rand() % 101) * (xSize - 2 * r) / 100.0;
+    double y = 2 * r + (std::rand() % 101) * (ySize - 2 * r) / 100.0;
+    double z = 0.0;
+
+    // Список точек (аналог Python list)
+    std::vector<std::pair<double, double>> px = {
+        {x - 4 * r / 5,y},{x - 3 * r / 5,y},{x - 2 * r / 5,y},{x - 1 * r / 5,y},{x,y},{x - 1 * r / 5,y},{x + 2 * r / 5,y},{x + 3 * r / 5,y},{x + 4 * r / 5,y},
+
+        {x - 3 * r / 5,y + 1 * r / 5},{x - 2 * r / 5,y + 1 * r / 5},{x - 2 * r / 5,y + 1 * r / 5},{x,y + 1 * r / 5},
+        {x - 2 * r / 5,y + 1 * r / 5},{x + 2 * r / 5,y + 1 * r / 5},{x + 3 * r / 5,y + 1 * r / 5},
+
+        {x - 3 * r / 5,y + 2 * r / 5},{x - 2 * r / 5,y + 2 * r / 5},{x - 1 * r / 5,y + 2 * r / 5},{x,y + 2 * r / 5},
+        {x + 1 * r / 5,y + 2 * r / 5},{x + 2 * r / 5,y + 2 * r / 5},{x + 3 * r / 5,y + 2 * r / 5},
+
+        {x - 3 * r / 5,y + 3 * r / 5},{x - 2 * r / 5,y + 3 * r / 5},{x - 1 * r / 5,y + 3 * r / 5},{x,y + 3 * r / 5},
+        {x + 1 * r / 5,y + 3 * r / 5},{x + 2 * r / 5,y + 3 * r / 5},{x + 3 * r / 5,y + 3 * r / 5},
+
+        {x - 3 * r / 5,y - 1 * r / 5},{x - 2 * r / 5,y - 1 * r / 5},{x - 2 * r / 5,y - 1 * r / 5},{x,y - 1 * r / 5},
+        {x - 2 * r / 5,y - 1 * r / 5},{x + 2 * r / 5,y - 1 * r / 5},{x + 3 * r / 5,y - 1 * r / 5},
+
+        {x - 3 * r / 5,y - 2 * r / 5},{x - 2 * r / 5,y - 2 * r / 5},{x - 1 * r / 5,y - 2 * r / 5},{x,y - 2 * r / 5},
+        {x + 1 * r / 5,y - 2 * r / 5},{x + 2 * r / 5,y - 2 * r / 5},{x + 3 * r / 5,y - 2 * r / 5},
+
+        {x - 3 * r / 5,y - 3 * r / 5},{x - 2 * r / 5,y - 3 * r / 5},{x - 1 * r / 5,y - 3 * r / 5},{x,y - 3 * r / 5},
+        {x + 1 * r / 5,y - 3 * r / 5},{x + 2 * r / 5,y - 3 * r / 5},{x + 3 * r / 5,y - 3 * r / 5}
+    };
+
+    for (const auto& p : px)
+    {
+        int ijk[3];
+        double pcoords[3];
+
+        double point[3] = { p.first, p.second, z };
+
+        int inside = grid->ComputeStructuredCoordinates(point, ijk, pcoords);
+
+        if (inside)
+        {
+            double worldPoint[3];
+            grid->GetPoint(grid->ComputePointId(ijk), worldPoint);
+
+            double dist = std::sqrt(
+                (worldPoint[0] - x) * (worldPoint[0] - x) +
+                (worldPoint[1] - y) * (worldPoint[1] - y)
+            );
+
+            if (dist <= r)
+            {
+                vtkIdType idp = grid->ComputePointId(ijk);
+                scalars->SetValue(idp, val);
+            }
+        }
+    }
+
+    return scalars;
+}
+
 void PeakAndBscanVTKView::constructPeakAndBscanVTKView()
 {
-    return;
+    //showNView(scan, 3);
+    return; 
+    
     //polyDataSource->SetOutput(sphere);
     //mapper->SetInputConnection(polyDataSource->GetOutputPort());
     //mapper->SetScalarModeToUsePointData();
@@ -589,7 +738,7 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
                 //auto y = normalizedRanges.finalLineCoordinate - normalizedRanges.lineCoordinates[i];
                 auto y = normalizedRanges.lineCoordinates[i];
                 auto z = 0;
-                if (scan->parameters.addZCoordinates) {
+                if (scan && scan->parameters.addZCoordinates) {
                     auto xx = kx * (x - shx );
                     auto yy = ky * (y - shy);
                     auto t = (xx * xx + yy * yy);
@@ -938,6 +1087,7 @@ void PeakAndBscanVTKView::ChartPeak(Peak& peak, std::shared_ptr<Scan>& scan)
 
 void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
 {
+
     auto scan_use_count = scan.use_count();
     if (scan_use_count < 1) return;
     this->scan = scan;
@@ -993,7 +1143,6 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     }
     double minValueRt = boost::accumulators::min(akumRt);
     double maxValueRt = boost::accumulators::max(akumRt);
-
 
     vtkNew<vtkPolyData> trajectoryPolyData;
     if (scan->parameters.headAndScanCollectorParameters.needShowCountOfPeak) {
@@ -1477,18 +1626,19 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     leftRenderer->SetBackground(colors->GetColor3d("Bisque").GetData());
 
     renderWindow->AddRenderer(rightRenderer);
+
     rightRenderer->SetViewport(rightViewport);
     rightRenderer->SetBackground(colors->GetColor3d("PaleTurquoise").GetData());
     rightRenderer->GradientBackgroundOn();
 
-    renderer->AddActor(inputActor);
-    //renderer->AddActor(inputActorRt);
+     renderer->AddActor(inputActor);    //11_03_2026 - заремарил этустроку //16_03_2026 - вернул
+    //renderer->AddActor(inputActorRt); //11_03_2026 - заремарил этустроку //16_03_2026 - вернул
     renderer->AddActor(inputActorRtPoints);
     renderer->AddActor(trajectoryActor);
     //renderer->AddActor2D(scalarBar);
     //renderer->AddActor2D(scalarBarRt);
 
-    leftRenderer->AddActor(inputActor);
+    leftRenderer->AddActor(inputActor); //11_03_2026 - заремарил этустроку //16_03_2026 - вернул
     leftRenderer->AddActor(inputActorRt);
     leftRenderer->AddActor(trajectoryActor);
     leftRenderer->AddActor(inputActorRtPoints);
@@ -1556,7 +1706,7 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     interactor->SetInteractorStyle(interactorStyle);
 
     renderWindow->SetSize(640, 360);
-    renderWindow->SetWindowName("QuantizePolyDataPoints");
+    renderWindow->SetWindowName("333QuantizePolyDataPoints");
     interactor->SetRenderWindow(renderWindow);
 
     scalarBarWidgetRt->SetInteractor(interactor);
@@ -1573,6 +1723,235 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     renderWindow->Render();
     //interactor->Start();
     interactor->Initialize();
+}
+
+void PeakAndBscanVTKView::showNView(std::shared_ptr<Scan> scan, int n, bool needToShowOriginalView, bool needShowRandomizedData)
+{
+    //vtkNew<vtkNamedColors> colors;
+    ////showNView Create a grid
+    //vtkNew<vtkRectilinearGrid> grid;
+    std::srand(std::time(nullptr));
+
+    auto colors = vtkSmartPointer<vtkNamedColors>::New();
+    auto grid = vtkSmartPointer<vtkRectilinearGrid>::New();
+
+    // Размер панели
+    double LPanel = 9000;
+    double HPanel = 300;
+    int LPanelStrikeCount = 23400;
+    int HPanelStrikeCount = 100;
+
+    if (scan && (!needShowRandomizedData) && (scan->lines.size() > 0)) {
+        LPanel = std::abs(double(scan->normalizedRanges.front().finalCoordinate - scan->normalizedRanges.front().startCoordinate));
+        HPanel = std::abs(double(scan->normalizedRanges.front().finalLineCoordinate - scan->normalizedRanges.front().lineCoordinate));
+        LPanelStrikeCount = scan->normalizedRanges.front().maxView[0].size();
+        HPanelStrikeCount = scan->normalizedRanges.front().maxView[0, 0].size();
+    }
+
+    grid->SetDimensions(LPanelStrikeCount, HPanelStrikeCount, 1);
+
+    double deltaX = LPanel / LPanelStrikeCount;
+    double deltaY = HPanel / HPanelStrikeCount;
+
+    int viewPortCounts = n;
+    double halfDeltaXforCamera = (LPanel / viewPortCounts) / 2;
+
+    double xSize = (grid->GetDimensions()[0]) * deltaX;
+
+    // --- X координаты ---
+    auto xArray = vtkSmartPointer<vtkDoubleArray>::New();
+    double val = -deltaX;
+
+    for (int i = 0; i < grid->GetDimensions()[0]; i++)
+    {
+        val += deltaX;
+        xArray->InsertNextValue(val);
+    }
+
+
+    // --- Y координаты ---
+    //ySize = (grid.GetDimensions()[1]) * deltaY
+    auto yArray = vtkSmartPointer<vtkDoubleArray>::New();
+    double valy = -deltaY;
+
+    for (int i = 0; i < grid->GetDimensions()[1]; i++)
+    {
+        valy += deltaY;
+        yArray->InsertNextValue(valy);
+    }
+
+    // --- Z координаты ---
+    auto zArray = vtkSmartPointer<vtkDoubleArray>::New();
+    double delta = 2.0;
+    val = -delta;
+
+    for (int i = 0; i < grid->GetDimensions()[2]; i++)
+    {
+        val += delta;
+        zArray->InsertNextValue(val);
+    }
+
+    grid->SetXCoordinates(xArray);
+    grid->SetYCoordinates(yArray);
+    grid->SetZCoordinates(zArray);
+
+    // --- Scalars ---
+    auto scalars = vtkSmartPointer<vtkDoubleArray>::New();
+    scalars->SetName("MyScalars");
+
+    vtkIdType gridsNumPoints = grid->GetNumberOfPoints();
+
+    for (vtkIdType id = 0; id < gridsNumPoints; id++)
+    {
+        //double p[3];
+        //grid->GetPoint(id,p);
+        //# scalars.InsertNextValue(0.5 + random.randint(0, 100) / 100 * p[0] / xSize)
+        vtkIdType rnd = std::rand() % gridsNumPoints;
+
+        double randomPoint[3];
+        grid->GetPoint(rnd, randomPoint);
+        scalars->InsertNextValue(randomPoint[0] / xSize);
+    }
+
+    // Рисуем круги
+    double rndz = 0.0;
+    double r = 5.0;
+    double valu = -1.0 * xSize;
+    paintCircle(grid, scalars, r, valu, deltaX, deltaY, 0);
+    paintCircle(grid, scalars, r, valu, deltaX, deltaY, 0);
+    paintCirclePure(grid, scalars, r, valu, deltaX, deltaY, 0);
+
+
+    // --- Границы viewport ---
+
+    for (int j = 0; j < viewPortCounts; j++)
+    {
+        for (int i = 0; i < HPanelStrikeCount; i++)
+        {
+            int ijk[3];
+            double pcoords[3];
+
+            double point[3] = {
+                (j + 1) * 2 * halfDeltaXforCamera,
+                i * deltaY,
+                0.0
+            };
+
+            int inside = grid->ComputeStructuredCoordinates(point, ijk, pcoords);
+
+            if (inside)
+            {
+                vtkIdType idp = grid->ComputePointId(ijk);
+
+                scalars->SetValue(idp, 100);
+                if (idp > 0) scalars->SetValue(idp - 1, 100);
+                if (idp < gridsNumPoints - 1) scalars->SetValue(idp + 1, 100);
+            }
+        }
+    }
+
+    grid->GetPointData()->SetScalars(scalars);
+    grid->Modified();
+
+    // --- Mapper ---
+    auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData(grid);
+    mapper->ScalarVisibilityOn();
+    mapper->SetColorModeToMapScalars();
+    //    mapper.Update()
+
+    auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(colors->GetColor3d("PeachPuff").GetData());
+
+    // --- Render window ---
+
+    //auto rw = vtkSmartPointer<vtkRenderWindow>::New();
+    //auto iren = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    iren->SetRenderWindow(rw);
+
+    //double xmins[] = { 0, 0, 0, 0 };
+    //double xmaxs[] = { 1, 1, 1, 1 };
+    double allViewSize = 1.0;
+    double viewSize = 0.1;
+    double commonViewSize = 0.0;
+    if (scan->parameters.commonViewNeeded) {
+        commonViewSize = 0.1;
+    };
+    viewSize = (allViewSize - commonViewSize) / viewPortCounts;
+    std::vector<double> xmins;
+    std::vector<double> xmaxs;
+    std::vector<double> ymins;
+    std::vector<double> ymaxs;
+    std::vector<double> camera_height;
+    double camera_height_value = 900.0;
+    std::vector <const char*> ren_bkg;
+
+    std::vector <double> camera_position_X;
+
+    double value = 0.0;
+    for (auto i = 0; i < viewPortCounts; i++) {
+        xmins.push_back(0.0);
+        xmaxs.push_back(1.0);
+        ymins.push_back(value);
+        value += viewSize;
+        ymaxs.push_back(value);
+        camera_height.push_back(camera_height_value);
+        auto colo = "LightGrey";
+        if (i % 2) {
+            colo = "Grey";
+        }
+        ren_bkg.push_back(colo);
+        camera_position_X.push_back(halfDeltaXforCamera*(2*i+1));
+    }
+    if (scan->parameters.commonViewNeeded) {
+        xmins.push_back(0.0);
+        xmaxs.push_back(1.0);
+        ymins.push_back(value);
+        value += commonViewSize;
+        ymaxs.push_back(value);
+        camera_height.push_back(camera_height_value);
+        ren_bkg.push_back("LightGrey");
+        camera_position_X.push_back(LPanel/2);
+    };
+    //double ymins[] = { 0, 0.3, 0.6, 0.9 };
+    //double ymaxs[] = { 0.3, 0.6, 0.9, 1 };
+    //double camera_height[] = { 900, 900, 900, 900 };
+    //const char* ren_bkg[] = { "LightGrey", "Grey", "LightGrey", "Grey" };
+    //double camera_position_X[] = {
+    //    halfDeltaXforCamera,
+    //    3 * halfDeltaXforCamera,
+    //    5 * halfDeltaXforCamera,
+    //    LPanel / 2
+    //};
+
+    double camera_position_Y = HPanel / 2;
+
+
+    for (int i = 0; i < std::size(xmins); i++)
+    {
+        auto ren = vtkSmartPointer<vtkRenderer>::New();
+        ren->SetViewport(xmins[i], ymins[i], xmaxs[i], ymaxs[i]);
+
+        rw->AddRenderer(ren);
+
+        auto camera = vtkSmartPointer<vtkCamera>::New();
+
+        camera->SetFocalPoint(camera_position_X[i], camera_position_Y, 0);
+        camera->SetPosition(camera_position_X[i], camera_position_Y, camera_height[i]);
+
+        ren->SetActiveCamera(camera);
+        ren->AddActor(actor);
+        ren->SetBackground(colors->GetColor3d(ren_bkg[i]).GetData());
+    }
+
+    rw->SetSize(2500, 1300);
+    rw->SetWindowName("900cmx30cm");
+
+    rw->Render();
+    //iren->Start();
+    iren->Initialize();
+
 }
 
 void PeakAndBscanVTKView::createImageDataFromDefectsView(vtkImageData* image, ::DefectsView* renderedDefectPoints)

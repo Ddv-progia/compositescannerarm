@@ -870,7 +870,9 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.aver = normalizedRange.max; //*******
   normalizedRange.diff = normalizedRange.max; //*******
   namespace ba = boost::accumulators;
-  ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> acc;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max>> accMax;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::min>> accMin;
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accDiff;
 
   for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
@@ -889,12 +891,12 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
                       diffPeak = maxPeak - minPeak;
 
                       //******* Преобразуем среднее по заданию Сергея Ивановича begin
-                      int N = 0;
+                      int N = 1;
                       for (auto iter = ranges[lineIndex][rangeIndex].subBegin; iter < ranges[lineIndex][rangeIndex].subEnd; iter++) {
                           N++;
                       }
-                      justPeak = justPeak * std::sqrt(N);
-                      //justPeak = justPeak / std::sqrt(N);
+                      //justPeak = justPeak * std::sqrt(N);
+                      justPeak = justPeak / std::sqrt(N);
 
                       //******* Преобразуем среднее по заданию Сергея Ивановича end
 
@@ -912,8 +914,10 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
                   }
                   acc(justPeak); //******* 
                   accDiff(diffPeak); //******* 
-                  if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
-                  if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
+                  accMax(maxPeak);
+                  accMin(minPeak);
+                  //if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
+                  //if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
               }
               normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
               normalizedRange.minView[peakIndex][lineIndex] = minPeak;
@@ -930,8 +934,10 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   ////normalizedRange.diff = ba::max(accDiff); //******* максимум по всем разницам
   //normalizedRange.diff = (ba::max(accDiff)+ ba::mean(accDiff))/2; //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
   normalizedRange.diff = ba::mean(accDiff); //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
-  normalizedRange.max = (normalizedRange.max + normalizedRange.aver)/2;
-  normalizedRange.min = (normalizedRange.min + normalizedRange.aver )/2;
+  normalizedRange.max = ba::max(accMax);
+  normalizedRange.min = ba::min(accMin);
+  //normalizedRange.max = (normalizedRange.max + normalizedRange.aver)/2;
+  //normalizedRange.min = (normalizedRange.min + normalizedRange.aver )/2;
   //normalizedRange.diff = (ba::mean(accDiff)*3)/ average; //*******  приведение к случаю, когда среднее равно трем (т.е. к цветовому диапазону)
   normalizedRange.sampleRate = ranges.front().front().sampleRate / step;
   normalizedRange.startCoordinate = ranges.front().front().startCoordinate;
@@ -1012,11 +1018,29 @@ bool ScanProcessingTask::getPeakWithCoordAt(const RangeScanLine& line, std::size
     return rezult;
 }
 
+
+
+std::tuple<bool, float> ScanProcessingTask::tryGetNonNANAndNonInfPeak(const RangeScanLine& line, std::size_t idx)
+{
+    float result = line.subBegin->samples[idx];
+    bool resultFound = !(std::isnan(result) && (!std::isinf(result)));
+    if (!resultFound) {
+        for (auto iter = line.subBegin; iter < line.subEnd; iter++) {
+            if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx]))) {
+                result = iter->samples[idx];
+                resultFound = true;
+                break;
+            }
+        }
+    } 
+    return std::tuple(resultFound, result);
+}
+
 float ScanProcessingTask::getAverageSubrangePeak(const RangeScanLine& line, std::size_t idx)
 {
   namespace ba = boost::accumulators;
   ba::accumulator_set<double, ba::stats<ba::tag::mean>> acc;
-  ba::mean(acc);
+  //ba::mean(acc);
 
   float result = line.subBegin->samples[idx];
   for(auto iter = line.subBegin; iter< line.subEnd; iter++){
@@ -1030,22 +1054,31 @@ float ScanProcessingTask::getAverageSubrangePeak(const RangeScanLine& line, std:
 
 float ScanProcessingTask::getMaxSubrangePeak(const RangeScanLine& line,std::size_t idx)
 {
-  float result = line.subBegin->samples[idx];
-  for(auto iter = line.subBegin; iter< line.subEnd; iter++){
-    if((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx]>result))
-      result = iter->samples[idx];
+    bool resultFound;
+    float result;
+    std::tie(resultFound, result) = tryGetNonNANAndNonInfPeak(line, idx);
+  if (resultFound) {
+      for (auto iter = line.subBegin; iter < line.subEnd; iter++) {
+          if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx] > result))
+              result = iter->samples[idx];
+      }
   }
   return result;
 }
 
 float ScanProcessingTask::getMinSubrangePeak(const RangeScanLine& line,std::size_t idx)
 {
-  float result = line.subBegin->samples[idx];
-  for(auto iter = line.subBegin; iter< line.subEnd; iter++){
-    if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx]<result))
-      result = iter->samples[idx];
-  }
-  return result;
+  //float result = line.subBegin->samples[idx];
+    bool resultFound;
+    float result;
+    std::tie(resultFound, result) = tryGetNonNANAndNonInfPeak(line, idx);
+    if (resultFound) {
+        for (auto iter = line.subBegin; iter < line.subEnd; iter++) {
+            if ((!std::isnan(iter->samples[idx])) && (!std::isinf(iter->samples[idx])) && (iter->samples[idx] < result))
+                result = iter->samples[idx];
+        }
+    }
+    return result;
 }
 
 std::tuple<float, float, float> ScanProcessingTask::getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx)

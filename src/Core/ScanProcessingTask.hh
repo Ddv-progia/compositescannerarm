@@ -65,6 +65,7 @@ private:
   float getMaxSubrangePeak(const RangeScanLine& line,std::size_t idx);
   float getMinSubrangePeak(const RangeScanLine& line,std::size_t idx);
   float getAverageSubrangePeak(const RangeScanLine& line,std::size_t idx);
+  std::tuple<bool, float> tryGetNonNANAndNonInfPeak(const RangeScanLine& line,std::size_t idx);
   std::tuple<float, float, float> getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx);
 //  std::pair<float,float> getNormalizedPeakFromSubranges(const RangeScanLine& line, std::size_t idx);
   void selectRangesFromSpec(Scan& scan);

@@ -328,6 +328,7 @@
    <addaction name="stopHandleScanAction"/>
    <addaction name="makeBScanAction"/>
    <addaction name="addZcoordinatesAction"/>
+   <addaction name="doubleLinesAction"/>
   </widget>
   <action name="quitAction">
    <property name="icon">
@@ -637,6 +638,18 @@
    </property>
    <property name="toolTip">
     <string>Добавить/Убрать всем точкам координаты Z</string>
+   </property>
+  </action>
+  <action name="doubleLinesAction">
+   <property name="icon">
+    <iconset resource="tango-icons.qrc">
+     <normaloff>:/icons/actions/icons/actions/edit-copy.png</normaloff>:/icons/actions/icons/actions/edit-copy.png</iconset>
+   </property>
+   <property name="text">
+    <string>double Lines</string>
+   </property>
+   <property name="toolTip">
+    <string>doubleLines</string>
    </property>
   </action>
  </widget>

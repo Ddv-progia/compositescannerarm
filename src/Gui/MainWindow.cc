@@ -155,6 +155,7 @@ void MainWindow::connectSignals()
   connect(ui.addZcoordinatesAction, SIGNAL(triggered()), this, SLOT(addZCoordinates()));
 
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
+  connect(ui.doubleLinesAction, SIGNAL(triggered()), this, SLOT(doubleLines()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCursorCoordinates()));
 
@@ -824,6 +825,123 @@ void MainWindow::coilManualControl()
   auto cmd = new CoilManualControlDialog;
   cmd->setAttribute(Qt::WA_DeleteOnClose, true);
   cmd->show();
+}
+
+/// <summary>
+/// Дублируем строки по оси X и/или Y чтобы получить "отсканированное" поле нового размера
+/// </summary>
+void MainWindow::doubleLines() 
+{
+  auto currentWidget = getCurrentMdiWidget();
+  if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
+      QDialog dlg;
+      dlg.setWindowTitle("Размеры заполняемого поля");
+
+      // Радиокнопки
+      QRadioButton* radio1NewSize = new QRadioButton("Новые размеры в мм");
+      QRadioButton* radio2MultiplyersXY = new QRadioButton("Кратность размерам оригинала, раз");
+      auto srnrts = sdw->getProcessingParameters().screenResizingNeededRatherThanScaleCount;
+      if (srnrts) {
+          radio1NewSize->setChecked(true);
+      }
+      else {
+          radio2MultiplyersXY->setChecked(true);
+      }
+
+      QVBoxLayout* radioLayout = new QVBoxLayout;
+      radioLayout->addWidget(radio2MultiplyersXY);
+      radioLayout->addWidget(radio1NewSize);
+
+      // Метки
+      QLabel* labelX = new QLabel("x:");
+      QLabel* labelY = new QLabel("y:");
+      // Поля ввода
+      QDoubleSpinBox* targetXSize = new QDoubleSpinBox();
+      targetXSize->setRange(1.0, 20000.0);
+      QDoubleSpinBox* targetYSize = new QDoubleSpinBox();
+      targetYSize->setRange(1.0, 20000.0);
+      // Горизонтальные layout'ы для строк
+      QHBoxLayout* layoutX = new QHBoxLayout();
+      layoutX->addWidget(labelX);
+      layoutX->addWidget(targetXSize);
+      QHBoxLayout* layoutY = new QHBoxLayout();
+      layoutY->addWidget(labelY);
+      layoutY->addWidget(targetYSize);
+      radioLayout->addLayout(layoutX);
+      radioLayout->addLayout(layoutY);
+
+      QGroupBox* radioGroup = new QGroupBox("Выбор режима");
+      radioGroup->setLayout(radioLayout);
+
+      //*****
+      QVBoxLayout* ScreenCountGroupLayout = new QVBoxLayout;
+
+      QCheckBox* ScreenCountNeededCheckBox = new QCheckBox("Разбивать окно на виды");
+      auto scn = sdw->getProcessingParameters().screenCountNeeded;
+      ScreenCountNeededCheckBox->setChecked(scn);
+      QCheckBox* CommonViewNeededCheckBox = new QCheckBox("Показать общий вид");
+      auto cvn = sdw->getProcessingParameters().commonViewNeeded;
+      CommonViewNeededCheckBox->setChecked(cvn);
+      QLabel* labelScreenCountStart = new QLabel("Разбить вид на ");
+      QLabel* labelScreenCountEnd = new QLabel(" частей");
+      QSpinBox* screenCountBox = new QSpinBox();
+      screenCountBox->setRange(1, 100);
+      int scb = sdw->getProcessingParameters().screenCount;
+      screenCountBox->setValue(scb);
+      QHBoxLayout* layoutScreenCount = new QHBoxLayout();
+      layoutScreenCount->addWidget(labelScreenCountStart);
+      layoutScreenCount->addWidget(screenCountBox);
+      layoutScreenCount->addWidget(labelScreenCountEnd);
+
+      ScreenCountGroupLayout->addWidget(ScreenCountNeededCheckBox);
+      ScreenCountGroupLayout->addWidget(CommonViewNeededCheckBox);
+      ScreenCountGroupLayout->addLayout(layoutScreenCount);
+
+      QGroupBox* ScreenCountGroup = new QGroupBox("Разбивка на экраны");
+      ScreenCountGroup->setLayout(ScreenCountGroupLayout);
+
+      //*****
+
+      QDialogButtonBox* buttonBox = new QDialogButtonBox(
+          QDialogButtonBox::Ok | QDialogButtonBox::Cancel
+      );
+
+      connect(buttonBox, SIGNAL(accepted()), &dlg, SLOT(accept()));
+
+      QObject::connect(buttonBox, &QDialogButtonBox::rejected,
+          &dlg, &QDialog::reject);
+
+      // Основной layout
+      QVBoxLayout* mainLayout = new QVBoxLayout();
+      mainLayout->addWidget(radioGroup);
+      //mainLayout->addLayout(layoutX);
+      //mainLayout->addLayout(layoutY);
+      mainLayout->addWidget(ScreenCountGroup);
+      mainLayout->addWidget(buttonBox);
+
+      dlg.setLayout(mainLayout);
+
+      if (dlg.exec() == QDialog::Accepted) {
+          double newXSize;
+          double newYSize;
+          newXSize = targetXSize->value();
+          newYSize = targetYSize->value();
+          auto parameters = sdw->getProcessingParameters();
+          parameters.screenCount = screenCountBox->value();
+          parameters.screenResizingNeededRatherThanScaleCount = radio1NewSize->isChecked();
+          parameters.screenCountNeeded = ScreenCountNeededCheckBox->isChecked();
+          parameters.commonViewNeeded  = CommonViewNeededCheckBox->isChecked();
+
+          if (radio1NewSize->isChecked()) {
+              sdw->multiSizeLines(parameters, scanFactory, newXSize, newYSize);
+          }
+          else {
+              sdw->doubleSizeLines(parameters, scanFactory, newXSize, newYSize);
+          }
+          //sdw->multiSizeLines(sdw->getProcessingParameters(), scanFactory, newXSize, newYSize);
+          sdw->ShowNView(parameters.screenCount);
+      }
+  }
 }
 
 void MainWindow::showCurrentParameterDialog()

@@ -372,12 +372,17 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   valueLabel->setFrameShadow(QFrame::Sunken);
   valueLabel->setFrameShape(QFrame::Box);
 
+  averValueLabel = new QLabel;
+  averValueLabel->setFrameShadow(QFrame::Sunken);
+  averValueLabel->setFrameShape(QFrame::Box);
+
   auto infoLayout = new QFormLayout;
   infoLayout->addRow("Столбец", columnLabel);
   infoLayout->addRow("Строка", rowLabel);
   infoLayout->addRow("X", xLabel);
   infoLayout->addRow("Y", yLabel);
   infoLayout->addRow("Уровень", valueLabel);
+  infoLayout->addRow("Среднее", averValueLabel);
   infoLayout->setContentsMargins(5, 5, 5, 5);
   infoLayout->setSpacing(5);
 
@@ -490,8 +495,8 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   dockLayout->addWidget(armVtkRenderWidget);
   layoutContainer->setLayout(dockLayout);
   armVtkRenderWidget->showQuantizedPoints(scan);
-
-  //commandScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  //armVtkRenderWidget->showNView(scan, 2);
+  ////commandScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   widgetLayout->addWidget(commandScrollArea, 0, 0);
   //widgetLayout->addLayout(commandLayout, 0, 0);
   widgetLayout->addWidget(rangeSelector, 0, 2);
@@ -547,6 +552,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   
   analyseRegion = false;
   connect(defectClassificationButton,SIGNAL(toggled(bool)),SLOT(showClassificationTable(bool)));
+
 }
 
 std::vector<std::vector<float>> ScanDisplayWindow::getPeaksFromRect(const QRectF& rect)
@@ -1872,6 +1878,28 @@ void ScanDisplayWindow::updateRangeViewPoint()
   }
 
   valueLabel->setText(qStringValue);
+ QString qStringAverValue = "";
+try {
+    if (std::isfinite( range->aver)) {
+        qStringAverValue = QString::number(range->aver, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->aver\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+averValueLabel->setText(qStringAverValue);
 
   rowCurve->setData(new MultiArraySliceSeriesData(range->view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
                     range->finalCoordinate));
@@ -1969,10 +1997,13 @@ void ScanDisplayWindow::SetPointInfoWidget(const int columnValue, const int rowV
     xLabel->setText(QString::number(xValue, 'f', signCount));
     yLabel->setText(QString::number(yValue, 'f', signCount));
     if (isnan(valueValue)) {
-        valueLabel->setText("");
+        valueLabel->setText("nan");
     }
     else {
-        valueLabel->setText(QString::number(valueValue, 'f', signCount));
+        if (isinf(valueValue)) {
+            valueLabel->setText("inf");
+        }
+        else valueLabel->setText(QString::number(valueValue, 'f', signCount));
     }
 }
 
@@ -2068,6 +2099,149 @@ ProcessingParameters ScanDisplayWindow::getProcessingParameters() const
   return scan->parameters;
 }
 
+/// <summary>
+/// Увеличиваем отсканированную область до заданных размеров (newXSize и newYSize), размеры в мм
+/// </summary>
+/// <param name="params"></param>
+/// <param name="factory"></param>
+void ScanDisplayWindow::multiSizeLines(const ProcessingParameters& params, ScanFactory& factory, double newXSize, double newYSize)
+{
+        scan->processingStage = ScanProcessingStage::RawDataObtained;
+        scan->parameters = params;
+        factory.startNewScan(params);
+        ::std::vector< ::SourceScanLine > liness;
+        bool isFirst = false;
+        double minLineCoord;
+        double maxLineCoord;
+        if (scan->lines.back().lineCoordinate != scan->lines.front().lineCoordinate) {
+            minLineCoord = scan->lines.front().lineCoordinate;
+            maxLineCoord = scan->lines.front().lineCoordinate;
+        }
+        else {
+            return;
+        }
+        for (auto const& l : scan->lines) {
+            liness.push_back(l);
+            if (l.lineCoordinate > maxLineCoord) maxLineCoord = l.lineCoordinate;
+            if (l.finalLineCoordinate > maxLineCoord) maxLineCoord = l.finalLineCoordinate;
+            if (l.lineCoordinate < minLineCoord) minLineCoord = l.lineCoordinate;
+            if (l.finalLineCoordinate < minLineCoord) minLineCoord = l.finalLineCoordinate;
+            
+            auto lsize = l.finalCoordinate - l.startCoordinate; // размер строки в мм по оси X
+            auto stepCount = int(newXSize / std::abs(lsize)); //сколько целых раз старая строка помещается в новой
+
+            for (auto i = 0; i < stepCount -1; i++) {
+                std::copy(std::begin(l.samples), std::end(l.samples), std::back_inserter(liness.back().samples));
+            }
+
+            auto ostatokDliny = newXSize - std::abs(lsize) * stepCount;
+            int adderCount = int(ostatokDliny * l.samples.size() / std::abs(lsize)); // количество звуковых тиков, чтобы "закрыть" остаток линии
+            std::copy(std::begin(l.samples), std::begin(l.samples)+ adderCount, std::back_inserter(liness.back().samples));
+
+
+            if (lsize > 0) {
+                liness.back().finalCoordinate = l.startCoordinate + newXSize;
+            }
+            else {
+                liness.back().startCoordinate = l.finalCoordinate + newXSize;
+            }
+            liness.back().timestampEnd = liness.back().timestampEnd * (newXSize);
+            //factory.addRangeScanLine(liness.back());
+        }
+        auto sizeYOfLines = maxLineCoord - minLineCoord;
+        auto deltaLines = sizeYOfLines / liness.size();
+        double baseCoord = minLineCoord;
+        while (baseCoord <= newYSize) {
+            for (auto l : liness) {
+                baseCoord = baseCoord + deltaLines;
+                if (baseCoord > newYSize) break;
+                l.lineCoordinate = baseCoord;
+                l.finalLineCoordinate = baseCoord;
+                factory.addRangeScanLine(l);
+            }
+        }
+        refreshWindow();
+}
+
+/// <summary>
+/// Кратно увеличиваем отсканированную область (в newXSize раз и в newYSize раз)
+/// </summary>
+/// <param name="params"></param>
+/// <param name="factory"></param>
+void ScanDisplayWindow::doubleSizeLines(const ProcessingParameters& params, ScanFactory& factory, double newXSize, double newYSize)
+{
+        scan->processingStage = ScanProcessingStage::RawDataObtained;
+        scan->parameters = params;
+        factory.startNewScan(params);
+        ::std::vector< ::SourceScanLine > liness;
+        bool isFirst = false;
+        double minLineCoord;
+        double maxLineCoord;
+        if (scan->lines.back().lineCoordinate != scan->lines.front().lineCoordinate) {
+            minLineCoord = scan->lines.front().lineCoordinate;
+            maxLineCoord = scan->lines.front().lineCoordinate;
+        }
+        for (auto const& l : scan->lines) {
+            liness.push_back(l);
+            if (l.lineCoordinate > maxLineCoord) maxLineCoord = l.lineCoordinate;
+            if (l.finalLineCoordinate > maxLineCoord) maxLineCoord = l.finalLineCoordinate;
+            if (l.lineCoordinate < minLineCoord) minLineCoord = l.lineCoordinate;
+            if (l.finalLineCoordinate < minLineCoord) minLineCoord = l.finalLineCoordinate;
+
+            for (auto i = 0; i < newXSize-1; i++) {
+                std::copy(std::begin(l.samples), std::end(l.samples), std::back_inserter(liness.back().samples));
+            }
+            liness.back().finalCoordinate = liness.back().finalCoordinate * (newXSize);
+            liness.back().timestampEnd = liness.back().timestampEnd * (newXSize);
+            factory.addRangeScanLine(liness.back());
+        }
+        auto sizeOfLines = maxLineCoord - minLineCoord;
+        auto deltaLines = sizeOfLines / liness.size();
+        double baseCoord = std::max(scan->lines.back().lineCoordinate, scan->lines.front().lineCoordinate);
+        for (auto i = 0; i < newYSize-1; i++) {
+            for (auto l : liness) {
+                baseCoord = baseCoord + deltaLines;
+                l.lineCoordinate = baseCoord;
+                l.finalLineCoordinate = baseCoord;
+                factory.addRangeScanLine(l);
+            }
+        }
+        refreshWindow();
+}
+
+void ScanDisplayWindow::doubleLines(const ProcessingParameters& params, ScanFactory& factory)
+{
+    scan->processingStage = ScanProcessingStage::RawDataObtained;
+    scan->parameters = params;
+    factory.startNewScan(params);
+    ::std::vector< ::SourceScanLine > liness;
+    bool isFirst = false;
+    double minLineCoord;
+    double maxLineCoord;
+    if (scan->lines.back().lineCoordinate != scan->lines.front().lineCoordinate) {
+        minLineCoord = scan->lines.front().lineCoordinate;
+        maxLineCoord = scan->lines.front().lineCoordinate;
+    }
+    for (auto const& l : scan->lines) {
+        factory.addRangeScanLine(l);
+        liness.push_back(l);
+        if (l.lineCoordinate > maxLineCoord) maxLineCoord = l.lineCoordinate;
+        if (l.finalLineCoordinate > maxLineCoord) maxLineCoord = l.finalLineCoordinate;
+        if (l.lineCoordinate < minLineCoord) minLineCoord = l.lineCoordinate;
+        if (l.finalLineCoordinate < minLineCoord) minLineCoord = l.finalLineCoordinate;
+    }
+    auto sizeOfLines = maxLineCoord - minLineCoord;
+    auto deltaLines = sizeOfLines / liness.size();
+    double baseCoord = std::max(scan->lines.back().lineCoordinate, scan->lines.front().lineCoordinate);
+    for (auto l : liness) {
+        baseCoord = baseCoord + deltaLines;
+        l.lineCoordinate = baseCoord;
+        l.finalLineCoordinate= baseCoord;
+        factory.addRangeScanLine(l);
+    }
+    refreshWindow();
+
+}
 void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, ScanFactory& factory)
 {
   // new start commented
@@ -2085,6 +2259,11 @@ void ScanDisplayWindow::applyParameters(const ProcessingParameters& params, Scan
   factory.startNewScan(params);  //rem : 04_09_2025
   for (auto const & l : scan->lines) factory.addRangeScanLine(l);
   refreshWindow();
+}
+
+void ScanDisplayWindow::ShowNView(int n, bool needToShowOriginalView, bool needShowRandomizedData)
+{
+        armVtkRenderWidget->showNView(scan, n, needToShowOriginalView, needShowRandomizedData);
 }
 
 int ScanDisplayWindow::currentXSize() const

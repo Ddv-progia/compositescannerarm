@@ -105,6 +105,7 @@ private:
   Q_SLOT void saveTechnologicalParameters();
   Q_SLOT void exportWave();
   Q_SLOT void makeBScanAction();
+  Q_SLOT void doubleLines();
   Q_SLOT void showCurrentParameterDialog();
   Q_SLOT void currentParametersToTechnological();
   Q_SLOT void coilManualControl();

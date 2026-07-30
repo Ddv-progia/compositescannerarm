@@ -197,7 +197,11 @@ public:
 
 	void exportWave(const QString dirname);
 	ProcessingParameters getProcessingParameters() const;
+	void doubleLines(const ProcessingParameters& params, ScanFactory& factory);
+	void multiSizeLines(const ProcessingParameters& params, ScanFactory& factory,double newXSize, double newYSize);
+	void doubleSizeLines(const ProcessingParameters& params, ScanFactory& factory,double newXSize = 2.0, double newYSize = 2.0);
 	void applyParameters(const ProcessingParameters& params, ScanFactory& factory);
+	void ShowNView(int n, bool needToShowOriginalView = true, bool needShowRandomizedData = false);
 	Q_SIGNAL void refreshScan(std::shared_ptr<Scan>& scan);
 	Q_SIGNAL void moveAlongSelectedDefect(const std::vector<Defect*>& defects, ::DefectSearchingParameters defParams);
 
@@ -209,10 +213,10 @@ public:
 
 
 private:
+	QPointer<PeakAndBscanVTKView> armVtkRenderWidget = new PeakAndBscanVTKView();
 	//QVBoxLayout dockLayout;
 	QPointer<QVBoxLayout > dockLayout = new QVBoxLayout();
 	//QPointer<QVTKOpenGLNativeWidget> armVtkRenderWidget = new QVTKOpenGLNativeWidget();
-	QPointer<PeakAndBscanVTKView> armVtkRenderWidget = new PeakAndBscanVTKView(); 
 	vtkSmartPointer<vtkEventQtSlotConnect> Connections;
 
 	QPointer<QWidget > layoutContainer = new QWidget();
@@ -269,6 +273,7 @@ private:
 	QLabel* xLabel;
 	QLabel* yLabel;
 	QLabel* valueLabel;
+	QLabel* averValueLabel;
 
 	QWidget* infoWidget;
 	QWidget* rangeSelector;

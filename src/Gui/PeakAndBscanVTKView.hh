@@ -24,6 +24,8 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataMapper2D.h>
 #include <vtkProperty.h>
+#include <vtkRectilinearGrid.h>
+#include <vtkDoubleArray.h>
 #include <vtkTexturedButtonRepresentation2D.h>
 #include <vtkTable.h>
 #include <vtkTransform.h>
@@ -82,12 +84,16 @@ public:
 	~PeakAndBscanVTKView();
 	PeakAndBscanVTKView(std::shared_ptr<Scan> scan, QWidget* parent = Q_NULLPTR);
 	vtkNew<vtkDiscretizableColorTransferFunction> buildCTF(bool const& raduga, std::vector<ColorStop> colors);
+	vtkIdType paintPointNumber(double xin, double yin, double zin, vtkRectilinearGrid* grid);
+	vtkDoubleArray* paintCircle(vtkRectilinearGrid* grid, vtkDoubleArray* scalars, double r, double val, double dx, double dy, double dz = 0.0);
+	vtkDoubleArray* paintCirclePure(vtkRectilinearGrid* grid, vtkDoubleArray* scalars, double r, double val, double dx, double dy, double dz = 0.0);
 	void constructPeakAndBscanVTKView();
 	void SetPolyDataSource(int index, vtkNew<vtkPolyData> &pointSource, ::std::vector< ::NormalizedRange > *normalizedRange);
 	void SetPolyDataSourceFromParameters(vtkNew<vtkPolyData> &pointSource, double startCoordinate, double finalCoordinate, ::std::vector< double > lineCoordinates, boost::multi_array<::RgbColor, 2> view );
 	void ChartPeak(Peak& peak, std::shared_ptr<Scan>& scan);
 	void ShowPeak(Peak& peak, std::shared_ptr<Scan>& scan);
 	void showQuantizedPoints(std::shared_ptr<Scan> scan);
+	void showNView(std::shared_ptr<Scan> scan, int n, bool needToShowOriginalView = true, bool needShowRandomizedData = false);
 	void createImageDataFromDefectsView(vtkImageData* image, ::DefectsView* renderedDefectPoints);
 	//QPointer<QVTKOpenGLNativeWidget> armVtkRenderWidget = new QVTKOpenGLNativeWidget();
 	//vtkRenderWindowInteractor* renderWindowInteractor;
@@ -96,9 +102,11 @@ public:
 	//vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
 	//vtkNew<QVTKInteractor> interactor;
 	vtkNew<vtkRenderWindowInteractor> interactor;
+	vtkNew<vtkRenderWindowInteractor> iren;
 	//vtkSmartPointer<vtkButtonWidget2D_2> buttonWidgetXY;
 	//vtkNew<vtkButtonWidget2D_2> buttonWidgetXY;
 	vtkNew<vtkRenderWindow> renderWindow;
+	vtkNew<vtkRenderWindow> rw;
 	vtkNew<vtkRenderer> renderer;
 	vtkNew<vtkRenderer> leftRenderer;
 	vtkNew<vtkRenderer> rightRenderer;
