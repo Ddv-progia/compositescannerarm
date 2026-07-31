@@ -720,8 +720,8 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
         //auto normalizedRanges = scan->commonNormalizedRanges[index];
         auto normalizedRanges = normalizedRange->at(index);
         auto view = normalizedRanges.view;
-        auto xSize = view.shape()[0];
-        auto ySize = view.shape()[1];
+        auto xSize = view.val.shape()[0];
+        auto ySize = view.val.shape()[1];
         auto kx = (3.14 / 50.0);
         auto ky = (3.14 / 50.0);
         auto shx = 70.0;
@@ -747,7 +747,7 @@ void PeakAndBscanVTKView::SetPolyDataSource(int index, vtkNew<vtkPolyData> &poin
                 }
                 auto idOfPoint = points->InsertNextPoint(x, y, z);
                 polyLine->GetPointIds()->InsertNextId(idOfPoint);
-                scalars->InsertNextTuple1(view[j][i]);
+                scalars->InsertNextTuple1(view.val[j][i]);
                 //scalars->InsertNextTuple1(peak.y);
             }
             cells->InsertNextCell(polyLine);
@@ -1234,8 +1234,8 @@ void PeakAndBscanVTKView::showQuantizedPoints(std::shared_ptr<Scan> scan)
     auto normalizedRange = scan->normalizedRanges[indexOfCurrentNormalizedRange];
     //auto normalizedRangesXcount = scan->normalizedRanges[indexOfCurrentNormalizedRange].view.shape()[0];
     //auto normalizedRangesYcount = scan->normalizedRanges[indexOfCurrentNormalizedRange].view.shape()[1];
-    auto normalizedRangesXcount = normalizedRange.view.shape()[0];
-    auto normalizedRangesYcount = normalizedRange.view.shape()[1];
+    auto normalizedRangesXcount = normalizedRange.view.val.shape()[0];
+    auto normalizedRangesYcount = normalizedRange.view.val.shape()[1];
     //////double radius = scan->parameters.headAndScanCollectorParameters.currentNumArea / 2;
     ////double radiusX = (double)scan->parameters.headAndScanCollectorParameters.height / (normalizedRangesXcount);
     ////double radiusY = (double)scan->parameters.headAndScanCollectorParameters.width/ ( normalizedRangesYcount);
@@ -1744,8 +1744,8 @@ void PeakAndBscanVTKView::showNView(std::shared_ptr<Scan> scan, int n, bool need
     if (scan && (!needShowRandomizedData) && (scan->lines.size() > 0)) {
         LPanel = std::abs(double(scan->normalizedRanges.front().finalCoordinate - scan->normalizedRanges.front().startCoordinate));
         HPanel = std::abs(double(scan->normalizedRanges.front().finalLineCoordinate - scan->normalizedRanges.front().lineCoordinate));
-        LPanelStrikeCount = scan->normalizedRanges.front().maxView[0].size();
-        HPanelStrikeCount = scan->normalizedRanges.front().maxView[0, 0].size();
+        LPanelStrikeCount = scan->normalizedRanges.front().maxView.val[0].size();
+        HPanelStrikeCount = scan->normalizedRanges.front().maxView.val[0, 0].size();
     }
 
     grid->SetDimensions(LPanelStrikeCount, HPanelStrikeCount, 1);

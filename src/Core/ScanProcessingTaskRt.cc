@@ -249,11 +249,11 @@ void ScanProcessingTaskRt::normalizeRange(NormalizedRange& normalizedRange,
     auto linesCount = ranges.size();
     auto be = boost::extents[lineLength][linesCount];
 
-    normalizedRange.maxView.resize(be);
-    normalizedRange.minView.resize(be);
-    normalizedRange.view.resize(be);
-    normalizedRange.averView.resize(be); //*******
-    normalizedRange.diffView.resize(be); //*******
+    normalizedRange.maxView.val.resize(be);
+    normalizedRange.minView.val.resize(be);
+    normalizedRange.view.val.resize(be);
+    normalizedRange.averView.val.resize(be); //*******
+    normalizedRange.diffView.val.resize(be); //*******
 
     normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
     normalizedRange.min = normalizedRange.max;
@@ -289,10 +289,10 @@ void ScanProcessingTaskRt::normalizeRange(NormalizedRange& normalizedRange,
                 justPeak = maxPeak; //*******
                 diffPeak = maxPeak; //*******
             }
-            normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
-            normalizedRange.minView[peakIndex][lineIndex] = minPeak;
-            normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
-            normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
+            normalizedRange.maxView.val[peakIndex][lineIndex] = maxPeak;
+            normalizedRange.minView.val[peakIndex][lineIndex] = minPeak;
+            normalizedRange.averView.val[peakIndex][lineIndex] = justPeak; //*******
+            normalizedRange.diffView.val[peakIndex][lineIndex] = diffPeak; //*******
             acc(justPeak); //*******
             accDiff(diffPeak); //*******
             if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;

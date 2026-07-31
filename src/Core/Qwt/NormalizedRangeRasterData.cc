@@ -42,7 +42,7 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
 double NormalizedRangeRasterData::value(double x, double y) const
 {
   double px = (x - range.startCoordinate) / double(std::abs(range.finalCoordinate - range.startCoordinate));
-  std::size_t ix = std::max(std::size_t(0), std::min(static_cast<std::size_t>(std::floor(px * range.view.shape()[0] + 0.5)), range.view.shape()[0] - 1));
+  std::size_t ix = std::max(std::size_t(0), std::min(static_cast<std::size_t>(std::floor(px * range.view.val.shape()[0] + 0.5)), range.view.val.shape()[0] - 1));
 
   auto yiter = (range.lineCoordinates.back() > range.lineCoordinates.front()) 
              ? boost::lower_bound(range.lineCoordinates, y)
@@ -50,7 +50,7 @@ double NormalizedRangeRasterData::value(double x, double y) const
   if (yiter != range.lineCoordinates.begin()) --yiter;
   auto iy = std::distance(range.lineCoordinates.begin(), yiter);
 
-  return range.view[ix][iy];
+  return range.view.val[ix][iy];
 }
 
 QwtInterval NormalizedRangeRasterData::interval(Qt::Axis axis) const {

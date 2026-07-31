@@ -127,8 +127,8 @@ DefectsView renderDefectPoints(const DefectKindView& kind,
   std::size_t rowCount = 0;
   std::size_t columnCount = 0;
   if (ranges.size() > 0) {
-	  rowCount = ranges.front().view.shape()[0];
-	  columnCount = ranges.front().view.shape()[1];
+	  rowCount = ranges.front().view.val.shape()[0];
+	  columnCount = ranges.front().view.val.shape()[1];
 	  result.sampleRate = ranges.front().sampleRate;
 	  result.startCoordinate = ranges.front().startCoordinate;
 	  result.finalCoordinate = ranges.front().finalCoordinate;
@@ -137,9 +137,9 @@ DefectsView renderDefectPoints(const DefectKindView& kind,
 	  result.view.resize(boost::extents[rowCount][columnCount]);
 	  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
 		  for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-			  auto r = channelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.red, &RgbColor::red);
-			  auto g = channelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.green, &RgbColor::green);
-			  auto b = channelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blue, &RgbColor::blue);
+			  auto r = channelValue(ranges[kind.red.range].view.val[rowIndex][columnIndex], kind.red, rendering.red, &RgbColor::red);
+			  auto g = channelValue(ranges[kind.green.range].view.val[rowIndex][columnIndex], kind.green, rendering.green, &RgbColor::green);
+			  auto b = channelValue(ranges[kind.blue.range].view.val[rowIndex][columnIndex], kind.blue, rendering.blue, &RgbColor::blue);
 
 			  auto sumR = r.red + g.red + b.red;
 			  auto sumG = r.green + g.green + b.green;
@@ -169,8 +169,8 @@ DefectsView renderDefectPointsWithFixedColor(const DefectKindView& kind,
   std::size_t rowCount = 0;
   std::size_t columnCount = 0;
   if (ranges.size() > 0) {
-	  rowCount = ranges.front().view.shape()[0];
-	  columnCount = ranges.front().view.shape()[1];
+	  rowCount = ranges.front().view.val.shape()[0];
+	  columnCount = ranges.front().view.val.shape()[1];
 	  result.sampleRate = ranges.front().sampleRate;
 	  result.startCoordinate = ranges.front().startCoordinate;
 	  result.finalCoordinate = ranges.front().finalCoordinate;
@@ -180,9 +180,9 @@ DefectsView renderDefectPointsWithFixedColor(const DefectKindView& kind,
 	  result.view.resize(boost::extents[rowCount][columnCount]);
 	  for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
 		  for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-			  uint8_t r = fixedChannelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red, rendering.redFixed);
-			  uint8_t g = fixedChannelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green, rendering.greenFixed);
-			  uint8_t b = fixedChannelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue, rendering.blueFixed);
+			  uint8_t r = fixedChannelValue(ranges[kind.red.range].view.val[rowIndex][columnIndex], kind.red, rendering.redFixed);
+			  uint8_t g = fixedChannelValue(ranges[kind.green.range].view.val[rowIndex][columnIndex], kind.green, rendering.greenFixed);
+			  uint8_t b = fixedChannelValue(ranges[kind.blue.range].view.val[rowIndex][columnIndex], kind.blue, rendering.blueFixed);
 			  if ((r == 0 && g == 0) && b == 0)
 				  result.view[rowIndex][columnIndex] = RgbColor{ 255, 255, 255 };
 			  else
@@ -203,8 +203,8 @@ DefectsView selectDefectPoints(const DefectKindView& kind,
   std::size_t rowCount = 0;
   std::size_t columnCount = 0;
   if (ranges.size() > 0) {
-	  rowCount = ranges.front().view.shape()[0];
-	  columnCount = ranges.front().view.shape()[1];
+	  rowCount = ranges.front().view.val.shape()[0];
+	  columnCount = ranges.front().view.val.shape()[1];
 	  result.sampleRate = ranges.front().sampleRate;
 	  result.startCoordinate = ranges.front().startCoordinate;
 	  result.finalCoordinate = ranges.front().finalCoordinate;
@@ -214,9 +214,9 @@ DefectsView selectDefectPoints(const DefectKindView& kind,
 
   for (std::size_t columnIndex = 0; columnIndex < columnCount; columnIndex++)
     for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-      int r = rawChannelValue(ranges[kind.red.range].view[rowIndex][columnIndex], kind.red);
-      int g = rawChannelValue(ranges[kind.green.range].view[rowIndex][columnIndex], kind.green);
-      int b = rawChannelValue(ranges[kind.blue.range].view[rowIndex][columnIndex], kind.blue);
+      int r = rawChannelValue(ranges[kind.red.range].view.val[rowIndex][columnIndex], kind.red);
+      int g = rawChannelValue(ranges[kind.green.range].view.val[rowIndex][columnIndex], kind.green);
+      int b = rawChannelValue(ranges[kind.blue.range].view.val[rowIndex][columnIndex], kind.blue);
 
       result.view[rowIndex][columnIndex] = RgbColor{ (uint8_t)std::min(r, 255), (uint8_t)std::min(g, 255), (uint8_t)std::min(b, 255) };
     }

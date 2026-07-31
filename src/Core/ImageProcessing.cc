@@ -300,8 +300,8 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
     if (!scan->normalizedRanges.empty()) {
         //формирование трехканального изображения
     //*******
-        auto sizeA = scan->normalizedRanges.begin()->view.begin()->size();
-        auto sizeB = scan->normalizedRanges.begin()->view.size();
+        auto sizeA = scan->normalizedRanges.begin()->view.val.begin()->size();
+        auto sizeB = scan->normalizedRanges.begin()->view.val.size();
         cv::Mat defectImage(static_cast<int>(sizeA),
             static_cast<int>(sizeB), CV_8UC3);
         for (auto i = 0; i < sizeA; i++) {
@@ -316,10 +316,10 @@ PlotDefectsModel::PlotDefectsModel(const std::shared_ptr<Scan>& scan, QObject* p
         for (auto& defectRange : scan->parameters.defectSearching.defectRanges) {
             if (defectRange.range >= scan->normalizedRanges.size()) continue;
             auto defectView = scan->normalizedRanges[defectRange.range];
-            for (auto i = 0; i < defectView.view.begin()->size(); i++) {
+            for (auto i = 0; i < defectView.view.val.begin()->size(); i++) {
                 unsigned char* const line(defectImage.ptr<unsigned char>(i));
-                for (auto j = 0; j < 3 * defectView.view.size(); j += 3) {
-                    auto value = defectView.view[j / 3][i];
+                for (auto j = 0; j < 3 * defectView.view.val.size(); j += 3) {
+                    auto value = defectView.view.val[j / 3][i];
                     bool gotDefect = false;
                     //if (scan->parameters.defectSearching.isDefectInside) {
                     //    if (value <= defectRange.maximumValue && value >= defectRange.minimumValue) {

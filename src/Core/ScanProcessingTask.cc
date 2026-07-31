@@ -859,11 +859,11 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   auto linesCount = ranges.size();
   auto be = boost::extents[lineLength][linesCount];
 
-  normalizedRange.maxView.resize(be);
-  normalizedRange.minView.resize(be);
-  normalizedRange.view.resize(be);
-  normalizedRange.averView.resize(be); //*******
-  normalizedRange.diffView.resize(be); //*******
+  normalizedRange.maxView.val.resize(be);
+  normalizedRange.minView.val.resize(be);
+  normalizedRange.view.val.resize(be);
+  normalizedRange.averView.val.resize(be); //*******
+  normalizedRange.diffView.val.resize(be); //*******
   if (rangeIndex >= ranges[0].size()) return;
   normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
   normalizedRange.min = normalizedRange.max;
@@ -871,8 +871,8 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.diff = normalizedRange.max; //*******
   namespace ba = boost::accumulators;
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> acc;
-  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max>> accMax;
-  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::min>> accMin;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accMax;
+  ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accMin;
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accDiff;
 
   for (std::size_t lineIndex = 0; lineIndex < linesCount; lineIndex++) {
@@ -919,10 +919,10 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
                   //if (maxPeak > normalizedRange.max) normalizedRange.max = maxPeak;
                   //if (minPeak < normalizedRange.min) normalizedRange.min = minPeak;
               }
-              normalizedRange.maxView[peakIndex][lineIndex] = maxPeak;
-              normalizedRange.minView[peakIndex][lineIndex] = minPeak;
-              normalizedRange.averView[peakIndex][lineIndex] = justPeak; //*******
-              normalizedRange.diffView[peakIndex][lineIndex] = diffPeak; //*******
+              normalizedRange.maxView.val[peakIndex][lineIndex] = maxPeak;
+              normalizedRange.minView.val[peakIndex][lineIndex] = minPeak;
+              normalizedRange.averView.val[peakIndex][lineIndex] = justPeak; //*******
+              normalizedRange.diffView.val[peakIndex][lineIndex] = diffPeak; //*******
               //normalizedRange.aver = justPeak; //*******
 
           }
@@ -936,6 +936,7 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.diff = ba::mean(accDiff); //*******  //TODO проверить (ba::max(accDiff)+ ba::min(accDiff))/2
   normalizedRange.max = ba::max(accMax);
   normalizedRange.min = ba::min(accMin);
+
   //normalizedRange.max = (normalizedRange.max + normalizedRange.aver)/2;
   //normalizedRange.min = (normalizedRange.min + normalizedRange.aver )/2;
   //normalizedRange.diff = (ba::mean(accDiff)*3)/ average; //*******  приведение к случаю, когда среднее равно трем (т.е. к цветовому диапазону)
@@ -969,6 +970,27 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
         normalizedRange.lineCoordinate,
         normalizedRange.finalLineCoordinate) = minMaxCoordinatesOfNormalizedRange(ranges, rangeIndex);
   }
+  normalizedRange.maxView.max = ba::max(accMax);
+  normalizedRange.maxView.min = ba::min(accMax);
+  normalizedRange.maxView.aver = ba::mean(accMax);
+  normalizedRange.maxView.extremum = ::Extremum::Max;
+  auto maxn = ba::max(accMin);
+  normalizedRange.minView.max = maxn;
+  auto minn = ba::min(accMin);
+  normalizedRange.minView.min = minn;
+  auto meann = ba::mean(accMin);
+  normalizedRange.minView.aver = meann;
+  normalizedRange.minView.extremum = ::Extremum::Min;
+  normalizedRange.diffView.max = ba::max(accDiff);
+  normalizedRange.diffView.min = ba::min(accDiff);
+  normalizedRange.diffView.aver = ba::mean(accDiff);
+  normalizedRange.diffView.extremum = ::Extremum::Diff;
+  normalizedRange.averView.max = ba::max(acc);
+  normalizedRange.averView.min = ba::min(acc);
+  normalizedRange.averView.aver = ba::mean(acc);
+  normalizedRange.averView.extremum = ::Extremum::Aver;
+
+
   if (normalizedRange.extremum == ::Extremum::Max) {
       normalizedRange.view = normalizedRange.maxView;
     }
@@ -977,7 +999,9 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   }  else if (normalizedRange.extremum == ::Extremum::Diff) {
       normalizedRange.view = normalizedRange.diffView;
   }
-  else normalizedRange.view = normalizedRange.averView;
+  else {
+      normalizedRange.view = normalizedRange.averView;
+  }
 }
 
 float ScanProcessingTask::getNormalizedPeakAt(const RangeScanLine& line, std::size_t idx)
@@ -1154,10 +1178,10 @@ std::vector<std::vector<double>> ScanProcessingTask::averageColumns(Scan& scan) 
   std::vector<std::vector<double>> r(rangeCount);
   
   for (std::size_t rangeIndex = 0; rangeIndex < scan.normalizedRanges.size(); rangeIndex++) {
-    auto rowCount = scan.normalizedRanges[rangeIndex].view.shape()[1];
+    auto rowCount = scan.normalizedRanges[rangeIndex].view.val.shape()[1];
     r[rangeIndex].resize(rowCount);
     for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-      r[rangeIndex][rowIndex] = ba::mean(boost::for_each(scan.normalizedRanges[rangeIndex].view[boost::indices[idxrng()][rowIndex]], 
+      r[rangeIndex][rowIndex] = ba::mean(boost::for_each(scan.normalizedRanges[rangeIndex].view.val[boost::indices[idxrng()][rowIndex]],
                                                          ba::accumulator_set<float, ba::features<ba::tag::mean>>()));
     }
 
@@ -1178,13 +1202,13 @@ void ScanProcessingTask::subtractColumnModels(Scan& scan, const std::vector<Poly
 
   scan.rangesResiduals.resize(scan.normalizedRanges.size());
   for (std::size_t rangeIndex = 0; rangeIndex < scan.normalizedRanges.size(); rangeIndex++) {
-    auto rangeShape = scan.normalizedRanges[rangeIndex].view.shape();
-    scan.rangesResiduals[rangeIndex].view.resize(boost::extents[rangeShape[0]][rangeShape[1]]);
+    auto rangeShape = scan.normalizedRanges[rangeIndex].view.val.shape();
+    scan.rangesResiduals[rangeIndex].view.val.resize(boost::extents[rangeShape[0]][rangeShape[1]]);
 
-    for (std::size_t j = 0; j < scan.normalizedRanges[rangeIndex].view.shape()[1]; j++) {
-      for (std::size_t i = 0; i < scan.normalizedRanges[rangeIndex].view.shape()[0]; i++) {
-        scan.rangesResiduals[rangeIndex].view[i][j] = 
-          scan.normalizedRanges[rangeIndex].view[i][j] - 
+    for (std::size_t j = 0; j < scan.normalizedRanges[rangeIndex].view.val.shape()[1]; j++) {
+      for (std::size_t i = 0; i < scan.normalizedRanges[rangeIndex].view.val.shape()[0]; i++) {
+        scan.rangesResiduals[rangeIndex].view.val[i][j] =
+          scan.normalizedRanges[rangeIndex].view.val[i][j] -
           evalPoly(models[rangeIndex], j);
       }
     }

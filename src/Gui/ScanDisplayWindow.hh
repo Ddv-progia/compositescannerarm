@@ -273,7 +273,14 @@ private:
 	QLabel* xLabel;
 	QLabel* yLabel;
 	QLabel* valueLabel;
+
+	QLabel* averValueGlobalLabel;
+	QLabel* maxValueGlobalLabel;
+	QLabel* minValueGlobalLabel;
+
 	QLabel* averValueLabel;
+	QLabel* maxValueLabel;
+	QLabel* minValueLabel;
 
 	QWidget* infoWidget;
 	QWidget* rangeSelector;

@@ -372,9 +372,31 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   valueLabel->setFrameShadow(QFrame::Sunken);
   valueLabel->setFrameShape(QFrame::Box);
 
+
+
+  averValueGlobalLabel = new QLabel;
+  averValueGlobalLabel->setFrameShadow(QFrame::Sunken);
+  averValueGlobalLabel->setFrameShape(QFrame::Box);
+
+  maxValueGlobalLabel = new QLabel;
+  maxValueGlobalLabel->setFrameShadow(QFrame::Sunken);
+  maxValueGlobalLabel->setFrameShape(QFrame::Box);
+
+  minValueGlobalLabel = new QLabel;
+  minValueGlobalLabel->setFrameShadow(QFrame::Sunken);
+  minValueGlobalLabel->setFrameShape(QFrame::Box);
+
   averValueLabel = new QLabel;
   averValueLabel->setFrameShadow(QFrame::Sunken);
   averValueLabel->setFrameShape(QFrame::Box);
+
+  maxValueLabel = new QLabel;
+  maxValueLabel->setFrameShadow(QFrame::Sunken);
+  maxValueLabel->setFrameShape(QFrame::Box);
+
+  minValueLabel = new QLabel;
+  minValueLabel->setFrameShadow(QFrame::Sunken);
+  minValueLabel->setFrameShape(QFrame::Box);
 
   auto infoLayout = new QFormLayout;
   infoLayout->addRow("Столбец", columnLabel);
@@ -382,7 +404,18 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   infoLayout->addRow("X", xLabel);
   infoLayout->addRow("Y", yLabel);
   infoLayout->addRow("Уровень", valueLabel);
+  auto vLayoutDummy = new QVBoxLayout();
+  vLayoutDummy->addSpacing(10);
+  auto vLayoutDummy2 = new QVBoxLayout();
+  vLayoutDummy2->addSpacing(10);
+  infoLayout->addRow(vLayoutDummy);
+  infoLayout->addRow("Макс.", maxValueLabel);
+  infoLayout->addRow("Мин.", minValueLabel);
   infoLayout->addRow("Среднее", averValueLabel);
+  infoLayout->addRow(vLayoutDummy2);
+  infoLayout->addRow("Макс. Глобал", maxValueGlobalLabel);
+  infoLayout->addRow("Мин. Глобал", minValueGlobalLabel);
+  infoLayout->addRow("Среднее Глобал", averValueGlobalLabel);
   infoLayout->setContentsMargins(5, 5, 5, 5);
   infoLayout->setSpacing(5);
 
@@ -665,7 +698,7 @@ QPoint ScanDisplayWindow::specIndex(QPoint& viewPoint, std::size_t nRange)
   // из индексов в точки спектра
   double sample;
   int line = viewPoint.y();
-  double xSize = scan->normalizedRanges.front().view.shape()[0] / 3;
+  double xSize = scan->normalizedRanges.front().view.val.shape()[0] / 3;
   int size = scan->normalizedSpec[line][nRange].samples.size();
 
   sample = size / xSize;
@@ -767,10 +800,10 @@ void ScanDisplayWindow::normalizeRegion(const QRectF& rect)
     endPoint.setY(temp);
   }
 
-  if(endPoint.y() >= scan->normalizedRanges.begin()->view.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.shape()[1] - 1);
-  if(endPoint.x() >= scan->normalizedRanges.begin()->view.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.shape()[0] - 1);
-  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.shape()[1] - 1);
-  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.shape()[0] - 1);
+  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
 
   ///* for(int i = 1;i<6;i++) 
   //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
@@ -795,10 +828,10 @@ void ScanDisplayWindow::getRegionFrequencyRose(const QRectF& rect)
     endPoint.setY(temp);
   }
 
-  if(endPoint.y() >= scan->normalizedRanges.begin()->view.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.shape()[1] - 1);
-  if(endPoint.x() >= scan->normalizedRanges.begin()->view.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.shape()[0] - 1);
-  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.shape()[1] - 1);
-  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.shape()[0] - 1);
+  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
 
   beginPoint = specIndex(beginPoint);
   endPoint = specIndex(endPoint);
@@ -1857,8 +1890,8 @@ void ScanDisplayWindow::updateRangeViewPoint()
   }
   QString qStringValue = "";
   try {
-      if ((!range->view.empty()) && (!range->view[indexX].empty())) {
-          auto value = range->view[indexX][indexY];
+      if ((!range->view.val.empty()) && (!range->view.val[indexX].empty())) {
+          auto value = range->view.val[indexX][indexY];
           qStringValue = QString::number(value, 'f', 3);
       }
   }
@@ -1878,10 +1911,81 @@ void ScanDisplayWindow::updateRangeViewPoint()
   }
 
   valueLabel->setText(qStringValue);
- QString qStringAverValue = "";
+
+  QString qStringAverGlobalValue = "";
 try {
     if (std::isfinite( range->aver)) {
-        qStringAverValue = QString::number(range->aver, 'f', 3);
+        qStringAverGlobalValue = QString::number(range->aver, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->aver\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+averValueGlobalLabel->setText(qStringAverGlobalValue);
+
+QString qStringMinGlobalValue = "";
+try {
+    if (std::isfinite(range->min)) {
+        qStringMinGlobalValue = QString::number(range->min, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->min\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+minValueGlobalLabel->setText(qStringMinGlobalValue);
+
+
+QString qStringMaxGlobalValue = "";
+try {
+    if (std::isfinite(range->max)) {
+        qStringMaxGlobalValue = QString::number(range->max, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->aver\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+maxValueGlobalLabel->setText(qStringMaxGlobalValue);
+
+QString qStringAverValue = "";
+try {
+    if (std::isfinite(range->view.aver)) {
+        qStringAverValue = QString::number(range->view.aver, 'f', 3);
     }
 }
 catch (uts::Exception& exc) {
@@ -1901,10 +2005,58 @@ catch (...) {
 
 averValueLabel->setText(qStringAverValue);
 
-  rowCurve->setData(new MultiArraySliceSeriesData(range->view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
+QString qStringMinValue = "";
+try {
+    if (std::isfinite(range->view.min)) {
+        qStringMinValue = QString::number(range->view.min, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->min\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+minValueLabel->setText(qStringMinValue);
+
+
+QString qStringMaxValue = "";
+try {
+    if (std::isfinite(range->view.max)) {
+        qStringMaxValue = QString::number(range->view.max, 'f', 3);
+    }
+}
+catch (uts::Exception& exc) {
+    auto msg = boost::get_error_info<uts::ErrInfo_Description>(exc);
+    if (msg) {
+        QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    }
+    else {
+        QMessageBox::critical(this, "Ошибка", QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+    }
+}
+catch (...) {
+    //QMessageBox::critical(this, "Ошибка", QString::fromUtf8(msg->c_str()));
+    QString str = QString::fromUtf8("Ошибка при получении range->aver\r\n");
+    QMessageBox::critical(this, "Ошибка", str + QString::fromLocal8Bit(boost::current_exception_diagnostic_information().c_str()));
+}
+
+maxValueLabel->setText(qStringMaxValue);
+
+
+  rowCurve->setData(new MultiArraySliceSeriesData(range->view.val[boost::indices[all][pointIndexes(currentViewPoint).y()]], range->startCoordinate,
                     range->finalCoordinate));
   try {
-      columnCurve->setData(new MultiArraySliceVerticalSeriesData(range->view[boost::indices[pointIndexes(currentViewPoint).x()][all]],
+      columnCurve->setData(new MultiArraySliceVerticalSeriesData(range->view.val[boost::indices[pointIndexes(currentViewPoint).x()][all]],
           range->lineCoordinates));
   }
   catch (...) {
@@ -1934,11 +2086,11 @@ void ScanDisplayWindow::updateResidualsViewPoint()
   auto all = boost::multi_array<float, 2>::index_range();
   auto& range = scan->rangesResiduals[idx];
 
-  valueLabel->setText(QString::number(range.view[pointIndexes(currentViewPoint).x()][pointIndexes(currentViewPoint).y()], 'f', 3));
+  valueLabel->setText(QString::number(range.view.val[pointIndexes(currentViewPoint).x()][pointIndexes(currentViewPoint).y()], 'f', 3));
 
-  rowCurve->setData(new MultiArraySliceSeriesData(range.view[boost::indices[all][pointIndexes(currentViewPoint).y()]], range.startCoordinate,
+  rowCurve->setData(new MultiArraySliceSeriesData(range.view.val[boost::indices[all][pointIndexes(currentViewPoint).y()]], range.startCoordinate,
                     range.finalCoordinate));
-  columnCurve->setData(new MultiArraySliceVerticalSeriesData(range.view[boost::indices[pointIndexes(currentViewPoint).x()][all]],
+  columnCurve->setData(new MultiArraySliceVerticalSeriesData(range.view.val[boost::indices[pointIndexes(currentViewPoint).x()][all]],
                        range.lineCoordinates));
   averageColumnCurve->setData(new DoubleVectorVerticalSeriesData(scan->averageColumns[idx], range.lineCoordinates));
   if (scan->parameters.columnModelOrder > 0) {
@@ -2270,9 +2422,9 @@ int ScanDisplayWindow::currentXSize() const
 {
   switch (kindBox->currentIndex()) {
   case 0:
-    return scan->normalizedRanges.front().view.shape()[0];
+    return scan->normalizedRanges.front().view.val.shape()[0];
   case 1:
-    return scan->rangesResiduals.front().view.shape()[0];
+    return scan->rangesResiduals.front().view.val.shape()[0];
   case 2:
   case 3:
     return scan->rawDefectPoints.front().view.shape()[0];
@@ -2285,9 +2437,9 @@ int ScanDisplayWindow::currentYSize() const
 {
   switch (kindBox->currentIndex()) {
   case 0:
-    return scan->normalizedRanges.front().view.shape()[1];
+    return scan->normalizedRanges.front().view.val.shape()[1];
   case 1:
-    return scan->rangesResiduals.front().view.shape()[1];
+    return scan->rangesResiduals.front().view.val.shape()[1];
   case 2:
   case 3:
     return scan->rawDefectPoints.front().view.shape()[1];

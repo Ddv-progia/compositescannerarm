@@ -314,9 +314,17 @@ struct RangeScanLine is
   finalCoordinateZ    : Double_Precision_Real = { -1.0 }
 end
 
+struct viewWithExtremums is  
+  val : MultiArray(Single_Precision_Real)
+  min : Double_Precision_Real
+  max : Double_Precision_Real
+  aver : Double_Precision_Real
+  extremum : Extremum
+end
 
 struct NormalizedRange is  
-  view : MultiArray(Single_Precision_Real)
+  -- view : MultiArray(Single_Precision_Real)
+  view : viewWithExtremums
   sampleRate :  Unsigned_Integer
   startCoordinate :  Double_Precision_Real
   finalCoordinate :  Double_Precision_Real
@@ -328,11 +336,15 @@ struct NormalizedRange is
   aver : Double_Precision_Real
   diff : Double_Precision_Real
   step :  Unsigned_Integer
-  maxView : MultiArray(Single_Precision_Real)
+  -- maxView : MultiArray(Single_Precision_Real)
+  maxView : viewWithExtremums
   extremum : Extremum
-  minView : MultiArray(Single_Precision_Real)
-  averView : MultiArray(Single_Precision_Real)
-  diffView : MultiArray(Single_Precision_Real)
+  -- minView : MultiArray(Single_Precision_Real)
+  -- averView : MultiArray(Single_Precision_Real)
+  -- diffView : MultiArray(Single_Precision_Real)
+  minView : viewWithExtremums
+  averView : viewWithExtremums
+  diffView : viewWithExtremums
   finalLineCoordinates: Std::Vector(Double_Precision_Real)
 --  lineCoordinatesMin: Double_Precision_Real = { 0 }
 --  finalLineCoordinateMax: Double_Precision_Real = { 0 }
