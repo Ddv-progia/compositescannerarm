@@ -10,6 +10,7 @@
 //#include <QtScript/QScriptEngine>
 //#include <QAxScript>
 //c:\Projects\vcpkg\installed\x64 - windows\include\QtScript
+#include <QListWidget>
 #include "ui_MainWindow.h"
 #include "Core/BackgroundTaskExecutor.hh"
 #include "Core/ScanDataMetatypes.hh"
@@ -22,6 +23,23 @@
 #include "RealTime/RTContext.h"
 
 
+class RectSelectionDialog : public QDialog {
+	Q_OBJECT
+public:
+
+	explicit RectSelectionDialog(QWidget* parent = nullptr);
+	RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn);
+	void setSpecNormalizationIJRect(std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn);
+	RectForNormalization getSelectedRect() const;
+	std::vector<RectForNormalization> specNormalizationIJRect;
+
+private slots:
+	void accept() override;
+
+private:
+	QListWidget* listWidget;
+	RectForNormalization selectedRect;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -115,5 +133,6 @@ private:
   
   Q_SLOT void moveAlongDefect(const std::vector<Defect*>& defectsIn, ::DefectSearchingParameters defectSearching);
   Q_SLOT void addZCoordinates();
+  Q_SLOT void showSelectNormalizationAreaDialog();
 
 };

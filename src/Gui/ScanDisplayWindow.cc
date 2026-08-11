@@ -561,7 +561,8 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
 
   connect(plotsButton, SIGNAL(clicked()), this, SLOT(showPlots()));
   connect(kindBox, SIGNAL(activated(int)), this, SLOT(updatePlotList()));
-
+  connect(kindBox, SIGNAL(currentIndexChanged(int)), this, SLOT(updatePlotGeometryOnCurrentIndexChanged(int)));
+  kindBox->setCurrentIndex(0);
   connect(pointPicker, SIGNAL(selected(const QPointF&)), this, SLOT(setViewPoint(const QPointF&)));
   connect(regionPicker, SIGNAL(selected(const QRectF&)), this, SLOT(normalizeRegion(const QRectF&)));
   connect(regionRosePicker, SIGNAL(selected(const QRectF&)), this, SLOT(getRegionFrequencyRose(const QRectF&)));
@@ -783,8 +784,48 @@ void ScanDisplayWindow::refreshWindow()
   if (win) win->deleteLater();
 }
 
+void ScanDisplayWindow::normalizeRegionExternalStart(const QRect& rect) {
+    normalizeRegionIntIndex(rect, false);
+}
 
-void ScanDisplayWindow::normalizeRegion(const QRectF& rect)
+void ScanDisplayWindow::normalizeRegionIntIndex(const QRect& rect, const bool needAddRegion)
+{
+  QPoint beginPoint, endPoint;
+  beginPoint = rect.topLeft();
+  endPoint = rect.bottomRight();
+  if (beginPoint.x() > endPoint.x()){
+    auto temp = beginPoint.x();
+    beginPoint.setX(endPoint.x());
+    endPoint.setX(temp);
+  }
+  if (beginPoint.y() > endPoint.y()){
+    auto temp = beginPoint.y();
+    beginPoint.setY(endPoint.y());
+    endPoint.setY(temp);
+  }
+
+  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+
+  ///* for(int i = 1;i<6;i++) 
+  //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
+  //normalizeSpec(beginPoint, endPoint, scan->spec);
+  if ((scan->parameters.specNormalizationIJRect.size()>0) &&
+      (scan->parameters.specNormalizationIJRect.front().xLowLeft == scan->parameters.specNormalizationIJRect.front().xTopRight) &&
+      (scan->parameters.specNormalizationIJRect.front().yLowLeft == scan->parameters.specNormalizationIJRect.front().yTopRight)) {
+      scan->parameters.specNormalizationIJRect.erase(scan->parameters.specNormalizationIJRect.begin());
+  }
+  if (needAddRegion) {
+      RectForNormalization rectForNormalization = { beginPoint.x(), beginPoint.y() , 0.0, endPoint.x(), endPoint.y(), 0.0 };
+      scan->parameters.specNormalizationIJRect.push_back(rectForNormalization);
+  }
+  //this->applyParameters(scan->parameters,*this->scanFactory);
+  normalizeSpec(beginPoint, endPoint, scan->normalizedSpec);
+}
+
+void ScanDisplayWindow::normalizeRegion(const QRectF& rect, const bool needAddRegion)
 {
   QPoint beginPoint, endPoint;
   beginPoint = pointIndexes(rect.topLeft());
@@ -808,6 +849,15 @@ void ScanDisplayWindow::normalizeRegion(const QRectF& rect)
   ///* for(int i = 1;i<6;i++) 
   //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
   //normalizeSpec(beginPoint, endPoint, scan->spec);
+  if ((scan->parameters.specNormalizationIJRect.front().xLowLeft == scan->parameters.specNormalizationIJRect.front().xTopRight)&&
+      (scan->parameters.specNormalizationIJRect.front().yLowLeft == scan->parameters.specNormalizationIJRect.front().yTopRight)) {
+      scan->parameters.specNormalizationIJRect.erase(scan->parameters.specNormalizationIJRect.begin());
+  }
+  if (needAddRegion) {
+      RectForNormalization rectForNormalization = { beginPoint.x(), beginPoint.y() , 0.0, endPoint.x(), endPoint.y(), 0.0 };
+      scan->parameters.specNormalizationIJRect.push_back(rectForNormalization);
+  }
+  //this->applyParameters(scan->parameters,*this->scanFactory);
   normalizeSpec(beginPoint, endPoint, scan->normalizedSpec);
 }
 
@@ -1784,6 +1834,7 @@ void ScanDisplayWindow::updatePlot()
   scanPlot->detachItems(QwtPlotItem::Rtti_PlotSpectrogram);
   scanPlot->detachItems(DefectPointsItem::Rtti_DefectPointsItem);
   auto indx = kindBox->currentIndex();
+  updatePlotGeometryOnCurrentIndexChanged(indx);
   switch (indx) {
   case 0:
     updateRangesPlot();
@@ -1800,8 +1851,8 @@ void ScanDisplayWindow::updatePlot()
   case 2:
     updateDefectPointsPlot();
     scanRightColorScale->hide();
-    xScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
-    yScanMarker->setLinePen(Qt::white, 1, Qt::DashLine);
+    xScanMarker->setLinePen(Qt::green, 1, Qt::DashLine);
+    yScanMarker->setLinePen(Qt::green, 1, Qt::DashLine);
     break;
   case 3:
     updateFixedColorDefectPointsPlot();
@@ -1819,6 +1870,48 @@ void ScanDisplayWindow::updatePlot()
   rowPlot->replot();
   columnPlot->replot();
   //armVtkRenderWidget->showQuantizedPoints(scan);
+}
+
+void ScanDisplayWindow::updatePlotGeometryOnCurrentIndexChanged(int index)
+{
+    //return currentXSize_;
+    //switch (kindBox->currentIndex()) {
+    switch (index) {
+    case 0:
+        currentXSize_ =  scan->normalizedRanges.front().view.val.shape()[0];
+        currentYSize_ = scan->normalizedRanges.front().view.val.shape()[1];
+        xStartCoordinate = scan->normalizedRanges.front().startCoordinate;
+        xFinalCoordinate = scan->normalizedRanges.front().finalCoordinate;
+        yStartCoordinate = scan->normalizedRanges.front().lineCoordinates.front();
+        yFinalCoordinate = scan->normalizedRanges.front().finalLineCoordinates.front();
+        break;
+    case 1:
+        currentXSize_ = scan->rangesResiduals.front().view.val.shape()[0];
+        currentYSize_ = scan->rangesResiduals.front().view.val.shape()[1];
+        xStartCoordinate = scan->rangesResiduals.front().startCoordinate;
+        xFinalCoordinate = scan->rangesResiduals.front().finalCoordinate;
+        yStartCoordinate = scan->rangesResiduals.front().lineCoordinates.front();
+        yFinalCoordinate = scan->rangesResiduals.front().finalLineCoordinates.size() > 0 ? scan->rangesResiduals.front().finalLineCoordinates.front() : scan->rangesResiduals.front().lineCoordinates.front();
+        //yFinalCoordinate = scan->rangesResiduals.front().finalLineCoordinates.front();
+        break;
+    case 2:
+    case 3:
+        currentXSize_ = scan->rawDefectPoints.front().view.shape()[0];
+        currentYSize_ = scan->rawDefectPoints.front().view.shape()[1];
+        xStartCoordinate = scan->rawDefectPoints.front().startCoordinate;
+        xFinalCoordinate = scan->rawDefectPoints.front().finalCoordinate;
+        yStartCoordinate = scan->rawDefectPoints.front().lineCoordinates.front();
+        yFinalCoordinate = scan->rawDefectPoints.front().finalLineCoordinates.size() > 0 ? scan->rawDefectPoints.front().finalLineCoordinates.front() : scan->rawDefectPoints.front().lineCoordinates.front();
+        //yFinalCoordinate = scan->rawDefectPoints.front().finalLineCoordinates.front();
+        break;
+    default:
+        currentXSize_ = -1;
+        currentYSize_ = -1;
+        xStartCoordinate = std::numeric_limits<double>::quiet_NaN();
+        xFinalCoordinate = std::numeric_limits<double>::quiet_NaN();
+        yStartCoordinate = std::numeric_limits<double>::quiet_NaN();
+        yFinalCoordinate = std::numeric_limits<double>::quiet_NaN();
+    }
 }
 
 void ScanDisplayWindow::updatePlotList()
@@ -2420,62 +2513,76 @@ void ScanDisplayWindow::ShowNView(int n, bool needToShowOriginalView, bool needS
 
 int ScanDisplayWindow::currentXSize() const
 {
-  switch (kindBox->currentIndex()) {
-  case 0:
-    return scan->normalizedRanges.front().view.val.shape()[0];
-  case 1:
-    return scan->rangesResiduals.front().view.val.shape()[0];
-  case 2:
-  case 3:
-    return scan->rawDefectPoints.front().view.shape()[0];
-  default:
-    return -1;
-  }
+    return currentXSize_;
+  //switch (kindBox->currentIndex()) {
+  //case 0:
+  //  return scan->normalizedRanges.front().view.val.shape()[0];
+  //case 1:
+  //  return scan->rangesResiduals.front().view.val.shape()[0];
+  //case 2:
+  //case 3:
+  //  return scan->rawDefectPoints.front().view.shape()[0];
+  //default:
+  //  return -1;
+  //}
 }
 
 int ScanDisplayWindow::currentYSize() const
 {
-  switch (kindBox->currentIndex()) {
-  case 0:
-    return scan->normalizedRanges.front().view.val.shape()[1];
-  case 1:
-    return scan->rangesResiduals.front().view.val.shape()[1];
-  case 2:
-  case 3:
-    return scan->rawDefectPoints.front().view.shape()[1];
-  default:
-    return -1;
-  }
+    return currentYSize_;
+  //switch (kindBox->currentIndex()) {
+  //case 0:
+  //  return scan->normalizedRanges.front().view.val.shape()[1];
+  //case 1:
+  //  return scan->rangesResiduals.front().view.val.shape()[1];
+  //case 2:
+  //case 3:
+  //  return scan->rawDefectPoints.front().view.shape()[1];
+  //default:
+  //  return -1;
+  //}
+}
+
+double ScanDisplayWindow::getYStartCoordinate() const
+{
+    return yStartCoordinate;
+}
+
+double ScanDisplayWindow::getYFinalCoordinate() const
+{
+    return yFinalCoordinate;
 }
 
 double ScanDisplayWindow::getXStartCoordinate() const
 {
-  switch (kindBox->currentIndex()) {
-  case 0:
-    return scan->normalizedRanges.front().startCoordinate;
-  case 1:
-    return scan->rangesResiduals.front().startCoordinate;
-  case 2:
-  case 3:
-    return scan->rawDefectPoints.front().startCoordinate;
-  default:
-    return 0;
-  }
+  return xStartCoordinate;
+  //switch (kindBox->currentIndex()) {
+  //case 0:
+  //  return scan->normalizedRanges.front().startCoordinate;
+  //case 1:
+  //  return scan->rangesResiduals.front().startCoordinate;
+  //case 2:
+  //case 3:
+  //  return scan->rawDefectPoints.front().startCoordinate;
+  //default:
+  //  return 0;
+  //}
 }
 
 double ScanDisplayWindow::getXFinalCoordinate() const
 {
-  switch (kindBox->currentIndex()) {
-  case 0:
-    return scan->normalizedRanges.front().finalCoordinate;
-  case 1:
-    return scan->rangesResiduals.front().finalCoordinate;
-  case 2:
-  case 3:
-    return scan->rawDefectPoints.front().finalCoordinate;
-  default:
-    return 0;
-  }
+  return xFinalCoordinate;
+  //switch (kindBox->currentIndex()) {
+  //case 0:
+  //  return scan->normalizedRanges.front().finalCoordinate;
+  //case 1:
+  //  return scan->rangesResiduals.front().finalCoordinate;
+  //case 2:
+  //case 3:
+  //  return scan->rawDefectPoints.front().finalCoordinate;
+  //default:
+  //  return 0;
+  //}
 }
 
 QPoint ScanDisplayWindow::pointIndexes(const QPointF& p) const

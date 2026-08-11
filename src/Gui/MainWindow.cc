@@ -43,6 +43,85 @@
 #include "Gui/AutoScanWindow.hh"
 
 
+
+RectSelectionDialog::RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn) : QDialog(parent)  , specNormalizationIJRect(vectorOfRectForNormalizationIn)
+{
+    setWindowTitle(tr("Выбор области"));
+    resize(400, 300);
+    listWidget = new QListWidget(this);
+    // Populate the list with the rectangles from the global vector
+    //this->setSpecNormalizationIJRect(vectorOfRectForNormalizationIn);
+    for (const auto& rect : specNormalizationIJRect) {
+        QString itemText = QString("(%1, %2, %3) to (%4, %5, %6)")
+            .arg(rect.xLowLeft)
+            .arg(rect.yLowLeft)
+            .arg(rect.zLowLeft)
+            .arg(rect.xTopRight)
+            .arg(rect.yTopRight)
+            .arg(rect.zTopRight);
+        listWidget->addItem(itemText);
+    }
+
+    auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    auto* layout = new QVBoxLayout(this);
+    layout->addWidget(listWidget);
+    layout->addWidget(buttonBox);
+
+}
+
+void RectSelectionDialog::setSpecNormalizationIJRect(std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn)
+{
+    specNormalizationIJRect = vectorOfRectForNormalizationIn;
+}
+
+RectSelectionDialog::RectSelectionDialog(QWidget* parent)
+    : QDialog(parent)
+{
+    setWindowTitle(tr("Выбор области"));
+    resize(400, 300);
+    listWidget = new QListWidget(this);
+    // Populate the list with the rectangles from the global vector
+    for (const auto& rect : specNormalizationIJRect) {
+        QString itemText = QString("(%1, %2, %3) to (%4, %5, %6)")
+            .arg(rect.xLowLeft)
+            .arg(rect.yLowLeft)
+            .arg(rect.zLowLeft)
+            .arg(rect.xTopRight)
+            .arg(rect.yTopRight)
+            .arg(rect.zTopRight);
+        listWidget->addItem(itemText);
+    }
+
+    auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    auto* layout = new QVBoxLayout(this);
+    layout->addWidget(listWidget);
+    layout->addWidget(buttonBox);
+}
+
+RectForNormalization RectSelectionDialog::getSelectedRect() const
+{
+    return selectedRect;
+}
+
+void RectSelectionDialog::accept()
+{
+    int currentRow = listWidget->currentRow();
+    if (currentRow >= 0 && currentRow < listWidget->count()) {
+        selectedRect = specNormalizationIJRect[currentRow];
+    }
+    else {
+        // If nothing is selected, we clear the selectedRect to default
+        selectedRect = RectForNormalization();
+    }
+    QDialog::accept();
+}
+
 MainWindow::MainWindow(realtime::RTContext &rtCtxt, BackgroundTaskExecutor& taskExecutor, ScanFactory& scanFactory)
   : taskExecutor(taskExecutor), scanFactory(scanFactory), m_rtCtxt(rtCtxt),
   processingParameters(Configuration::getConfigurationPathname("etc\\Processing-Parameters.xml").toStdString(), "Processing-Parameters"),
@@ -156,6 +235,7 @@ void MainWindow::connectSignals()
 
   connect(ui.currentProcessingParametersAction, SIGNAL(triggered()), this, SLOT(showCurrentParameterDialog()));
   connect(ui.doubleLinesAction, SIGNAL(triggered()), this, SLOT(doubleLines()));
+  connect(ui.pbSelectNormalizationAreaDialog, SIGNAL(clicked()), this, SLOT(showSelectNormalizationAreaDialog()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCoordinates()));
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateCursorCoordinates()));
 
@@ -942,6 +1022,33 @@ void MainWindow::doubleLines()
           sdw->ShowNView(parameters.screenCount);
       }
   }
+}
+
+void MainWindow::showSelectNormalizationAreaDialog()
+{
+    auto currentWidget = getCurrentMdiWidget();
+    if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
+        auto par = sdw->getProcessingParameters();
+
+        RectSelectionDialog dialog = RectSelectionDialog(this, par.specNormalizationIJRect);
+        if (dialog.exec() == QDialog::Accepted) {
+            RectForNormalization selected = dialog.getSelectedRect();
+            qDebug() << "Selected rect:"
+                << selected.xLowLeft << selected.yLowLeft << selected.zLowLeft
+                << selected.xTopRight << selected.yTopRight << selected.zTopRight;
+            // Optionally, show in a message box
+            QMessageBox::information(this, tr("Выбрано"),
+                QString("Выбранный прямоугольник: (%1, %2, %3) - (%4, %5, %6)")
+                .arg(selected.xLowLeft)
+                .arg(selected.yLowLeft)
+                .arg(selected.zLowLeft)
+                .arg(selected.xTopRight)
+                .arg(selected.yTopRight)
+                .arg(selected.zTopRight));
+            QRect  rect  = QRect(selected.xLowLeft, selected.yLowLeft, selected.xTopRight,selected.yTopRight);
+            sdw->normalizeRegionExternalStart(rect);
+        }
+    }
 }
 
 void MainWindow::showCurrentParameterDialog()

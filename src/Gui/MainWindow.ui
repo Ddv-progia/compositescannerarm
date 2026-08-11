@@ -172,6 +172,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="pbSelectNormalizationAreaDialog">
+        <property name="text">
+         <string>Обл. усреднения</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

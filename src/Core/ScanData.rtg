@@ -59,7 +59,6 @@ struct Peak is
   z          : Double_Precision_Real= { 0.0 }
 end
 
-
 struct DefectChannel is
   range : Unsigned_Integer
   limit : Double_Precision_Real
@@ -156,6 +155,15 @@ struct SpecNormalizationParams is
   sigma :  Double_Precision_Real
 end
 
+struct RectForNormalization is
+  xLowLeft          : Double_Precision_Real= { 0.0 }
+  yLowLeft          : Double_Precision_Real= { 0.0 }
+  zLowLeft          : Double_Precision_Real= { 0.0 }
+  xTopRight          : Double_Precision_Real= { 0.0 }
+  yTopRight          : Double_Precision_Real= { 0.0 }
+  zTopRight          : Double_Precision_Real= { 0.0 }
+end
+
 struct HeadAndScanCollectorParameters is
   maximumTimeMinutes :  Unsigned_Integer = { 60 }
   soundsSampleRate :  Unsigned_Integer = { 96000 }
@@ -197,7 +205,7 @@ struct ProcessingParameters is
   shouldNormalizeNew : Boolean = {false}
   multiplierForSigma: Double_Precision_Real = {3.0}
   useSubRanges : Boolean
-  specNormalization :Std::Vector(SpecNormalizationParams)
+  specNormalization : Std::Vector(SpecNormalizationParams)
 
   colorStopsList : Std::Vector(ColorStop)
   defectClassification : Std::Vector(DefectType)
@@ -207,6 +215,9 @@ struct ProcessingParameters is
   factorForFrequencyRoseWidget: Double_Precision_Real
 
   headAndScanCollectorParameters: HeadAndScanCollectorParameters
+
+  specNormalizationIJRect : Std::Vector(RectForNormalization) 
+
   stepForSplitFrequencyRanges: Unsigned_Integer = {1000}
 
   shouldRelate : Boolean  = {true} 
@@ -217,7 +228,6 @@ struct ProcessingParameters is
   screenCountNeeded: Boolean = {true} --//разбивать доп. вид на несколько частей
   commonViewNeeded: Boolean = {false} --//показывать на доп. виде общий вид скана
   screenCount: Integer = { 2 } --// на сколько частей разбивать доп. вид
-
 end
 
 

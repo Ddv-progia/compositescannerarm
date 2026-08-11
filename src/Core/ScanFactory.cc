@@ -76,6 +76,8 @@ void ScanFactory::recalculateScan(std::shared_ptr<Scan>& scan)
 {
   std::lock_guard<std::mutex> lock(rangeScanLinesMutex);
   processingParameters.specNormalization = scan->parameters.specNormalization;
+  processingParameters.specNormalizationIJRect = scan->parameters.specNormalizationIJRect;
+  //processingParameters = scan->parameters;
   auto task = new ScanProcessingTask(rangeScanLines, processingParameters,scan);
   connect(task, SIGNAL(newScanReady(const std::shared_ptr<Scan>&)), this, SIGNAL(newScanPublished(const std::shared_ptr<Scan>&)), Qt::DirectConnection);
   taskExecutor.enqueue(task);

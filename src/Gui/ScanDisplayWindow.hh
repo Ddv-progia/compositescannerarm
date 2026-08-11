@@ -43,6 +43,8 @@
  #include <vtkDataSetMapper.h>
 #include <vtkScalarBarWidget.h>
 #include <vtkQuantizePolyDataPoints.h>
+
+#include <limits>
 #include <cmath>
 #include <cstdlib>
 #include <random>
@@ -72,6 +74,7 @@
 #if VTK_VERSION_NUMBER >= 89000000000ULL
 #define VTK890 1
 #endif
+
 
 //namespace myStyleSpace {
 //
@@ -213,6 +216,12 @@ public:
 
 
 private:
+	int currentXSize_ = -1;
+	int currentYSize_ = -1;
+	double xStartCoordinate = std::numeric_limits<double>::quiet_NaN();
+	double xFinalCoordinate = std::numeric_limits<double>::quiet_NaN();
+	double yStartCoordinate = std::numeric_limits<double>::quiet_NaN();
+	double yFinalCoordinate = std::numeric_limits<double>::quiet_NaN();
 	QPointer<PeakAndBscanVTKView> armVtkRenderWidget = new PeakAndBscanVTKView();
 	//QVBoxLayout dockLayout;
 	QPointer<QVBoxLayout > dockLayout = new QVBoxLayout();
@@ -299,6 +308,7 @@ private:
 	//void Randomize(vtkSphereSource* sphere, vtkMapper* mapper, vtkGenericOpenGLRenderWindow* window, std::mt19937& randEng);
 	Q_SLOT void updatePlot();
 	Q_SLOT void updatePlotList();
+	Q_SLOT void updatePlotGeometryOnCurrentIndexChanged(int index);
 	Q_SLOT void showPlots();
 	Q_SLOT void selectRange(int idx, Extremum ex);
 
@@ -319,13 +329,16 @@ private:
 	void normalizeSpec(QPoint beginPoint, QPoint endPoint, std::vector<std::vector<RangeScanLine>>& spec);
 	Q_SLOT void setViewPoint(const QPointF& newViewPoint);
 	Q_SLOT void getRegionFrequencyRose(const QRectF& rect);
-	Q_SLOT void normalizeRegion(const QRectF& rect);
+	Q_SLOT void normalizeRegion(const QRectF& rect, const bool needAddRegion = true);
+	Q_SLOT void normalizeRegionIntIndex(const QRect& rect, const bool needAddRegion = true);
 	Q_SLOT void refreshWindow();
 
 	int currentXSize() const;
 	int currentYSize() const;
 	double getXStartCoordinate() const;
 	double getXFinalCoordinate() const;
+	double getYStartCoordinate() const;
+	double getYFinalCoordinate() const;
 	QPoint pointIndexes(const QPointF& p) const;
 	QPointF pointFromIndexes(int ix, int iy) const;
 	Q_SLOT void moveMarkers(int dx, int dy);
@@ -371,6 +384,7 @@ private:
 
 	LineEncoding requestLineEncoding();
 public slots:
+	Q_SLOT void normalizeRegionExternalStart(const QRect& rect);
 
 	void slot_clicked(vtkObject*, unsigned long, void*, void*);
 
