@@ -33,7 +33,6 @@
 #include <vtkTrivialProducer.h>
 #include <vtkVectorText.h>
 
-
 #include <vtkAbstractPicker.h>
 #include <vtkCoordinate.h>
 #include <vtkDataSetMapper.h>

@@ -1178,7 +1178,7 @@ std::vector<std::vector<double>> ScanProcessingTask::averageColumns(Scan& scan) 
   std::vector<std::vector<double>> r(rangeCount);
   
   for (std::size_t rangeIndex = 0; rangeIndex < scan.normalizedRanges.size(); rangeIndex++) {
-    auto rowCount = scan.normalizedRanges[rangeIndex].view.val.shape()[1];
+    auto rowCount = scan.normalizedRanges[rangeIndex].view.val.shape()[1]; 
     r[rangeIndex].resize(rowCount);
     for (std::size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
       r[rangeIndex][rowIndex] = ba::mean(boost::for_each(scan.normalizedRanges[rangeIndex].view.val[boost::indices[idxrng()][rowIndex]],
