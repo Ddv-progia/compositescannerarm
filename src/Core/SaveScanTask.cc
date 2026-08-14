@@ -121,6 +121,17 @@ void SaveScanTask::operator() ()
       putVal<double>(db, (boost::format("lines.@%1%.startCoordinateZ") % i).str(), scan.lines[i].startCoordinateZ);
       putVal<double>(db, (boost::format("lines.@%1%.finalCoordinateZ") % i).str(), scan.lines[i].finalCoordinateZ);
 
+      putVal<std::uint32_t>(db, "parameters.specNormalizationIJRect.@size", scan.parameters.specNormalizationIJRect.size());
+      for (std::size_t i = 0; i < scan.parameters.specNormalizationIJRect.size(); i++) {
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.xLowLeft") % i).str(), scan.parameters.specNormalizationIJRect[i].xLowLeft);
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.yLowLeft") % i).str(), scan.parameters.specNormalizationIJRect[i].yLowLeft);
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.zLowLeft") % i).str(), scan.parameters.specNormalizationIJRect[i].zLowLeft);
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.xTopRight") % i).str(), scan.parameters.specNormalizationIJRect[i].xTopRight);
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.yTopRight") % i).str(), scan.parameters.specNormalizationIJRect[i].yTopRight);
+          putVal<double>(db,   (boost::format("parameters.specNormalizationIJRect.@%1%.zTopRight") % i).str(), scan.parameters.specNormalizationIJRect[i].zTopRight);
+      }
+
+
       emit stageProgressed();
     }
 

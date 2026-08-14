@@ -126,6 +126,18 @@ void LoadScanTask::operator()()
       }
 
       parameters.columnModelOrder = getVal<unsigned>(db, "parameters.columnModelOrder");
+
+      auto specNormalizationIJRectSize = getVal<std::uint32_t>(db, "parameters.specNormalizationIJRect.@size",0);
+      parameters.specNormalizationIJRect.resize(specNormalizationIJRectSize);
+      for (std::size_t i = 0; i < parameters.specNormalizationIJRect.size(); i++) {
+          parameters.specNormalizationIJRect[i].xLowLeft = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.xLowLeft") % i).str(), 0);
+          parameters.specNormalizationIJRect[i].yLowLeft = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.yLowLeft") % i).str(), 0);
+          parameters.specNormalizationIJRect[i].zLowLeft = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.zLowLeft ") % i).str(), 0);
+          parameters.specNormalizationIJRect[i].xTopRight = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.xTopRight") % i).str(), 0);
+          parameters.specNormalizationIJRect[i].yTopRight = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.yTopRight") % i).str(), 0);
+          parameters.specNormalizationIJRect[i].zTopRight = getVal<double>(db, (boost::format("parameters.specNormalizationIJRect.@%1%.zTopRight") % i).str(), 0);
+      }
+
     }
     scanFactory.startNewScan(parameters);
 
