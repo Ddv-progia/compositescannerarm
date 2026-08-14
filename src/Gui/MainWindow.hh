@@ -28,17 +28,21 @@ class RectSelectionDialog : public QDialog {
 public:
 
 	explicit RectSelectionDialog(QWidget* parent = nullptr);
-	RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn);
-	void setSpecNormalizationIJRect(std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn);
-	RectForNormalization getSelectedRect() const;
-	std::vector<RectForNormalization> specNormalizationIJRect;
+	RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization >& vectorOfRectForNormalizationIn);
+	void setSpecNormalizationIJRect(std::vector< ::RectForNormalization >& vectorOfRectForNormalizationIn);
+	RectForNormalization* getSelectedRect() const;
+	std::vector<RectForNormalization>* specNormalizationIJRect;
 
 private slots:
 	void accept() override;
+	void slotDelete();          // обработчик кнопки Ђудалитьї
+	void slotClearAll();        // обработчик кнопки Ђочистить всеї
 
 private:
 	QListWidget* listWidget;
-	RectForNormalization selectedRect;
+	RectForNormalization* selectedRect;
+	QPushButton* btnDelete;      // Ђудалитьї Ц удал€ем выбранный элемент
+	QPushButton * btnClearAll;    // Ђочистить всеї Ц очищаем весь список
 };
 
 class MainWindow : public QMainWindow

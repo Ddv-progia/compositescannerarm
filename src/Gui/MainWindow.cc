@@ -44,14 +44,12 @@
 
 
 
-RectSelectionDialog::RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn) : QDialog(parent)  , specNormalizationIJRect(vectorOfRectForNormalizationIn)
+RectSelectionDialog::RectSelectionDialog(QWidget* parent, std::vector< ::RectForNormalization >& vectorOfRectForNormalizationIn) : QDialog(parent)  , specNormalizationIJRect(&vectorOfRectForNormalizationIn)
 {
     setWindowTitle(tr("Выбор области"));
     resize(400, 300);
     listWidget = new QListWidget(this);
-    // Populate the list with the rectangles from the global vector
-    //this->setSpecNormalizationIJRect(vectorOfRectForNormalizationIn);
-    for (const auto& rect : specNormalizationIJRect) {
+    for (const auto& rect : *specNormalizationIJRect) {
         QString itemText = QString("(%1, %2, %3) to (%4, %5, %6)")
             .arg(rect.xLowLeft)
             .arg(rect.yLowLeft)
@@ -61,20 +59,56 @@ RectSelectionDialog::RectSelectionDialog(QWidget* parent, std::vector< ::RectFor
             .arg(rect.zTopRight);
         listWidget->addItem(itemText);
     }
-
+    QWidget * rightPanel = new QWidget(this);
+    QVBoxLayout * rightLayout = new QVBoxLayout(rightPanel);
+    btnDelete = new QPushButton(tr("Удалить"), this);
+    btnClearAll = new QPushButton(tr("Очистить все"), this);
+    rightLayout->addWidget(btnDelete);
+    rightLayout->addWidget(btnClearAll);
+    QWidget* lowerPanel = new QWidget(this);
     auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    QHBoxLayout* lowerLayout = new QHBoxLayout();
+    lowerLayout->addStretch();
+    lowerLayout->addWidget(buttonBox);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(listWidget,&QListWidget::itemDoubleClicked, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
+    connect(btnDelete, &QPushButton::clicked, this, &RectSelectionDialog::slotDelete);
+    connect(btnClearAll, &QPushButton::clicked, this, &RectSelectionDialog::slotClearAll);
+    auto* upperLayout = new QHBoxLayout();
+    upperLayout->addWidget(listWidget);
+    upperLayout->addWidget(rightPanel);
     auto* layout = new QVBoxLayout(this);
-    layout->addWidget(listWidget);
-    layout->addWidget(buttonBox);
-
+    layout->addLayout(upperLayout);
+    layout->addLayout(lowerLayout);
 }
 
-void RectSelectionDialog::setSpecNormalizationIJRect(std::vector< ::RectForNormalization > vectorOfRectForNormalizationIn)
+ void RectSelectionDialog::slotDelete() {
+     // Проверяем, выбран ли элемент
+     int curRow = listWidget->currentRow();
+     if (curRow < 0) {
+         QMessageBox::warning(this, tr("Ошибка"),
+                              tr("Выберите элемент для удаления."));
+         return;
+     }
+
+     if (!specNormalizationIJRect->empty()) {
+         specNormalizationIJRect->erase(specNormalizationIJRect->begin() + curRow);
+     }
+
+     // Удаляем строку из списка виджетов
+     QListWidgetItem *item = listWidget->takeItem(curRow);
+     delete item;   // (Qt сам освободит память, но делаем явно)
+ }
+
+ void RectSelectionDialog::slotClearAll() {
+     specNormalizationIJRect->clear();
+     listWidget->clear();
+ }
+
+void RectSelectionDialog::setSpecNormalizationIJRect(std::vector< ::RectForNormalization >& vectorOfRectForNormalizationIn)
 {
-    specNormalizationIJRect = vectorOfRectForNormalizationIn;
+    specNormalizationIJRect = &vectorOfRectForNormalizationIn;
 }
 
 RectSelectionDialog::RectSelectionDialog(QWidget* parent)
@@ -84,7 +118,7 @@ RectSelectionDialog::RectSelectionDialog(QWidget* parent)
     resize(400, 300);
     listWidget = new QListWidget(this);
     // Populate the list with the rectangles from the global vector
-    for (const auto& rect : specNormalizationIJRect) {
+    for (const auto& rect : *specNormalizationIJRect) {
         QString itemText = QString("(%1, %2, %3) to (%4, %5, %6)")
             .arg(rect.xLowLeft)
             .arg(rect.yLowLeft)
@@ -104,7 +138,7 @@ RectSelectionDialog::RectSelectionDialog(QWidget* parent)
     layout->addWidget(buttonBox);
 }
 
-RectForNormalization RectSelectionDialog::getSelectedRect() const
+RectForNormalization* RectSelectionDialog::getSelectedRect() const
 {
     return selectedRect;
 }
@@ -113,11 +147,11 @@ void RectSelectionDialog::accept()
 {
     int currentRow = listWidget->currentRow();
     if (currentRow >= 0 && currentRow < listWidget->count()) {
-        selectedRect = specNormalizationIJRect[currentRow];
+        selectedRect = &specNormalizationIJRect->at(currentRow);
     }
     else {
         // If nothing is selected, we clear the selectedRect to default
-        selectedRect = RectForNormalization();
+        selectedRect = new RectForNormalization();
     }
     QDialog::accept();
 }
@@ -1028,26 +1062,30 @@ void MainWindow::showSelectNormalizationAreaDialog()
 {
     auto currentWidget = getCurrentMdiWidget();
     if (auto sdw = dynamic_cast<ScanDisplayWindow*>(currentWidget)) {
-        auto par = sdw->getProcessingParameters();
+        ProcessingParameters par = sdw->getProcessingParameters();
 
         RectSelectionDialog dialog = RectSelectionDialog(this, par.specNormalizationIJRect);
+        
         if (dialog.exec() == QDialog::Accepted) {
-            RectForNormalization selected = dialog.getSelectedRect();
+            RectForNormalization* selected = dialog.getSelectedRect();
             qDebug() << "Selected rect:"
-                << selected.xLowLeft << selected.yLowLeft << selected.zLowLeft
-                << selected.xTopRight << selected.yTopRight << selected.zTopRight;
-            // Optionally, show in a message box
-            QMessageBox::information(this, tr("Выбрано"),
-                QString("Выбранный прямоугольник: (%1, %2, %3) - (%4, %5, %6)")
-                .arg(selected.xLowLeft)
-                .arg(selected.yLowLeft)
-                .arg(selected.zLowLeft)
-                .arg(selected.xTopRight)
-                .arg(selected.yTopRight)
-                .arg(selected.zTopRight));
-            QRect  rect  = QRect(selected.xLowLeft, selected.yLowLeft, selected.xTopRight,selected.yTopRight);
+                << selected->xLowLeft << selected->yLowLeft << selected->zLowLeft
+                << selected->xTopRight << selected->yTopRight << selected->zTopRight;
+            //// Optionally, show in a message box
+            //QMessageBox::information(this, tr("Выбрано"),
+            //    QString("Выбранный прямоугольник: (%1, %2, %3) - (%4, %5, %6)")
+            //    .arg(selected.xLowLeft)
+            //    .arg(selected.yLowLeft)
+            //    .arg(selected.zLowLeft)
+            //    .arg(selected.xTopRight)
+            //    .arg(selected.yTopRight)
+            //    .arg(selected.zTopRight));
+            QPoint p1(selected->xLowLeft, selected->yLowLeft);
+            QPoint p2(selected->xTopRight, selected->yTopRight);
+            QRect  rect  = QRect(p1, p2);
             sdw->normalizeRegionExternalStart(rect);
         }
+        sdw->setProcessingParameters(par);
     }
 }
 
