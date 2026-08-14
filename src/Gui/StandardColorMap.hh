@@ -34,14 +34,22 @@ public:
       std::for_each(stopsList.begin(),stopsList.end(),
         [&](ColorStop stop){if(stop.val>max) max = stop.val; if(stop.val<min) min = stop.val;});
 
-      if((min*max)<0){
-        nullPoint = std::abs(min)/std::abs(max-min);
-      }
-      else
-        nullPoint = std::abs(min);
+      //if((min*max)<0){
+      //  nullPoint = std::abs(min)/std::abs(max-min);
+      //}
+      //else
+      //  nullPoint = std::abs(min);
 
-      for(auto& stop : stopsList)
-        linearMap->addColorStop(nullPoint + stop.val/std::abs(max-min),QColor(QString::fromStdString(stop.color)));
+      //for(auto& stop : stopsList)
+      //  linearMap->addColorStop(nullPoint + stop.val/std::abs(max-min),QColor(QString::fromStdString(stop.color)));
+
+      auto delta = 1;
+      if ((max - min)!=0)
+          delta = std::abs(max - min);
+      nullPoint = std::abs(min) / delta;
+      for (auto& stop : stopsList)
+          linearMap->addColorStop(nullPoint +stop.val/ delta, QColor(QString::fromStdString(stop.color)));
+
       globalInterval.setInterval(min,max);
     } else {
       globalInterval.setInterval(-1,1);

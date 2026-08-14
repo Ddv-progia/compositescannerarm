@@ -267,6 +267,7 @@ ScanDisplayWindow::ScanDisplayWindow(const std::shared_ptr<Scan>& scan, QWidget*
   scanPlot->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating, true);
   scanPlot->axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating, true);
   scanPlot->installEventFilter(scanPlotEventFilter);
+  
 
   rowPlot = new QwtPlot;
   rowPlot->setCanvasBackground(Qt::white);
@@ -793,6 +794,7 @@ void ScanDisplayWindow::normalizeRegionIntIndex(const QRect& rect, const bool ne
   QPoint beginPoint, endPoint;
   beginPoint = rect.topLeft();
   endPoint = rect.bottomRight();
+
   if (beginPoint.x() > endPoint.x()){
     auto temp = beginPoint.x();
     beginPoint.setX(endPoint.x());
@@ -804,10 +806,14 @@ void ScanDisplayWindow::normalizeRegionIntIndex(const QRect& rect, const bool ne
     endPoint.setY(temp);
   }
 
-  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
-  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
-  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
-  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])
+      endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])
+      endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])
+      beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])
+      beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
 
   ///* for(int i = 1;i<6;i++) 
   //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
@@ -828,8 +834,10 @@ void ScanDisplayWindow::normalizeRegionIntIndex(const QRect& rect, const bool ne
 void ScanDisplayWindow::normalizeRegion(const QRectF& rect, const bool needAddRegion)
 {
   QPoint beginPoint, endPoint;
-  beginPoint = pointIndexes(rect.topLeft());
-  endPoint = pointIndexes(rect.bottomRight());
+  beginPoint = pointIndexes(rect.bottomLeft());
+  endPoint = pointIndexes(rect.topRight());
+  //normalizeRegionIntIndex(QRect(beginPoint, endPoint), needAddRegion);
+  //return;
   if (beginPoint.x() > endPoint.x()){
     auto temp = beginPoint.x();
     beginPoint.setX(endPoint.x());
@@ -841,15 +849,16 @@ void ScanDisplayWindow::normalizeRegion(const QRectF& rect, const bool needAddRe
     endPoint.setY(temp);
   }
 
-  if(endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
-  if(endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
-  if(beginPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  beginPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
-  if(beginPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  beginPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if (endPoint.y() >= scan->normalizedRanges.begin()->view.val.shape()[1])  endPoint.setY(scan->normalizedRanges.begin()->view.val.shape()[1] - 1);
+  if (endPoint.x() >= scan->normalizedRanges.begin()->view.val.shape()[0])  endPoint.setX(scan->normalizedRanges.begin()->view.val.shape()[0] - 1);
+  if (beginPoint.y() < 0)  beginPoint.setY(0);
+  if (beginPoint.x() < 0)  beginPoint.setX(0);
 
   ///* for(int i = 1;i<6;i++) 
   //    normalizeSpec(QPoint(beginPoint.x()/i,beginPoint.y()/i),QPoint(endPoint.x()/i,endPoint.y()/i),scan->normalizedSpec);*/
   //normalizeSpec(beginPoint, endPoint, scan->spec);
-  if ((scan->parameters.specNormalizationIJRect.front().xLowLeft == scan->parameters.specNormalizationIJRect.front().xTopRight)&&
+  if ((scan->parameters.specNormalizationIJRect.size()>0)&&
+      (scan->parameters.specNormalizationIJRect.front().xLowLeft == scan->parameters.specNormalizationIJRect.front().xTopRight)&&
       (scan->parameters.specNormalizationIJRect.front().yLowLeft == scan->parameters.specNormalizationIJRect.front().yTopRight)) {
       scan->parameters.specNormalizationIJRect.erase(scan->parameters.specNormalizationIJRect.begin());
   }
@@ -1087,7 +1096,7 @@ void ScanDisplayWindow::createColoredRangeSelector()
   auto selector = new ColoredRangeSelector(maxs, mins, avers, diffs, commonRanges, colorMap);
   auto layout = new QHBoxLayout;
   layout->setContentsMargins(1, 1, 1, 1);
-
+  
   layout->addWidget(selector);
 
   rangeSelector->setLayout(layout);
@@ -2342,6 +2351,11 @@ void ScanDisplayWindow::exportWave(const QString dirname)
 ProcessingParameters ScanDisplayWindow::getProcessingParameters() const
 {
   return scan->parameters;
+}
+
+void ScanDisplayWindow::setProcessingParameters(ProcessingParameters parametersIn)
+{
+  scan->parameters = parametersIn;
 }
 
 /// <summary>

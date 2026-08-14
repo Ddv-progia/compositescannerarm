@@ -200,6 +200,7 @@ public:
 
 	void exportWave(const QString dirname);
 	ProcessingParameters getProcessingParameters() const;
+	void setProcessingParameters(ProcessingParameters parametersIn);
 	void doubleLines(const ProcessingParameters& params, ScanFactory& factory);
 	void multiSizeLines(const ProcessingParameters& params, ScanFactory& factory,double newXSize, double newYSize);
 	void doubleSizeLines(const ProcessingParameters& params, ScanFactory& factory,double newXSize = 2.0, double newYSize = 2.0);
