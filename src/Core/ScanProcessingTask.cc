@@ -812,6 +812,89 @@ void ScanProcessingTask::normalizeRanges(Scan& scan)
     normalizeRange(scan.commonNormalizedRanges[rangeIndex2],scan.commonRanges, rangeIndex2, step, startIndex, stopIndex, extremum);
     emit stageProgressed();
   }
+  for (std::size_t rangeIndex2 = 0; rangeIndex2 < commonRangesCount; rangeIndex2++) {
+      //Формируем DiffOnTable как разница между чет-нечет строками из scan.parameters.ranges(только если они есть в scan.commonRanges) Extremum берется из первой строки
+      //normalizeRange(scan.commonNormalizedRanges[rangeIndex2], scan.commonRanges, rangeIndex2, step, startIndex, stopIndex, extremum);
+      //emit stageProgressed();
+  }
+
+}
+
+void ScanProcessingTask::createDiffOnTableViews(Scan& scan)
+{
+    //Формируем DiffOnTable как разница между чет-нечет строками из scan.parameters.ranges(только если они есть в scan.commonRanges) Extremum берется из первой строки
+    auto rangesCount = scan.parameters.ranges.size();
+    std::size_t commonRangesCount = 0;
+    if (scan.commonRanges.size() > 0) {
+        commonRangesCount = scan.commonRanges.front().size();
+    }
+    auto normalizedRangesSize = rangesCount;
+    auto commonNormalizedRangesSize = commonRangesCount;
+    for (std::size_t rangeIndex = 0; rangeIndex < commonRangesCount; rangeIndex++) {
+        auto rangeIndexDoubled = rangeIndex *2;
+        auto rangeIndexDoubledPlusOne = rangeIndexDoubled + 1;
+        if ((rangeIndexDoubledPlusOne) < rangesCount) {
+            auto extremumOne = scan.normalizedRanges[rangeIndexDoubled].extremum;
+            auto extremumTwo = scan.normalizedRanges[rangeIndexDoubledPlusOne].extremum;
+            viewWithExtremums* viewForCalculateOne;
+            viewWithExtremums* viewForCalculateTwo;
+            switch (extremumOne)
+            {
+            case Extremum::Max: {
+                viewForCalculateOne = &scan.normalizedRanges[rangeIndexDoubled].maxView;
+                break;
+            }
+            case Extremum::Min: {
+                viewForCalculateOne = &scan.normalizedRanges[rangeIndexDoubled].minView;
+                break;
+            }
+            case Extremum::Aver: {
+                viewForCalculateOne = &scan.normalizedRanges[rangeIndexDoubled].averView;
+                break;
+            }
+            case Extremum::Diff: {
+                viewForCalculateOne = &scan.normalizedRanges[rangeIndexDoubled].diffView;
+                break;
+            }
+            default:
+                return;
+                break;
+            }
+            switch (extremumTwo)
+            {
+            case Extremum::Max: {
+                viewForCalculateTwo = &scan.normalizedRanges[rangeIndexDoubledPlusOne].maxView;
+                break;
+            }
+            case Extremum::Min: {
+                viewForCalculateTwo = &scan.normalizedRanges[rangeIndexDoubledPlusOne].minView;
+                break;
+            }
+            case Extremum::Aver: {
+                viewForCalculateTwo = &scan.normalizedRanges[rangeIndexDoubledPlusOne].averView;
+                break;
+            }
+            case Extremum::Diff: {
+                viewForCalculateTwo = &scan.normalizedRanges[rangeIndexDoubledPlusOne].diffView;
+                break;
+            }
+            default:
+                return;
+                break;
+            }
+            auto a = scan.commonNormalizedRanges[rangeIndex].diffOnTableView.val.shape()[0];
+            auto b = scan.commonNormalizedRanges[rangeIndex].diffOnTableView.val.shape()[1];
+            for (auto i = 0; i<scan.commonNormalizedRanges[rangeIndex].diffOnTableView.val.shape()[0];i++) {
+                for (auto j = 0; j < scan.commonNormalizedRanges[rangeIndex].diffOnTableView.val.shape()[1]; j++) {
+                    auto oneValue = float(viewForCalculateOne->val[i][j]);
+                    auto twoValue = float(viewForCalculateTwo->val[i][j]);
+                    scan.commonNormalizedRanges[rangeIndex].diffOnTableView.val[i][j] = oneValue - twoValue;
+                }
+            }
+        }
+        emit stageProgressed();
+    }
+
 }
 
 std::tuple<double, double, double, double> ScanProcessingTask::minMaxCoordinatesOfNormalizedRange(std::vector<std::vector<RangeScanLine>>& ranges, std::size_t rangeIndex)
@@ -864,11 +947,13 @@ void ScanProcessingTask::normalizeRange(NormalizedRange& normalizedRange,
   normalizedRange.view.val.resize(be);
   normalizedRange.averView.val.resize(be); //*******
   normalizedRange.diffView.val.resize(be); //*******
+  normalizedRange.diffOnTableView.val.resize(be); //*******
   if (rangeIndex >= ranges[0].size()) return;
   normalizedRange.max = getNormalizedPeakAt(ranges[0][rangeIndex], startIndex);
   normalizedRange.min = normalizedRange.max;
   normalizedRange.aver = normalizedRange.max; //*******
   normalizedRange.diff = normalizedRange.max; //*******
+  normalizedRange.diffOnTable = normalizedRange.max; //*******
   namespace ba = boost::accumulators;
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> acc;
   ba::accumulator_set<double, ba::stats<ba::tag::mean, ba::tag::max, ba::tag::min>> accMax;
@@ -1867,6 +1952,11 @@ void ScanProcessingTask::operator() ()
     normalizeRanges(*scan);
     scan->processingStage = ScanProcessingStage::RangesNormalized;
   case ScanProcessingStage::RangesNormalized:
+    emit stageStarted("Построение разностного сигнала", scan->commonRanges.front().size());
+    createDiffOnTableViews(*scan);
+    scan->processingStage = ScanProcessingStage::DiffOnTableConstructed;
+  case ScanProcessingStage::DiffOnTableConstructed:
+
     if (scan->parameters.columnModelOrder > 0) {
       emit stageStarted("Построение модели столбцов", scan->parameters.ranges.size() * 2);
       scan->averageColumns = averageColumns(*scan);

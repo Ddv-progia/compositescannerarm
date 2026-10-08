@@ -311,7 +311,7 @@ private:
 	Q_SLOT void updatePlotList();
 	Q_SLOT void updatePlotGeometryOnCurrentIndexChanged(int index);
 	Q_SLOT void showPlots();
-	Q_SLOT void selectRange(int idx, Extremum ex);
+	Q_SLOT void onSelectRange(int idx, Extremum ex);
 
 	QGridLayout* widgetLayout;
 	QVBoxLayout* mainLayout;

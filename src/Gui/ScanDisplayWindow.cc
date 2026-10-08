@@ -656,6 +656,13 @@ void ScanDisplayWindow::changeExtremum(Extremum ex) //*******
             }
             break;
         }
+        case Extremum::DiffOnTable: {
+            for (auto& range : scan->commonNormalizedRanges) {
+                range.view = range.diffOnTableView;
+                range.extremum = Extremum::DiffOnTable;
+            }
+            break;
+        }
         case Extremum::Min: {
             for (auto& range : scan->commonNormalizedRanges) {
                 range.view = range.minView;
@@ -1072,7 +1079,7 @@ void ScanDisplayWindow::saveAs(BackgroundTaskExecutor& taskExecutor, QMdiArea* m
 
 void ScanDisplayWindow::createColoredRangeSelector()
 {
-  std::vector<float> mins, maxs, avers, diffs;
+  std::vector<float> mins, maxs, avers, diffs, diffOnTable;
 
   double max = 0.0;
   double min = 0.0;
@@ -1088,19 +1095,20 @@ void ScanDisplayWindow::createColoredRangeSelector()
     maxs.push_back(range.max);
     avers.push_back(range.aver);
     diffs.push_back(range.diff);
+    diffOnTable.push_back(range.diff*2);
   }
   QwtColorMap* colorMap = new FixedColorMap(scan->parameters.colorStopsList);//(min,max);
   auto commonRanges = constructCommonRanges();
   if(scan->parameters.shouldNormalize)
     commonRanges.push_back(FrequencyRange{ commonRanges.front().from, commonRanges.back().to });
-  auto selector = new ColoredRangeSelector(maxs, mins, avers, diffs, commonRanges, colorMap);
+  auto selector = new ColoredRangeSelector(maxs, mins, avers, diffs, diffOnTable, commonRanges, colorMap);
   auto layout = new QHBoxLayout;
   layout->setContentsMargins(1, 1, 1, 1);
   
   layout->addWidget(selector);
 
   rangeSelector->setLayout(layout);
-  connect(selector, SIGNAL(selectRange(int, Extremum)), SLOT(selectRange(int, Extremum)));
+  connect(selector, SIGNAL(selectRange(int, Extremum)), SLOT(onSelectRange(int, Extremum)));
   connect(plotBox, SIGNAL(activated(int)), selector, SLOT(leave()));
 }
 
@@ -1153,7 +1161,8 @@ void ScanDisplayWindow::updateRangesPlot()
   else {
     spec->setData(new RangeRasterData(scan->ranges, idx));
   }
-  spec->setRenderThreadCount(0);
+  //spec->setRenderThreadCount(0);
+  spec->setRenderThreadCount(3);
 
   if (scan->parameters.defectRendering.fixedColorScale)
     spec->setColorMap(new FixedColorMap(scan->parameters.colorStopsList));
@@ -1213,7 +1222,7 @@ void ScanDisplayWindow::updateRangesPlot()
   //}
 }
 
-void ScanDisplayWindow::selectRange(int idx, Extremum ex)
+void ScanDisplayWindow::onSelectRange(int idx, Extremum ex)
 {
   showCommonRange = true;
   //*******

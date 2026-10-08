@@ -18,7 +18,9 @@ enum Extremum is
     Max,
     Min,
     Aver,
-    Diff
+    Diff,
+    DiffOnTable,
+    Count
 
 enum ScanProcessingStage is
     RawDataObtained,
@@ -44,7 +46,8 @@ enum ScanProcessingStage is
     RtRangesSelected,
     RtLinesAligned,
     RtRangesNormalized,
-    RtModelSubstracted
+    RtModelSubstracted,
+    DiffOnTableConstructed
 
 struct FrequencyRange is 
   from : Double_Precision_Real
@@ -198,6 +201,8 @@ struct ProcessingParameters is
 
   ranges : Std::Vector(FrequencyRange)
   extremumOfRanges : Std::Vector(Extremum)
+  -- AdditationOrSubscription : размерность как у extremumOfRanges; при формировании diffOnTableView true - складывать значения четных и нечетных диапазонов; false - вычитать 
+  AdditationOrSubscription : Std::Vector(Boolean)  with UCL::Reflection::Binding::Transient_Member
   defectPoints : Std::Vector(DefectKindView)
   columnModelOrder :  Unsigned_Integer
   smoothingPointsCount : Unsigned_Integer
@@ -329,6 +334,7 @@ struct viewWithExtremums is
   min : Double_Precision_Real
   max : Double_Precision_Real
   aver : Double_Precision_Real
+  diff : Double_Precision_Real
   extremum : Extremum
 end
 
@@ -345,6 +351,7 @@ struct NormalizedRange is
   max : Double_Precision_Real
   aver : Double_Precision_Real
   diff : Double_Precision_Real
+  diffOnTable : Double_Precision_Real
   step :  Unsigned_Integer
   -- maxView : MultiArray(Single_Precision_Real)
   maxView : viewWithExtremums
@@ -355,6 +362,7 @@ struct NormalizedRange is
   minView : viewWithExtremums
   averView : viewWithExtremums
   diffView : viewWithExtremums
+  diffOnTableView : viewWithExtremums
   finalLineCoordinates: Std::Vector(Double_Precision_Real)
 --  lineCoordinatesMin: Double_Precision_Real = { 0 }
 --  finalLineCoordinateMax: Double_Precision_Real = { 0 }

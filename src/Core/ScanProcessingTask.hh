@@ -52,6 +52,7 @@ private:
 
   std::tuple<std::size_t, std::size_t, std::size_t> getNormalizedIndexes(Scan& scan) const;
   void normalizeRanges(Scan& scan);
+  void createDiffOnTableViews(Scan& scan);
   std::tuple<double, double, double, double> minMaxCoordinatesOfNormalizedRange(std::vector<std::vector<RangeScanLine>>& ranges, std::size_t rangeIndex);
   void normalizeRange(NormalizedRange& normalizedRange,
                       std::vector<std::vector<RangeScanLine>>& ranges,

@@ -6,7 +6,7 @@
 #include <qwt_interval.h>
 
 
-bool RangeView::eventFilter(QObject* watched, QEvent* event)
+bool RangeViewFrame::eventFilter(QObject* watched, QEvent* event)
 {
   if(event->type() == QEvent::MouseButtonRelease) {
     select();
@@ -17,13 +17,14 @@ bool RangeView::eventFilter(QObject* watched, QEvent* event)
 }
 
 
-RangeView::RangeView(QRgb rangeColor, FrequencyRange newRange, QWidget* parent): QFrame(parent), range(newRange)
+RangeViewFrame::RangeViewFrame(QRgb rangeColor, FrequencyRange newRange, QWidget* parent): QFrame(parent), range(newRange)
 {
-  this->setFrameStyle(QFrame::Box | QFrame::Plain);
+  this->setFrameStyle(QFrame::Box | QFrame::Raised);
+  this->setLineWidth(1);
+  this->setMidLineWidth(0);
+  this->setFrameShape(QFrame::NoFrame); // выключаем рамку
   setBackgroundRole(QPalette::Window);
   setAutoFillBackground(true);
-  this->setFrameShape(QFrame::NoFrame);
-  this->setLineWidth(0);
   QPalette palette = this->palette();
   palette.setColor(QPalette::Window, QColor::fromRgb(rangeColor));
   this->setPalette(palette);
@@ -32,23 +33,23 @@ RangeView::RangeView(QRgb rangeColor, FrequencyRange newRange, QWidget* parent):
   installEventFilter(this);
 }
 
-void RangeView::select()
+void RangeViewFrame::select()
 {
-  this->setFrameShape(QFrame::Panel);
+  //this->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+  this->setFrameStyle(QFrame::Box | QFrame::Raised);
   this->setLineWidth(1);
 }
-void RangeView::deleteSelection()
+void RangeViewFrame::deleteSelection()
 {
   this->setFrameShape(QFrame::NoFrame);
-  this->setLineWidth(0);
 }
 
-QSize RangeView::sizeHint () const
+QSize RangeViewFrame::sizeHint () const
 {
   return QSize(12, 12);
 }
 
-FrequencyRange RangeView::getRange() const
+FrequencyRange RangeViewFrame::getRange() const
 {
   return range;
 }
@@ -66,92 +67,52 @@ bool ColoredRangeSelector::eventFilter(QObject* watched, QEvent* event)
   if (event->type() == QEvent::KeyPress) {
     auto keyEvent = static_cast<QKeyEvent*>(event);
     auto& view = views[static_cast<uint>(currentRange.second)][currentRange.first];
+    int extremumSize = static_cast<int>(Extremum::Count);
+    int currentRangeSecond = static_cast<int>(currentRange.second);
+    bool viewChanged = false;
     if (keyEvent->modifiers() == Qt::NoModifier) {
       switch (keyEvent->key()) {
       case Qt::Key_Down:
-        //*******
-        //if(currentRange.second != Extremum::Min) { 
-        //  view->deleteSelection();
-        //  currentRange.second = Extremum::Min;
-        //  emit selectRange(currentRange.first, currentRange.second);
-        //  view->select();
-        //  setFrequencyText(view->getRange());
-        //}
-        if (currentRange.second != Extremum::Diff) {
-
-            view->deleteSelection();
-            if (currentRange.second == Extremum::Aver) {
-                currentRange.second = Extremum::Diff;
-            }else if (currentRange.second == Extremum::Min) {
-            currentRange.second = Extremum::Aver;
-            }
-            else currentRange.second = Extremum::Min;
-            setFrequencyText(view->getRange());
-            auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
-            viewNew->select();
-            emit selectRange(currentRange.first, currentRange.second);
+        if (currentRangeSecond < (extremumSize - 1)) {
+            currentRange.second = static_cast<Extremum>(currentRangeSecond+1);
+            viewChanged = true;
         }
-        //*******
-
-        return true;
+        break;
       case Qt::Key_Up:
-        //*******
-        //if(currentRange.second != Extremum::Max) {
-        //  view->deleteSelection();
-        //  currentRange.second = Extremum::Max;
-        //  emit selectRange(currentRange.first, currentRange.second);
-        //  view->select();
-        //  setFrequencyText(view->getRange());
-        //}
-        if (currentRange.second != Extremum::Max) {
-            view->deleteSelection();
-            if (currentRange.second == Extremum::Diff) {
-                currentRange.second = Extremum::Aver;
-            } else if (currentRange.second == Extremum::Min) {
-                currentRange.second = Extremum::Max;
-            }
-            else currentRange.second = Extremum::Min;
-            setFrequencyText(view->getRange());
-            auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
-            viewNew->select();
-            emit selectRange(currentRange.first, currentRange.second);
+        if (currentRangeSecond > 0) {
+            currentRange.second = static_cast<Extremum>(currentRangeSecond - 1);
+            viewChanged = true;
         }
-        //*******
-        return true;
+        break;
       case Qt::Key_Left:
         if(currentRange.first > 0) {
-          view->deleteSelection();
           currentRange.first--;
-          emit selectRange(currentRange.first, currentRange.second);
-          //*******
-          //view->select(); 
-          auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
-          viewNew->select();
-          //*******
-          setFrequencyText(viewNew->getRange());
+          viewChanged = true;
         }
-        return true;
+        break;
       case Qt::Key_Right:
         if(currentRange.first < views[0].size() - 1) {
-          view->deleteSelection();
           currentRange.first++;
-          emit selectRange(currentRange.first, currentRange.second);
-          //*******
-          //view->select();
+          viewChanged = true;
+        }
+        break;
+      }
+      if (viewChanged) {
+          view->deleteSelection();
           auto& viewNew = views[static_cast<uint>(currentRange.second)][currentRange.first];
           viewNew->select();
-          //*******
           setFrequencyText(viewNew->getRange());
-        }
-        return true;
+          emit selectRange(currentRange.first, currentRange.second);
       }
+      else
+          return true;
     }
   }
   return QObject::eventFilter(watched, event);
 }
 
 
-ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<float> mins, std::vector<float> avers, std::vector<float> diffs, std::vector<FrequencyRange> ranges,
+ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<float> mins, std::vector<float> avers, std::vector<float> diffs, std::vector<float> diffOnTable, std::vector<FrequencyRange> ranges,
     QwtColorMap* newColorMap, QWidget* parent) : QFrame(parent)
 {
   QwtInterval interval(static_cast<double>(*std::min_element(mins.begin(), mins.end())), static_cast<double>(*std::max_element(maxs.begin(),
@@ -160,6 +121,7 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   auto maxLayout = new QHBoxLayout;
   auto averLayout = new QHBoxLayout;
   auto diffLayout = new QHBoxLayout;
+  auto diffOnTableLayout = new QHBoxLayout; // разница по двум диапазонам из таблицы диапазонов пользователя
   auto selectorLayout = new QVBoxLayout;
   auto layout = new QHBoxLayout;
   auto headerLayout = new QVBoxLayout;
@@ -175,6 +137,8 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   averLayout->setContentsMargins(2, 0, 0, 0);
   diffLayout->setSpacing(0);
   diffLayout->setContentsMargins(2, 0, 0, 0);
+  diffOnTableLayout->setSpacing(0);
+  diffOnTableLayout->setContentsMargins(2, 0, 0, 0);
   selectorLayout->setContentsMargins(0, 0, 0, 0);
   selectorLayout->setSpacing(3);
   headerLayout->setContentsMargins(0, 0, 0, 2);
@@ -188,13 +152,16 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   headerLayout->addWidget(new QLabel("Min. "));
   headerLayout->addWidget(new QLabel("Aver. "));
   headerLayout->addWidget(new QLabel("Diff. "));
+  headerLayout->addWidget(new QLabel("Diff.OnTable "));
 
   minLayout->setStretch(0, 0);
   maxLayout->setStretch(0, 0);
   averLayout->setStretch(0, 0);
   diffLayout->setStretch(0, 0);
+  diffOnTableLayout->setStretch(0, 0);
 
-  views.resize(4);
+  views.resize(5);
+  //views.resize(4);
 
   this->setFrameStyle(QFrame::StyledPanel);
 
@@ -203,37 +170,45 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
       //if (isnan(mins[i])) {
       //    val = 0;
       //}
-    auto minView = new RangeView(newColorMap->rgb(interval, mins[i]), ranges[i]);
+    auto minView = new RangeViewFrame(newColorMap->rgb(interval, mins[i]), ranges[i]);
     //val = maxs[i];
     //if (isnan(maxs[i])) {
     //    val = 0;
     //}
-    auto maxView = new RangeView(newColorMap->rgb(interval, maxs[i]), ranges[i]);
+    auto maxView = new RangeViewFrame(newColorMap->rgb(interval, maxs[i]), ranges[i]);
     //val = avers[i];
     //if (isnan(avers[i])) {
     //    val = 0;
     //}
-    auto averView = new RangeView(newColorMap->rgb(interval, avers[i]), ranges[i]);
+    auto averView = new RangeViewFrame(newColorMap->rgb(interval, avers[i]), ranges[i]);
     //val = diffs[i];
     //if (isnan(diffs[i])) {
     //    val = 0;
     //}
-    auto diffView = new RangeView(newColorMap->rgb(interval, diffs[i]), ranges[i]);
+    auto diffView = new RangeViewFrame(newColorMap->rgb(interval, diffs[i]), ranges[i]);
+    
+    auto diffOnTableView = new RangeViewFrame(newColorMap->rgb(interval, diffOnTable[i]), ranges[i]);
 
     views[0].push_back(maxView);
     views[1].push_back(minView);
     views[2].push_back(averView);
     views[3].push_back(diffView);
+    views[4].push_back(diffOnTableView);
 
     maxLayout->addWidget(maxView);
     minLayout->addWidget(minView);
     averLayout->addWidget(averView);
     diffLayout->addWidget(diffView);
+    diffOnTableLayout->addWidget(diffOnTableView);
 
-    connect(maxView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeMax(RangeView*)));
-    connect(minView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeMin(RangeView*)));
-    connect(averView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeAver(RangeView*)));
-    connect(diffView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeDiff(RangeView*)));
+    connect(maxView, SIGNAL(rangeSelected(RangeViewFrame*)), SLOT(selectRangeMax(RangeViewFrame*)));
+    connect(minView, SIGNAL(rangeSelected(RangeViewFrame*)), SLOT(selectRangeMin(RangeViewFrame*)));
+    connect(averView, SIGNAL(rangeSelected(RangeViewFrame*)), SLOT(selectRangeAver(RangeViewFrame*)));
+    connect(diffView, SIGNAL(rangeSelected(RangeViewFrame*)), SLOT(selectRangeDiff(RangeViewFrame*)));
+    //connect(diffOnTableView, SIGNAL(rangeSelected(RangeView*)), SLOT(selectRangeDiffOnTable(RangeView*)));
+    //connect(diffOnTableView, &RangeView::rangeSelected,[=](RangeView* rangeView) {selectRangeDiffOnTable(rangeView);});
+    connect(diffOnTableView, &RangeViewFrame::rangeSelected, this,&ColoredRangeSelector::selectRangeDiffOnTable);
+    //connect(diffOnTableView, &RangeView::rangeSelected,[=](RangeView* rangeView) {selectRange(rangeView, Extremum::DiffOnTable);});
   }
 
   frequency = new QLabel;
@@ -245,6 +220,7 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   selectorLayout->addLayout(minLayout);
   selectorLayout->addLayout(averLayout);
   selectorLayout->addLayout(diffLayout);
+  selectorLayout->addLayout(diffOnTableLayout);
 
   layout->addLayout(headerLayout);
   layout->addLayout(selectorLayout);
@@ -261,23 +237,28 @@ ColoredRangeSelector::ColoredRangeSelector(std::vector<float> maxs, std::vector<
   leave();
 }
 
-void ColoredRangeSelector::selectRangeMax(RangeView* view)
+void ColoredRangeSelector::selectRangeMax(RangeViewFrame* view)
 {
     selectRange(view, Extremum::Max); //*******
 }
 
 //*******
-void ColoredRangeSelector::selectRangeAver(RangeView* view)
+void ColoredRangeSelector::selectRangeAver(RangeViewFrame* view)
 {
     selectRange(view, Extremum::Aver);
 }
 
-void ColoredRangeSelector::selectRangeDiff(RangeView* view)
+void ColoredRangeSelector::selectRangeDiffOnTable(RangeViewFrame* view)
+{
+    selectRange(view, Extremum::DiffOnTable); 
+}
+
+void ColoredRangeSelector::selectRangeDiff(RangeViewFrame* view)
 {
     selectRange(view, Extremum::Diff); 
 }
 
-void ColoredRangeSelector::selectRange(RangeView* viewIn, Extremum ex)
+void ColoredRangeSelector::selectRange(RangeViewFrame* viewIn, Extremum ex)
 {
   auto currView = views[static_cast<uint>(currentRange.second)][currentRange.first];
   currView->deleteSelection();
@@ -297,7 +278,7 @@ void ColoredRangeSelector::selectRange(RangeView* viewIn, Extremum ex)
 }
 //*******
 
-void ColoredRangeSelector::selectRangeMin(RangeView* view)
+void ColoredRangeSelector::selectRangeMin(RangeViewFrame* view)
 {
     selectRange(view, Extremum::Min); //*******
 }

@@ -19,6 +19,7 @@ class ExtremumDelegate : public QStyledItemDelegate
       cb->addItem("Min");
       cb->addItem("Aver");
       cb->addItem("Diff");
+      cb->addItem("DiffOnTable");
       //hand = static_cast<Suit>(account_num);
       return cb;
     }

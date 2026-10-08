@@ -24,19 +24,19 @@ class DefectRangeDelegate : public QStyledItemDelegate
     {
       auto cb = new QComboBox(parent);
       int i = 0;
-      if (extremums.size() == ranges.size()) {
-          for (auto& r : ranges) {
-              QString str = "Max";
-              if (extremums[i] == ::Extremum::Aver) str = "Aver";
-              else if (extremums[i] == ::Extremum::Min) str = "Min";
-              else if (extremums[i] == ::Extremum::Diff) str = "Diff";
-              i++;
-              cb->addItem(QString("%1 - %2 : %3").arg(r.from).arg(r.to).arg(str));
-          }
+      int targedRowIndex = index.row();
+      int rowIndex = 0;
+      for (auto& r : ranges) {
+            QString strExtremum = "";
+            if (extremums[rowIndex] == ::Extremum::Max) strExtremum = "Max";
+            else if (extremums[rowIndex] == ::Extremum::Min) strExtremum = "Min";
+            else if (extremums[rowIndex] == ::Extremum::Aver) strExtremum = "Aver";
+            else if (extremums[rowIndex] == ::Extremum::Diff) strExtremum = "Diff";
+            else if (extremums[rowIndex] == ::Extremum::DiffOnTable) strExtremum = "DiffOnTable";
+            cb->addItem(QString("%1 - %2 : %3").arg(r.from).arg(r.to).arg(strExtremum));
+            rowIndex++;
       }
-      else {
-          for (auto& r : ranges) cb->addItem(QString("%1 - %2").arg(r.from).arg(r.to));
-      }
+
       return cb;
     }
 
