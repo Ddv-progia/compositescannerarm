@@ -1,4 +1,4 @@
-#include <boost/format.hpp>
+п»ї#include <boost/format.hpp>
 #include <UCL/Exception.hh>
 
 #include "fieldwidget.h"
@@ -91,12 +91,12 @@ float FieldWidget::getPositionY()
 
 
 /// <summary>
-/// ищет координаты пика по timestamp'у
-/// заполняет peak найденными координатами
+/// РёС‰РµС‚ РєРѕРѕСЂРґРёРЅР°С‚С‹ РїРёРєР° РїРѕ timestamp'Сѓ
+/// Р·Р°РїРѕР»РЅСЏРµС‚ peak РЅР°Р№РґРµРЅРЅС‹РјРё РєРѕРѕСЂРґРёРЅР°С‚Р°РјРё
 /// </summary>
 /// <param name="indexInSound"></param>
 /// <param name="peak"></param>
-/// <returns>true, если координаты найдены</returns>
+/// <returns>true, РµСЃР»Рё РєРѕРѕСЂРґРёРЅР°С‚С‹ РЅР°Р№РґРµРЅС‹</returns>
 bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 {
 	auto bindex = peak.beginIndex;
@@ -114,7 +114,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 		if ((indexInSound >= currChunk.startpositionOfChunk) && (indexInSound < currChunk.endpositionOfChunk)) {
 			timestampForIndexInSound = currChunk.timestamp-
 				                       (unsigned long long int)((currChunk.endpositionOfChunk - indexInSound) * (1 / soundSampleRate));
-			notFoundCurChunkIndex = false;     // нашли, выход из цикла
+			notFoundCurChunkIndex = false;     // РЅР°С€Р»Рё, РІС‹С…РѕРґ РёР· С†РёРєР»Р°
 		}
 		else {
 			++m_curChunkIndex;
@@ -127,7 +127,7 @@ bool FieldWidget::getCoordinateOfPeak(size_t indexInSound, ::Peak& peak)
 
 	//size_t m_curIndex = 0;
 	//size_t m_curChunkIndex = 0;
-	//size_t m_curTrajectoryIndex = 0; // первый найденный индекс, по которому timestamp элемента в Trajectory больше,чем timestamp искомого пика
+	//size_t m_curTrajectoryIndex = 0; // РїРµСЂРІС‹Р№ РЅР°Р№РґРµРЅРЅС‹Р№ РёРЅРґРµРєСЃ, РїРѕ РєРѕС‚РѕСЂРѕРјСѓ timestamp СЌР»РµРјРµРЅС‚Р° РІ Trajectory Р±РѕР»СЊС€Рµ,С‡РµРј timestamp РёСЃРєРѕРјРѕРіРѕ РїРёРєР°
 
 	//bool notFoundCurTrajectoryIndex = true;
 	//size_t indCoord = 0;
@@ -298,7 +298,7 @@ findPeak() {
 		int size = m_scanArm->sound.samples.size();
 		if (foreStep == 0) {
 				BOOST_THROW_EXCEPTION(uts::IncorrectArgumentException()
-					<< uts::ErrInfo_Description((boost::format("Длительность пика слишком мала: %1% ") % foreStep ).str()));
+					<< uts::ErrInfo_Description((boost::format("Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ РїРёРєР° СЃР»РёС€РєРѕРј РјР°Р»Р°: %1% ") % foreStep ).str()));
 			}
 		//for (; m_currentSampleIndex != m_scanArm->sound.samples.end(); ++m_currentSampleIndex) {
 		//	if (abs(*m_currentSampleIndex) > comparator) {

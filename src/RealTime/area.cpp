@@ -1,4 +1,4 @@
-#include "area.h"
+ï»¿#include "area.h"
 #include <QtGui/qpainter.h>
 #include <iostream>
 #include <QtGui/QGuiApplication>
@@ -47,7 +47,7 @@ float averagePeaksAmplitude(const std::list<Peak> &peaks, const ::std::vector< f
 		double summ = 0;
 		for (auto peak : peaks) {
 			auto max = std::max_element(data.begin() + peak.beginIndex, data.begin() + peak.endIndex);
-			if (max == data.end()) //TODO çàðåìàðèòü ëèáî âûäàòü îøèáêó
+			if (max == data.end()) //TODO Ð·Ð°Ñ€ÐµÐ¼Ð°Ñ€Ð¸Ñ‚ÑŒ Ð»Ð¸Ð±Ð¾ Ð²Ñ‹Ð´Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
 				return 0;
 			summ += *max;
 		}

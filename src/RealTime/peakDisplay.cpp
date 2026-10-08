@@ -1,4 +1,4 @@
-#include "peakDisplay.h"
+ï»¿#include "peakDisplay.h"
 #include <QList>
 
 #include <iostream>
@@ -10,7 +10,7 @@ PeakDisplay::PeakDisplay()
 {
     //
 
-    //QString titleX = QString::fromLocal8Bit("time, ìèëëèñåê.");
+    //QString titleX = QString::fromLocal8Bit("time, Ð¼Ð¸Ð»Ð»Ð¸ÑÐµÐº.");
     QString titleX = QString::fromLocal8Bit("time");
     m_oneWave = new  OneWaveWidget("Peak Display", titleX);
     m_oneWave->setRangeFrequency(0, 1000);                //TODO magic number 1, 501
@@ -35,7 +35,7 @@ setScan(std::shared_ptr<ScanArm> scan) {
     //const auto& backStep = m_scanArm->sound.sampleRate * parameters.peakBackstep * 10.0; //TODO magic number 10
     //const auto& foreStep = m_scanArm->sound.sampleRate * parameters.peakForestep * 10.0;
     m_oneWave->setRangeFrequency(0, (backStep + foreStep) );
-    //m_oneWave->setRangeFrequency(-parameters.peakBackstep*1000, parameters.peakForestep*1000); // Ïðåäåëû ïî îñè - ìèëëèñåêóíäû äî Ìàêñèìóìà ïèêà (-peakBackstep;peakForestep)
+    //m_oneWave->setRangeFrequency(-parameters.peakBackstep*1000, parameters.peakForestep*1000); // ÐŸÑ€ÐµÐ´ÐµÐ»Ñ‹ Ð¿Ð¾ Ð¾ÑÐ¸ - Ð¼Ð¸Ð»Ð»Ð¸ÑÐµÐºÑƒÐ½Ð´Ñ‹ Ð´Ð¾ ÐœÐ°ÐºÑÐ¸Ð¼ÑƒÐ¼Ð° Ð¿Ð¸ÐºÐ° (-peakBackstep;peakForestep)
     //m_chartView->setPeakMagnitude(m_scanArm->parameters.peakMagnitudeLimit);
 }
 

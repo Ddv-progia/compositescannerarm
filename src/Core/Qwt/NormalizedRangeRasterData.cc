@@ -1,4 +1,4 @@
-/*
+п»ї/*
  * Core/Qwt/NormalizedRangeRasterData.cc
  */
 
@@ -14,8 +14,8 @@ NormalizedRangeRasterData::NormalizedRangeRasterData(const NormalizedRange& rang
   : range(range)
 {
   m_intervals.at(Qt::XAxis) = QwtInterval(range.startCoordinate, range.finalCoordinate);
-  double minLocal = 0; //  если получили одну строку, задаем ей ненулевую высоту для корректного определения площади дефекта
-  double maxLocal = 1;//  если получили одну строку, задаем ей ненулевую высоту для корректного определения площади дефекта
+  double minLocal = 0; //  РµСЃР»Рё РїРѕР»СѓС‡РёР»Рё РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ, Р·Р°РґР°РµРј РµР№ РЅРµРЅСѓР»РµРІСѓСЋ РІС‹СЃРѕС‚Сѓ РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РѕРїСЂРµРґРµР»РµРЅРёСЏ РїР»РѕС‰Р°РґРё РґРµС„РµРєС‚Р°
+  double maxLocal = 1;//  РµСЃР»Рё РїРѕР»СѓС‡РёР»Рё РѕРґРЅСѓ СЃС‚СЂРѕРєСѓ, Р·Р°РґР°РµРј РµР№ РЅРµРЅСѓР»РµРІСѓСЋ РІС‹СЃРѕС‚Сѓ РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РѕРїСЂРµРґРµР»РµРЅРёСЏ РїР»РѕС‰Р°РґРё РґРµС„РµРєС‚Р°
     if (range.lineCoordinates.begin() != range.lineCoordinates.end()) {
         auto xMinLocal = std::min_element(range.lineCoordinates.begin(), range.lineCoordinates.end());
         auto xMaxLocal = std::max_element(range.lineCoordinates.begin(), range.lineCoordinates.end());

@@ -1,4 +1,4 @@
-/*
+п»ї/*
  * Gui/MainWindow.hh
  */
 
@@ -6,6 +6,7 @@
 
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
+#include <QDialog>
 #include <QJSEngine>
 //#include <QtScript/QScriptEngine>
 //#include <QAxScript>
@@ -35,14 +36,14 @@ public:
 
 private slots:
 	void accept() override;
-	void slotDelete();          // обработчик кнопки «удалить»
-	void slotClearAll();        // обработчик кнопки «очистить все»
+	void slotDelete();          // РѕР±СЂР°Р±РѕС‚С‡РёРє РєРЅРѕРїРєРё В«СѓРґР°Р»РёС‚СЊВ»
+	void slotClearAll();        // РѕР±СЂР°Р±РѕС‚С‡РёРє РєРЅРѕРїРєРё В«РѕС‡РёСЃС‚РёС‚СЊ РІСЃРµВ»
 
 private:
 	QListWidget* listWidget;
 	RectForNormalization* selectedRect;
-	QPushButton* btnDelete;      // «удалить» – удаляем выбранный элемент
-	QPushButton * btnClearAll;    // «очистить все» – очищаем весь список
+	QPushButton* btnDelete;      // В«СѓРґР°Р»РёС‚СЊВ» вЂ“ СѓРґР°Р»СЏРµРј РІС‹Р±СЂР°РЅРЅС‹Р№ СЌР»РµРјРµРЅС‚
+	QPushButton * btnClearAll;    // В«РѕС‡РёСЃС‚РёС‚СЊ РІСЃРµВ» вЂ“ РѕС‡РёС‰Р°РµРј РІРµСЃСЊ СЃРїРёСЃРѕРє
 };
 
 class MainWindow : public QMainWindow
